@@ -1,0 +1,33 @@
+[versions]
+# 툴체인: Pleos 공식 Vehicle 샘플 앱과 동일한 조합
+agp = "8.8.2"
+kotlin = "2.0.0"
+coreKtx = "1.16.0"
+activityCompose = "1.10.1"
+composeBom = "2024.04.01"
+# Pleos Connect SDK (2026-10-19 릴리스 기준 최신)
+pleosVehicle = "2.3.2"
+pleosNaviHelper = "3.0.5"
+pleosTextToSpeech = "3.3.1"
+pleosSpeechToText = "3.3.1"
+pleosFusedLocation = "1.1.3"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+# 필요한 SDK만 app/build.gradle.kts 의 dependencies 에 추가해서 사용
+pleos-vehicle = { module = "ai.pleos.playground:Vehicle", version.ref = "pleosVehicle" }
+pleos-navihelper = { module = "ai.pleos.playground:NaviHelper", version.ref = "pleosNaviHelper" }
+pleos-tts = { module = "ai.pleos.playground:TextToSpeech", version.ref = "pleosTextToSpeech" }
+pleos-stt = { module = "ai.pleos.playground:SpeechToText", version.ref = "pleosSpeechToText" }
+pleos-fusedlocation = { module = "ai.pleos.playground:FusedLocation", version.ref = "pleosFusedLocation" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -1,0 +1,4 @@
+# 대화 기록·패치는 줄바꿈 변환 없이 원본 그대로 저장 (변환되면 복원·git apply가 깨질 수 있음)
+*.jsonl -text
+*.patch -text
+*.sh text eol=lf

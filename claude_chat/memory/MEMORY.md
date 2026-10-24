@@ -1,0 +1,6 @@
+- [Respond in Korean](respond-in-korean.md) — 모든 설명은 한국어로만 (영어 섞이면 사용자가 지적함)
+- [Contest dev repo location](contest-dev-repo-location.md) — 실제 개발은 C:\dev\hmg_app_challenge_contest (OneDrive 폴더 아님)
+- [Project status](project-status.md) — 10/24 개발 준비 완료, 아이디어 미정(사용자 결정 후 개발 시작), 미커밋 변경 2개
+- [API key in app OK](api-key-in-app-ok.md) — LLM API 키 앱 내장 허용(private 저장소, 나중에 교체), 경고 반복 금지
+- [Git branch workflow](git-branch-workflow.md) — 사용자 작업 브랜치는 altrofast11x2, main 직접 push 금지
+- [Pleos dev environment](pleos-dev-environment.md) — JDK/SDK/AVD 경로, Vehicle 2.3.1 없음 → 2.3.2, sdkmanager 19.0 필요 등 함정

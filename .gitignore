@@ -1,3 +1,4 @@
+# Android / Gradle
 *.iml
 .gradle/
 /local.properties
@@ -5,12 +6,23 @@
 .DS_Store
 /build/
 /app/build/
+/app/release/
 /captures/
 .externalNativeBuild/
 .cxx/
 .kotlin/
+*.log
 
-# 서명 키는 절대 커밋하지 않음
+# 비밀값: 서명 키·비밀번호·API 키는 절대 커밋하지 않는다 (예시 파일 .env.example만 커밋)
 *.jks
 *.keystore
 keystore.properties
+.env
+.env.*
+!.env.example
+
+# web/ (Node.js)
+node_modules/
+
+# Claude Code 개인 설정
+.claude/settings.local.json

@@ -1,15 +1,17 @@
 ---
 name: git-branch-workflow
-description: "공모전 저장소는 팀원별 브랜치로 작업 — 사용자 브랜치는 altrofast11x2, main은 팀원도 수정함"
+description: "작업 저장소는 비공개 altrofast11x2/hmg_app_challenge_contest의 altrofast11x2 브랜치, 백업은 altrofast11x2_backup, push 전 확인"
 metadata:
   node_type: memory
   type: project
-  originSessionId: 63f35f8b-b151-42be-a526-b897e5c6ee6a
-  modified: 2026-10-24T12:58:46.099Z
+  originSessionId: a0acef44-095f-4903-afed-69862aa322b3
+  modified: 2026-10-25T15:16:00.242Z
 ---
 
-2026-10-24부터 사용자는 `altrofast11x2` 브랜치에 작업을 push한다. 첫 커밋 b68e08a(기본 프로젝트 세팅)를 이 브랜치에 올렸다. 원격에는 다른 팀원의 브랜치(예: `nrioig`)도 있고, `main`에는 팀원이 README를 직접 수정한 커밋(cf64586)이 있다.
+- 작업 폴더 `C:\Users\kazin\AndroidStudioProjects\DriveLog` = 비공개 저장소 `altrofast11x2/hmg_app_challenge_contest`의 `altrofast11x2` 브랜치. 명세의 "새 비공개 저장소 DriveLog 생성"은 사용자 지시로 이것으로 바뀌었다.
+- 2026-10-26: 사용자가 "altrofast11x2 branch 안에 있는거 다 지워도됨"이라고 해서 기존 내용(이전 아이디어 탐색 프로젝트 com.hmgchallenge.app, 이전 claude_chat)을 지우고 새로 시작했다. 지우기 전 상태 `5f8b4cb`는 `altrofast11x2_backup` 브랜치로 push해 두었다.
+- `main`(팀원이 README 수정, cf64586)과 `nrioig`는 팀원 브랜치다. 직접 push하지 않는다. LICENSE(MIT, Cozy)는 main과 같은 파일이라 유지한다.
 
-**Why:** 사용자가 "branch 는 altrofast11x2 로 잡아서 push"하라고 지시했다. 팀원이 각자 브랜치를 쓰는 협업 구조다.
+**Why:** 명세 0번이 "외부로 나가는 작업(저장소 생성, push, 배포)은 실행 전에 확인"을 요구한다. 팀원과 같은 저장소를 쓴다.
 
-**How to apply:** 기본적으로 `altrofast11x2`에 커밋하고 push한다. `main`에는 직접 push하지 않는다. `main`에 합칠 때는 README 충돌 가능성을 먼저 확인한다. 저장소 위치는 [[contest-dev-repo-location]]에 있다.
+**How to apply:** 커밋은 자유롭게 하되 `altrofast11x2` push는 매번 사용자에게 확인받는다. 관련: [[drivelog-project]]

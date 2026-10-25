@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">HMG App Challenge</string>
+    <string name="app_name">자동 운행기록부</string>
+    <string name="welcome_tagline">차가 알아서 쓰는 운행기록부</string>
 </resources>

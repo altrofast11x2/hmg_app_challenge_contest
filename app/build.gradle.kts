@@ -5,16 +5,18 @@ plugins {
 }
 
 android {
-    namespace = "com.hmgchallenge.app"
+    namespace = "com.altrostudio.drivelog"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.hmgchallenge.app"
-        // Pleos 요구사항: API 28 이상 (차량 사이버 보안 - 사이닝 키 로테이션 지원)
+        applicationId = "com.altrostudio.drivelog"
+        // Pleos 요구사항: API 28 이상 (차량 보안 요건)
         minSdk = 28
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -26,7 +28,6 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -40,17 +41,20 @@ android {
 }
 
 dependencies {
-    implementation(libs.pleos.vehicle)
-    // implementation(libs.pleos.navihelper)
-    // implementation(libs.pleos.tts)
-    // implementation(libs.pleos.stt)
-    // implementation(libs.pleos.fusedlocation)
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }

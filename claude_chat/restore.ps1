@@ -1,4 +1,4 @@
-﻿# 다른 Windows 컴퓨터에서 claude_chat에 담긴 대화 기록·메모리를 Claude Code 기록 폴더로 복원한다.
+﻿# 다른 Windows 컴퓨터에서 claude_chat에 담긴 대화 기록과 메모리를 Claude Code 기록 폴더로 복원한다.
 # 사용: 저장소를 clone 한 뒤 powershell -ExecutionPolicy Bypass -File claude_chat\restore.ps1
 
 $ErrorActionPreference = "Stop"

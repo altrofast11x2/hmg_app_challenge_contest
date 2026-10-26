@@ -5,6 +5,7 @@
 | 경로 | 내용 |
 |---|---|
 | `supabase/migrations/0001_init.sql` | 테이블, RLS 정책, 연결 코드 발급·사용 함수 |
+| `supabase/migrations/0002_hardening.sql` | 보안·성능 점검 반영: RLS 판단 함수를 API에 안 보이는 `private` 스키마로, 정책은 로그인 사용자에게만, 외래 키 인덱스 |
 | `scripts/setup.mjs` | 마이그레이션 적용 + 익명 로그인 켜기 (Management API) |
 | `seed/seed.mjs` | 시연용 데모 조직, 관리자 계정, 연결 코드 (secret 키 사용) |
 | `seed/seed.sql` | `seed.mjs`와 같은 데모 데이터를 SQL로 (관리자 계정은 대시보드에서 먼저 만든다) |
@@ -38,7 +39,8 @@
 3. 대시보드에서 직접 할 일 (MCP에 해당 기능이 없다)
    - **Authentication > Sign In / Providers**에서 **Allow anonymous sign-ins** 켜기
    - **Authentication > Users > Add user > Create new user**로 관리자 계정 만들기 (**Auto Confirm User** 체크)
-4. Claude가 MCP로 `0001_init.sql` 적용 → `drivelog_migrations` 기록 → `seed/seed.sql` 실행 → 보안 점검(advisors)을 한다.
+4. Claude가 MCP로 `migrations/`의 SQL을 차례로 적용(`apply_migration`) → `drivelog_migrations` 기록 → `seed/seed.sql` 실행 → 보안·성능 점검(advisors)을 한다.
+   - `apply_migration`과 정책 삭제 같은 SQL은 Claude Code에 승인 창이 뜬다. 늦게 승인하면 요청이 만료되어 `Invalid or expired requestState` 오류가 난다 → 다시 실행하고 바로 승인한다.
 5. `local.properties`에 `supabase.url`, `supabase.anonKey`(Publishable key)를 넣는다.
 
 ### B. 스크립트 (`backend/.env`의 키 사용)

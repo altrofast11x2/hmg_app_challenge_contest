@@ -1,0 +1,89 @@
+// 앱의 LogbookBuilderTest·LogbookCsvTest와 같은 기대값으로 웹 계산을 확인한다
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { BOM, buildLogbook, csvFileName, kstParts, logbookCsv, monthRange } from '../js/logbook.js';
+
+// 2026-10-26(월) 09:00 한국 시간
+const MON_9AM = Date.UTC(2026, 9, 26, 0, 0);
+
+function trip(overrides = {}) {
+  return {
+    id: 't1',
+    vehicle_id: 'v1',
+    driver_id: 'd1',
+    started_at_ms: MON_9AM,
+    ended_at_ms: MON_9AM + 30 * 60 * 1000,
+    start_odometer_km: 100.0,
+    end_odometer_km: 112.3,
+    visit_note: '고객사 A',
+    purpose: 'BUSINESS',
+    ...overrides,
+  };
+}
+
+const names = { drivers: { d1: '기본 운전자' }, vehicles: { v1: '데모 차량' } };
+const lines = (csv) => csv.slice(BOM.length).split('\r\n');
+
+test('달의 범위는 한국 시간 1일 0시부터 다음 달 1일 0시 전까지다', () => {
+  const [from, to] = monthRange(2026, 10);
+  assert.equal(from, Date.UTC(2026, 8, 30, 15, 0));
+  assert.equal(to, Date.UTC(2026, 9, 31, 15, 0));
+  assert.deepEqual(kstParts(from), { date: '2026-10-01', weekday: '목', time: '00:00' });
+});
+
+test('업무용 사용거리는 출퇴근과 일반업무만 더하고 미분류·비업무는 넣지 않는다', () => {
+  const logbook = buildLogbook([
+    trip({ id: 'a', purpose: 'COMMUTE', start_odometer_km: 0, end_odometer_km: 10 }),
+    trip({ id: 'b', purpose: 'BUSINESS', start_odometer_km: 10, end_odometer_km: 40 }),
+    trip({ id: 'c', purpose: 'PERSONAL', start_odometer_km: 40, end_odometer_km: 50, visit_note: null }),
+    trip({ id: 'd', purpose: 'UNCLASSIFIED', start_odometer_km: 50, end_odometer_km: 60 }),
+  ], names);
+  const { summary } = logbook;
+  assert.equal(summary.totalKm, 60);
+  assert.equal(summary.commuteKm, 10);
+  assert.equal(summary.businessKm, 30);
+  assert.equal(summary.workKm, 40);
+  assert.equal(summary.workRatioPercent.toFixed(1), '66.7');
+  assert.equal(summary.unclassifiedCount, 1);
+  assert.equal(summary.tripCount, 4);
+});
+
+test('계기판 값이 없으면 주행거리는 0이고, 운행이 없으면 업무사용비율은 비운다', () => {
+  const logbook = buildLogbook([trip({ start_odometer_km: null })], names);
+  assert.equal(logbook.rows[0].distanceKm, 0);
+  assert.equal(buildLogbook([], names).summary.workRatioPercent, null);
+});
+
+test('운행은 시작 시각 순서로 줄을 세운다', () => {
+  const logbook = buildLogbook([trip({ id: 'late', started_at_ms: MON_9AM + 1000 }), trip({ id: 'early' })], names);
+  assert.deepEqual(logbook.rows.map((row) => row.tripId), ['early', 'late']);
+});
+
+test('CSV는 UTF-8 BOM으로 시작하고 CRLF로 줄을 나누며 앱과 같은 서식으로 쓴다', () => {
+  const csv = logbookCsv(buildLogbook([trip()], names));
+  assert.ok(csv.startsWith(BOM));
+  assert.ok(lines(csv)[0].startsWith('사용일자,사용자,주행 전 계기판 거리(km)'));
+  assert.equal(lines(csv)[1], '2026-10-26(월),기본 운전자,100.0,112.3,12.3,0.0,12.3,고객사 A,일반업무');
+  assert.ok(csv.includes('총 주행거리(km),12.3\r\n'));
+  assert.ok(csv.includes('업무용 사용거리(km),12.3\r\n'));
+  assert.ok(csv.includes('업무사용비율(%),100.0\r\n'));
+  assert.ok(csv.endsWith('미분류 운행(건),0\r\n'));
+});
+
+test('쉼표·따옴표·줄바꿈이 든 비고는 따옴표로 감싸고, 수식으로 시작하는 글자는 막는다', () => {
+  assert.ok(logbookCsv(buildLogbook([trip({ visit_note: '서울 "본사", 3층\n회의' })], names))
+    .includes('"서울 ""본사"", 3층\n회의"'));
+  assert.ok(logbookCsv(buildLogbook([trip({ visit_note: '=HYPERLINK("x")' })], names)).includes(`"'=HYPERLINK(""x"")"`));
+  assert.ok(logbookCsv(buildLogbook([trip({ visit_note: '-12.5' })], names)).includes(',-12.5,'));
+});
+
+test('여러 차량을 함께 내보낼 때만 차량 열을 넣는다', () => {
+  const csv = logbookCsv(buildLogbook([trip()], names), { includeVehicle: true });
+  assert.ok(lines(csv)[0].startsWith('사용일자,차량,사용자'));
+  assert.ok(lines(csv)[1].startsWith('2026-10-26(월),데모 차량,기본 운전자'));
+});
+
+test('CSV 파일 이름에 쓸 수 없는 글자는 바꾼다', () => {
+  assert.equal(csvFileName(2026, 10), 'DriveLog_2026-10.csv');
+  assert.equal(csvFileName(2026, 3, '영업 1호/차'), 'DriveLog_2026-03_영업_1호_차.csv');
+});

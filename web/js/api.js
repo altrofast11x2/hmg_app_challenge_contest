@@ -1,0 +1,165 @@
+// Supabase REST API를 직접 부른다 (앱과 같은 방식, 라이브러리 없음).
+// 웹에는 공개 키(Publishable key)만 들어간다. 데이터 보호는 서버의 RLS가 맡는다. secret/service_role 키는 절대 넣지 않는다.
+
+const SESSION_KEY = 'drivelog.session';
+// 만료 1분 전에 미리 토큰을 새로 받는다
+const REFRESH_MARGIN_MS = 60 * 1000;
+
+let config = { url: '', key: '' };
+let session = loadSession();
+
+export class ApiError extends Error {
+  constructor(status, message, code) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function configure({ url, key }) {
+  config = { url: url.replace(/\/+$/, ''), key };
+}
+
+export const isConfigured = () => Boolean(config.url && config.key);
+
+export const currentUser = () => session?.user ?? null;
+
+function loadSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SESSION_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(value) {
+  session = value;
+  if (value) localStorage.setItem(SESSION_KEY, JSON.stringify(value));
+  else localStorage.removeItem(SESSION_KEY);
+}
+
+function toSession(auth) {
+  return {
+    accessToken: auth.access_token,
+    refreshToken: auth.refresh_token,
+    expiresAtMs: Date.now() + auth.expires_in * 1000,
+    user: { id: auth.user.id, email: auth.user.email },
+  };
+}
+
+async function send(path, { method = 'GET', body, token, prefer } = {}) {
+  const headers = { apikey: config.key, 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (prefer) headers.Prefer = prefer;
+  let response;
+  try {
+    response = await fetch(config.url + path, { method, headers, body: body && JSON.stringify(body) });
+  } catch {
+    throw new ApiError(0, '서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.');
+  }
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  if (!response.ok) {
+    const message = data?.msg ?? data?.message ?? data?.error_description ?? String(text);
+    throw new ApiError(response.status, message, data?.error_code ?? data?.code);
+  }
+  return data;
+}
+
+async function refresh() {
+  try {
+    saveSession(toSession(await send('/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', body: { refresh_token: session.refreshToken },
+    })));
+  } catch (error) {
+    saveSession(null);
+    throw new ApiError(401, '로그인이 만료됐어요. 다시 로그인해 주세요.', error.code);
+  }
+}
+
+async function accessToken() {
+  if (!session) throw new ApiError(401, '로그인이 필요해요.');
+  if (Date.now() > session.expiresAtMs - REFRESH_MARGIN_MS) await refresh();
+  return session.accessToken;
+}
+
+/** 로그인한 관리자로 부른다. 토큰이 거절되면 한 번 새로 받아 다시 시도한다 */
+async function authed(path, options = {}) {
+  try {
+    return await send(path, { ...options, token: await accessToken() });
+  } catch (error) {
+    if (error.status !== 401 || !session) throw error;
+    await refresh();
+    return send(path, { ...options, token: session.accessToken });
+  }
+}
+
+const eq = (value) => `eq.${encodeURIComponent(value)}`;
+
+// ─── 로그인 ───────────────────────────────────────────────────────────
+
+export async function signIn(email, password) {
+  saveSession(toSession(await send('/auth/v1/token?grant_type=password', {
+    method: 'POST', body: { email, password },
+  })));
+  return session.user;
+}
+
+/** 이 브라우저에서만 로그아웃한다 (기본값 global은 같은 계정을 쓰는 다른 사람까지 로그아웃시킨다) */
+export async function signOut() {
+  const token = session?.accessToken;
+  saveSession(null);
+  if (token) await send('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
+}
+
+// ─── 조회 ────────────────────────────────────────────────────────────
+
+/** 내가 관리자인 조직들 [{ id, name }] */
+export async function adminOrgs() {
+  const rows = await authed(
+    `/rest/v1/memberships?select=org_id,organizations(name)&role=eq.admin&user_id=${eq(currentUser().id)}`,
+  );
+  return rows.map((row) => ({ id: row.org_id, name: row.organizations?.name ?? '조직' }));
+}
+
+export const vehicles = (orgId) => authed(
+  `/rest/v1/vehicles?select=id,vin,display_name,default_driver_id,device_user_id,paired_at,created_at`
+  + `&org_id=${eq(orgId)}&order=created_at`,
+);
+
+export const drivers = (orgId) => authed(`/rest/v1/drivers?select=id,name&org_id=${eq(orgId)}&order=created_at`);
+
+/** 그 기간 [fromMs, toMs)에 시작한 운행. vehicleId가 없으면 조직의 모든 차량 */
+export function trips(orgId, fromMs, toMs, vehicleId) {
+  const vehicleFilter = vehicleId ? `&vehicle_id=${eq(vehicleId)}` : '';
+  return authed(
+    '/rest/v1/trips?select=id,vehicle_id,driver_id,started_at_ms,ended_at_ms,start_odometer_km,end_odometer_km,visit_note,purpose'
+    + `&org_id=${eq(orgId)}&started_at_ms=gte.${fromMs}&started_at_ms=lt.${toMs}${vehicleFilter}&order=started_at_ms`,
+  );
+}
+
+/** 아직 쓸 수 있는 연결 코드 (만료 전, 사용 전 또는 여러 번 쓰는 데모 코드) */
+export const activePairingCodes = (orgId) => authed(
+  `/rest/v1/pairing_codes?select=code,vehicle_name,expires_at,reusable,used_at&org_id=${eq(orgId)}`
+  + `&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&or=(used_at.is.null,reusable.is.true)&order=expires_at`,
+);
+
+// ─── 변경 ────────────────────────────────────────────────────────────
+
+/** 6자리 연결 코드를 발급한다 (10분 유효, 한 번만 사용) → { code, expires_at } */
+export async function issuePairingCode(orgId, vehicleName) {
+  const [issued] = await authed('/rest/v1/rpc/issue_pairing_code', {
+    method: 'POST', body: { p_org: orgId, p_vehicle_name: vehicleName || null },
+  });
+  return issued;
+}
+
+/** 차량 연결을 해제한다. 운행 기록은 그대로 남는다 */
+export const unpairVehicle = (vehicleId) => authed('/rest/v1/rpc/unpair_vehicle', {
+  method: 'POST', body: { p_vehicle: vehicleId },
+});

@@ -1,13 +1,16 @@
--- 시연용 데모 조직, 관리자 권한, 연결 코드를 만든다 (seed.mjs와 같은 결과, secret 키 없이 쓰는 방법).
+-- 시연용 데모 조직, 관리자 계정, 연결 코드를 만든다 (seed.mjs와 같은 결과, secret 키 없이 쓰는 방법).
 -- SQL Editor나 Supabase MCP(execute_sql)로 실행한다. 여러 번 실행해도 같은 결과가 된다.
--- 데모 데이터는 backend/seed에만 있고 APK에는 넣지 않는다.
+-- 데모 데이터는 backend/seed에만 있고 APK에는 넣지 않는다. 실제 값은 backend/.env(커밋 금지)에 적어 둔다.
 --
--- 먼저 대시보드 Authentication > Users > Add user > Create new user 로 관리자 계정을 만든다
--- (Auto Confirm User 체크 → 실제 메일이 가지 않는다). 그다음 아래 세 값을 바꿔서 실행한다.
+-- 관리자 계정
+--   - v_admin_password에 비밀번호를 넣으면 계정을 만든다(이미 있으면 비밀번호만 바꾼다).
+--     이메일 확인 처리된 계정으로 만들어서 실제 메일은 가지 않는다.
+--   - 대시보드 Authentication > Users에서 직접 만들었다면 '<비밀번호>'를 그대로 둔다.
 do $$
 declare
   v_org_name text := 'AltroStudio 데모';
   v_admin_email text := 'admin@email.com';
+  v_admin_password text := '<비밀번호>';
   v_code text := '<6자리 숫자>';  -- 심사·시연용 연결 코드 (여러 번 쓸 수 있고 2027-02-28까지 유효)
   v_admin uuid;
   v_org uuid;
@@ -16,10 +19,38 @@ begin
     raise exception '연결 코드는 6자리 숫자여야 합니다';
   end if;
 
-  -- 1. 관리자 계정 (대시보드에서 만든 계정을 찾는다)
+  -- 1. 관리자 계정
   select id into v_admin from auth.users where email = v_admin_email;
+  if v_admin_password <> '<비밀번호>' then
+    if length(v_admin_password) < 6 then
+      raise exception '비밀번호는 6자 이상이어야 합니다';
+    end if;
+    if v_admin is null then
+      v_admin := gen_random_uuid();
+      insert into auth.users (
+        instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change
+      ) values (
+        '00000000-0000-0000-0000-000000000000', v_admin, 'authenticated', 'authenticated', v_admin_email,
+        extensions.crypt(v_admin_password, extensions.gen_salt('bf')), now(),
+        '{"provider": "email", "providers": ["email"]}', '{}', now(), now(),
+        '', '', '', ''
+      );
+      insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+      values (
+        v_admin::text, v_admin,
+        jsonb_build_object('sub', v_admin::text, 'email', v_admin_email, 'email_verified', true),
+        'email', now(), now(), now()
+      );
+    else
+      update auth.users
+      set encrypted_password = extensions.crypt(v_admin_password, extensions.gen_salt('bf')), updated_at = now()
+      where id = v_admin;
+    end if;
+  end if;
   if v_admin is null then
-    raise exception '관리자 계정 %이 없습니다. Authentication > Users에서 먼저 만드세요', v_admin_email;
+    raise exception '관리자 계정 %이 없습니다. v_admin_password를 채우거나 Authentication > Users에서 먼저 만드세요', v_admin_email;
   end if;
 
   -- 2. 데모 조직 (이름으로 찾고 없으면 만든다)

@@ -2,7 +2,7 @@
 
 AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (Pleos Connect 앱)
 
-> 개발 중입니다. 지금은 프로젝트 골격(1단계)까지만 완료되었고, 기능은 아직 구현되지 않았습니다.
+> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV), 서버(Supabase) 스키마·권한·연결 코드·동기화 코드, 관리자 웹 최소판을 만들었습니다. 차량 앱과 서버를 실제로 연결해 동기화하는 시험은 아직 진행 중입니다.
 
 ## 앱 이름과 한 줄 소개
 
@@ -20,6 +20,19 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 ./gradlew assembleDebug      # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew installDebug       # 실행 중인 에뮬레이터에 설치
 ```
+
+서버 주소와 공개 키는 `local.properties`에 넣습니다 (`local.properties.example` 참고, 커밋 금지). 비워 두면 앱은 서버 없이 이 차량에만 기록합니다.
+
+### 관리자 웹 (`web/`)
+
+Node.js 18 이상이 필요하고, 설치할 패키지는 없습니다.
+
+```bash
+node web/scripts/write-config.mjs   # local.properties의 서버 주소·공개 키로 web/js/config.js를 만든다
+node web/scripts/serve.mjs          # http://127.0.0.1:5173
+```
+
+자세한 내용은 [web/README.md](web/README.md)에 있습니다.
 
 ## 테스트 환경과 필요한 설정
 
@@ -53,7 +66,12 @@ adb forward tcp:8088 tcp:8088
 
 ### 데모 계정
 
-백엔드 구현(6단계) 후에 추가합니다.
+| 용도 | 값 |
+|---|---|
+| 관리자 웹 로그인 | `admin@email.com` (비밀번호는 저장소에 두지 않습니다. 전달 방법은 제출 전에 정합니다) |
+| 차량 연결 코드 (시연용, 여러 번 사용 가능, 2027-02-28까지) | `422511` |
+
+데모 조직과 계정은 `backend/seed/`에서만 만들고, APK에는 들어가지 않습니다.
 
 ## APK 위치
 

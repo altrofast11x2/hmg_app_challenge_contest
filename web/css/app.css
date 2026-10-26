@@ -1,120 +1,150 @@
-/* 관리자 웹 임시 스타일. 색·글자·간격은 아래 변수로만 쓴다.
-   디자인은 기능을 모두 만든 뒤에 입힌다 (2026-10-26 사용자 결정) → design/tokens/tokens.css의 drivelog_ 토큰으로 바꾼다. */
-:root {
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --border: #d9dde3;
-  --text: #1b2430;
-  --text-muted: #5f6b7a;
-  --primary: #2458c6;
-  --primary-text: #ffffff;
-  --danger: #c0392b;
-  --error-bg: #fdecea;
-  --info-bg: #eef2f7;
-  --purpose-commute: #d9f1fa;
-  --purpose-business: #dfe8fb;
-  --purpose-personal: #e7e9ec;
-  --purpose-unclassified: #fbefd5;
-  --radius: 8px;
-  --gap-s: 8px;
-  --gap-m: 16px;
-  --gap-l: 24px;
-  --font: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
-}
+/* 관리자 웹 스타일. 색·글자·간격·모서리는 tokens.css(design/tokens/tokens.css 복사본)의 drivelog_ 토큰만 쓴다.
+   앱과 같은 남색 다크 테마가 기본이다 (index.html의 data-theme="dark"). 글자는 웹 크기 토큰(--drivelog-web-*)을 쓴다. */
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.5 var(--font);
+  background: var(--drivelog-background);
+  color: var(--drivelog-text-primary);
+  font: var(--drivelog-web-body);
+  font-variant-numeric: tabular-nums;
 }
 
-h1 { font-size: 22px; margin: 0 0 var(--gap-m); }
-h2 { font-size: 18px; margin: var(--gap-l) 0 var(--gap-s); }
+h1 { font: var(--drivelog-web-headline); margin: 0 0 var(--drivelog-spacing-medium); }
+h2 { font: var(--drivelog-web-title); margin: var(--drivelog-spacing-large) 0 var(--drivelog-spacing-small); }
 
-button, input, select { font: inherit; }
+button, input, select { font: inherit; color: inherit; }
 
+/* 버튼: 누르면 95%로 줄어든다 (앱과 같은 누름 반응) */
 button {
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  padding: var(--gap-s) var(--gap-m);
+  border: var(--drivelog-border-width) solid transparent;
+  border-radius: var(--drivelog-radius-small);
+  padding: var(--drivelog-spacing-extra-small) var(--drivelog-spacing-medium);
+  min-height: calc(var(--drivelog-spacing-extra-large) - var(--drivelog-spacing-extra-small));
   cursor: pointer;
+  font: var(--drivelog-web-label);
+  font-size: inherit;
+  transition: transform var(--drivelog-press-duration) ease-out;
 }
-button:disabled { opacity: .5; cursor: default; }
-.button-primary { background: var(--primary); color: var(--primary-text); }
-.button-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
-.button-text { background: none; color: var(--primary); padding: var(--gap-s); }
-.button-text.danger { color: var(--danger); }
+button:active:not(:disabled) { transform: scale(var(--drivelog-press-scale)); }
+button:disabled { cursor: default; background: var(--drivelog-button-disabled-background); color: var(--drivelog-text-disabled); border-color: transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: var(--drivelog-border-width) solid var(--drivelog-selection-ring); outline-offset: var(--drivelog-border-width); }
+.button-primary { background: var(--drivelog-button-primary-background); color: var(--drivelog-button-primary-text); }
+.button-primary:active:not(:disabled) { background: var(--drivelog-button-primary-background-pressed); }
+.button-secondary { background: var(--drivelog-button-secondary-background); color: var(--drivelog-button-secondary-text); border-color: var(--drivelog-border-strong); }
+.button-secondary:active:not(:disabled) { background: var(--drivelog-button-secondary-background-pressed); }
+.button-signature { background: var(--drivelog-signature); color: var(--drivelog-signature-text); }
+.button-text { background: none; color: var(--drivelog-text-secondary); padding: var(--drivelog-spacing-extra-small); }
+.button-text:active:not(:disabled) { background: var(--drivelog-surface-pressed); }
+.button-text.danger { color: var(--drivelog-status-error); }
 
 input, select {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--gap-s);
-  background: var(--surface);
-  color: var(--text);
+  border: var(--drivelog-border-width) solid var(--drivelog-border);
+  border-radius: var(--drivelog-radius-small);
+  padding: var(--drivelog-spacing-extra-small) var(--drivelog-spacing-small);
+  background: var(--drivelog-surface-raised);
+  color: var(--drivelog-text-primary);
+  color-scheme: inherit;
 }
+input::placeholder { color: var(--drivelog-text-tertiary); }
 
-label { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--gap-m); }
+label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--drivelog-spacing-extra-small);
+  margin-bottom: var(--drivelog-spacing-small);
+  font: var(--drivelog-web-label);
+  color: var(--drivelog-text-secondary);
+}
+label input { font: var(--drivelog-web-body); color: var(--drivelog-text-primary); }
 
-.center { max-width: 420px; margin: 10vh auto; padding: 0 var(--gap-m); }
+.center { max-width: 440px; margin: 10vh auto; padding: 0 var(--drivelog-spacing-small); }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--gap-l);
+  background: var(--drivelog-surface);
+  border-radius: var(--drivelog-radius-medium);
+  padding: var(--drivelog-spacing-large);
+  box-shadow: var(--drivelog-elevation-card);
 }
 .login button { width: 100%; }
+.login .brand-mark { display: flex; align-items: center; gap: var(--drivelog-spacing-small); margin-bottom: var(--drivelog-spacing-medium); }
+.login .brand-mark h1 { margin: 0; }
 
-.message { padding: var(--gap-s) var(--gap-m); border-radius: var(--radius); background: var(--info-bg); }
-.message-error { background: var(--error-bg); color: var(--danger); }
-.form-status:not(:empty) { margin-bottom: var(--gap-m); }
-.muted { color: var(--text-muted); }
+.message { padding: var(--drivelog-spacing-small) var(--drivelog-spacing-medium); border-radius: var(--drivelog-radius-small); background: var(--drivelog-surface); color: var(--drivelog-text-secondary); }
+.message-error { background: var(--drivelog-status-error-container); color: var(--drivelog-status-error); }
+.message-success { background: var(--drivelog-status-integrity-container); color: var(--drivelog-status-integrity); }
+.form-status:not(:empty) { margin-bottom: var(--drivelog-spacing-small); }
+.muted { color: var(--drivelog-text-secondary); }
+
+/* 앱 표시: 남색 사각 안의 계기판 아이콘 (앱의 동의 화면과 같은 모양) */
+.app-mark {
+  width: var(--drivelog-spacing-extra-large);
+  height: var(--drivelog-spacing-extra-large);
+  border-radius: var(--drivelog-radius-small);
+  background: var(--drivelog-button-primary-background);
+  color: var(--drivelog-signature);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.app-mark svg { width: var(--drivelog-icon-size-small); height: var(--drivelog-icon-size-small); }
 
 .topbar {
   display: flex;
   align-items: center;
-  gap: var(--gap-m);
-  padding: var(--gap-s) var(--gap-l);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  gap: var(--drivelog-spacing-small);
+  padding: var(--drivelog-spacing-small) var(--drivelog-spacing-large);
+  background: var(--drivelog-surface);
+  border-bottom: var(--drivelog-border-width) solid var(--drivelog-border);
 }
+.brand { font: var(--drivelog-web-title); }
+.org-name { color: var(--drivelog-text-secondary); }
 .spacer { flex: 1; }
-.user { color: var(--text-muted); }
+.user { color: var(--drivelog-text-secondary); }
 
-.tabs { display: flex; gap: var(--gap-s); padding: var(--gap-s) var(--gap-l) 0; border-bottom: 1px solid var(--border); background: var(--surface); }
-.tab { background: none; border-radius: 0; border-bottom: 3px solid transparent; color: var(--text-muted); }
-.tab-active { border-bottom-color: var(--primary); color: var(--text); font-weight: 600; }
+.tabs { display: flex; gap: var(--drivelog-spacing-extra-small); padding: 0 var(--drivelog-spacing-large); background: var(--drivelog-surface); border-bottom: var(--drivelog-border-width) solid var(--drivelog-border); }
+.tab { background: none; border: 0; border-bottom: calc(var(--drivelog-border-width) * 2) solid transparent; border-radius: 0; color: var(--drivelog-text-secondary); padding: var(--drivelog-spacing-small) var(--drivelog-spacing-medium); }
+.tab-active { border-bottom-color: var(--drivelog-accent); color: var(--drivelog-text-primary); }
 
-main > .content { max-width: 1200px; margin: 0 auto; padding: var(--gap-l); }
+main > .content { max-width: 1280px; margin: 0 auto; padding: var(--drivelog-spacing-large); }
 
-.toolbar { display: flex; align-items: center; gap: var(--gap-s); flex-wrap: wrap; margin-bottom: var(--gap-m); }
-.month { margin: 0 var(--gap-s); min-width: 8em; text-align: center; }
+.toolbar { display: flex; align-items: center; gap: var(--drivelog-spacing-extra-small); flex-wrap: wrap; margin-bottom: var(--drivelog-spacing-medium); }
+.month { margin: 0 var(--drivelog-spacing-extra-small); min-width: 8em; text-align: center; }
 
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-m); margin-bottom: var(--gap-m); }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--gap-m); display: flex; flex-direction: column; }
-.stat-label, .stat-detail { color: var(--text-muted); font-size: 13px; }
-.stat-value { font-size: 22px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--drivelog-spacing-small); margin-bottom: var(--drivelog-spacing-medium); }
+.stat { background: var(--drivelog-surface); border-radius: var(--drivelog-radius-medium); padding: var(--drivelog-spacing-medium); display: flex; flex-direction: column; gap: var(--drivelog-spacing-extra-small); box-shadow: var(--drivelog-elevation-card); }
+.stat-label, .stat-detail { font: var(--drivelog-web-label); color: var(--drivelog-text-secondary); }
+.stat-value { font: var(--drivelog-web-headline); }
 
-.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.table-wrap { overflow-x: auto; background: var(--drivelog-surface); border-radius: var(--drivelog-radius-medium); box-shadow: var(--drivelog-elevation-card); }
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: var(--gap-s) var(--gap-m); border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
-th { color: var(--text-muted); font-weight: 600; font-size: 13px; }
+th, td { padding: var(--drivelog-spacing-small); border-bottom: var(--drivelog-border-width) solid var(--drivelog-border); text-align: left; white-space: nowrap; }
+th { font: var(--drivelog-web-label); color: var(--drivelog-text-secondary); }
 tbody tr:last-child td { border-bottom: none; }
-th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
-td.code-cell { font-variant-numeric: tabular-nums; letter-spacing: .05em; }
+th.num, td.num { text-align: right; }
+td.code-cell { letter-spacing: .05em; }
 td.actions { text-align: right; }
 
-.purpose { padding: 2px var(--gap-s); border-radius: var(--radius); font-size: 13px; }
-.purpose-commute { background: var(--purpose-commute); }
-.purpose-business { background: var(--purpose-business); }
-.purpose-personal { background: var(--purpose-personal); }
-.purpose-unclassified { background: var(--purpose-unclassified); }
+/* 용도 칩: 앱과 같은 용도 색 */
+.purpose { display: inline-block; padding: calc(var(--drivelog-spacing-extra-small) / 2) var(--drivelog-spacing-small); border-radius: var(--drivelog-radius-full); font: var(--drivelog-web-label); }
+.purpose-commute { background: var(--drivelog-purpose-commute-background); color: var(--drivelog-purpose-commute-text); }
+.purpose-business { background: var(--drivelog-purpose-business-background); color: var(--drivelog-purpose-business-text); }
+.purpose-personal { background: var(--drivelog-purpose-personal-background); color: var(--drivelog-purpose-personal-text); }
+.purpose-unclassified { background: var(--drivelog-purpose-unclassified-background); color: var(--drivelog-purpose-unclassified-text); }
 
-.pairing { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--gap-m); align-items: start; }
+.badge { display: inline-flex; align-items: center; gap: var(--drivelog-spacing-extra-small); padding: calc(var(--drivelog-spacing-extra-small) / 2) var(--drivelog-spacing-small); border-radius: var(--drivelog-radius-full); font: var(--drivelog-web-label); background: var(--drivelog-surface-raised); color: var(--drivelog-text-secondary); }
+.badge-developer { background: var(--drivelog-signature); color: var(--drivelog-signature-text); }
+
+.pairing { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--drivelog-spacing-small); align-items: start; }
 .pairing-form h2 { margin-top: 0; }
-.code-card { display: flex; flex-direction: column; align-items: center; gap: var(--gap-s); }
-.code { font-size: 56px; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
-.countdown { margin: 0; color: var(--text-muted); }
+.code-card { display: flex; flex-direction: column; align-items: center; gap: var(--drivelog-spacing-extra-small); }
+.code { font: var(--drivelog-headline); letter-spacing: .1em; }
+.countdown { margin: 0; color: var(--drivelog-text-secondary); }
+
+/* 개발자: 기업 등록 */
+.org-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); column-gap: var(--drivelog-spacing-medium); }
+.org-form h2, .org-form .form-wide { grid-column: 1 / -1; }
+.org-form h2 { margin-top: 0; }
+.org-form .section-label { grid-column: 1 / -1; font: var(--drivelog-web-label); color: var(--drivelog-accent); margin: var(--drivelog-spacing-extra-small) 0; }

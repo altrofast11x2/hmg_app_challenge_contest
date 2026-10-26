@@ -109,7 +109,7 @@ const ID_EMAIL_DOMAIN = 'drivelog.invalid';
 /** 아이디 또는 이메일 → 로그인 이메일. 아이디는 대소문자를 구분하지 않는다 */
 export function loginEmail(idOrEmail) {
   const value = idOrEmail.trim();
-  return value.includes('@') ? value : `${value.toLowerCase()}@${ID_EMAIL_DOMAIN}`;
+  return value.includes('@') ? value.toLowerCase() : `${value.toLowerCase()}@${ID_EMAIL_DOMAIN}`;
 }
 
 export async function signIn(idOrEmail, password) {
@@ -163,6 +163,36 @@ export const activePairingCodes = (orgId) => authed(
   `/rest/v1/pairing_codes?select=code,vehicle_name,expires_at,reusable,used_at&org_id=${eq(orgId)}`
   + `&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&or=(used_at.is.null,reusable.is.true)&order=expires_at`,
 );
+
+// ─── 개발자(서비스 운영) ──────────────────────────────────────────────
+
+/** 개발자 계정인지 (개발자는 기업을 등록한다) */
+export async function isDeveloper() {
+  const rows = await authed(`/rest/v1/developers?select=user_id&user_id=${eq(currentUser().id)}`);
+  return rows.length > 0;
+}
+
+/** 등록된 모든 기업과 차량 수 (개발자만. 운행 기록은 볼 수 없다) */
+export const allOrganizations = () => authed(
+  '/rest/v1/organizations?select=id,name,business_number,representative,address,contact_name,contact_phone,contact_email,'
+  + 'admin_email,created_at,vehicles(count)&order=created_at.desc',
+);
+
+/** 기업을 등록하고 기업 관리자 계정을 만든다 → { status, org_id?, admin_email? } */
+export const createOrganization = (form) => authed('/rest/v1/rpc/create_organization', {
+  method: 'POST',
+  body: {
+    p_name: form.name,
+    p_business_number: form.businessNumber,
+    p_representative: form.representative,
+    p_address: form.address,
+    p_contact_name: form.contactName,
+    p_contact_phone: form.contactPhone,
+    p_contact_email: form.contactEmail,
+    p_admin_email: form.adminEmail,
+    p_admin_password: form.adminPassword,
+  },
+});
 
 // ─── 변경 ────────────────────────────────────────────────────────────
 

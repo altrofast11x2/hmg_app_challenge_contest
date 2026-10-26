@@ -41,6 +41,28 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
+/** 앱과 같은 선 아이콘 (24 격자, 2.2 획). 정해진 path만 그린다 */
+function lineIcon(...paths) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  for (const d of paths) {
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  return svg;
+}
+
+/** 앱 표시: 남색 사각 안의 계기판 아이콘 (앱의 동의 화면과 같다) */
+const appMark = () => el('span', { class: 'app-mark' }, lineIcon('M4 16a8 8 0 1 1 16 0', 'M12 16l4-5', 'M7.5 19.5h9'));
+
 function currentMonth() {
   const [year, month] = kstParts(Date.now()).date.split('-').map(Number);
   return { year, month };
@@ -111,7 +133,7 @@ function renderLogin(notice) {
   const status = el('div', { class: 'form-status' }, notice ? message(notice, 'error') : null);
   const button = el('button', { type: 'submit', class: 'button-primary' }, '로그인');
   const form = el('form', { class: 'card login', onsubmit: onSubmit },
-    el('h1', {}, '자동 운행기록부 관리자'),
+    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '자동 운행기록부 관리자')),
     el('label', {}, '아이디 또는 이메일', el('input', {
       name: 'id', type: 'text', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false', required: true,
     })),
@@ -142,6 +164,11 @@ function renderLogin(notice) {
 async function enter() {
   setScreen(el('main', { class: 'center' }, message('불러오는 중…')));
   try {
+    // 개발자(서비스 운영) 계정은 기업 등록 화면으로
+    if (await api.isDeveloper()) {
+      renderDeveloper();
+      return;
+    }
     state.orgs = await api.adminOrgs();
     if (state.orgs.length === 0) {
       setScreen(el('main', { class: 'center' },
@@ -186,6 +213,7 @@ function renderMain() {
   const content = el('section', { class: 'content' });
   setScreen(
     el('header', { class: 'topbar' },
+      appMark(),
       el('strong', { class: 'brand' }, '자동 운행기록부'),
       orgPicker,
       el('span', { class: 'spacer' }),
@@ -227,6 +255,19 @@ async function renderLogbook(content, token) {
       el('button', {
         class: 'button-secondary', onclick: () => moveMonth(1), disabled: isCurrentMonth, 'aria-label': '다음 달',
       }, '▶'),
+      // ◀ ▶를 여러 번 누르지 않도록 달을 바로 고른다 (사용자 피드백 2026-10-26)
+      el('input', {
+        type: 'month',
+        'aria-label': '달 고르기',
+        value: `${year}-${String(month).padStart(2, '0')}`,
+        max: `${now.year}-${String(now.month).padStart(2, '0')}`,
+        onchange: (event) => {
+          const [pickedYear, pickedMonth] = event.target.value.split('-').map(Number);
+          if (!pickedYear || !pickedMonth) return;
+          state.month = { year: pickedYear, month: pickedMonth };
+          renderMain();
+        },
+      }),
       el('select', {
         'aria-label': '차량',
         onchange: (event) => {
@@ -391,6 +432,100 @@ function pairingSection(token) {
           el('td', {}, code.vehicle_name ?? '-'),
           el('td', {}, formatDateTime(code.expires_at)),
           el('td', {}, code.reusable ? '여러 번 사용 (시연용)' : '1회용'),
+        ))),
+      )));
+    } catch (error) {
+      if (token === renderToken) list.replaceChildren(failure(error) ?? '');
+    }
+  }
+}
+
+// ─── 개발자: 기업 등록 ────────────────────────────────────────────────
+
+const ORG_RESULT_MESSAGES = {
+  INVALID_NAME: '기업명을 입력하세요.',
+  INVALID_EMAIL: '기업 관리자 아이디는 이메일 형식이어야 해요.',
+  WEAK_PASSWORD: '초기 비밀번호는 8자 이상이어야 해요.',
+  EMAIL_TAKEN: '이미 쓰고 있는 아이디예요. 다른 아이디를 넣어 주세요.',
+};
+
+/** 개발자 화면: 기업 정보를 적어 등록하고(기업 관리자 계정도 함께 만든다), 등록된 기업을 본다 */
+function renderDeveloper() {
+  const content = el('section', { class: 'content' });
+  setScreen(
+    el('header', { class: 'topbar' },
+      appMark(),
+      el('strong', { class: 'brand' }, '자동 운행기록부'),
+      el('span', { class: 'badge badge-developer' }, '개발자'),
+      el('span', { class: 'spacer' }),
+      el('span', { class: 'user' }, api.displayName(api.currentUser())),
+      el('button', { class: 'button-text', onclick: logout }, '로그아웃'),
+    ),
+    el('main', {}, content),
+  );
+  const token = renderToken;
+  const list = el('div', {}, message('불러오는 중…'));
+  const status = el('div', { class: 'form-status form-wide' });
+  const button = el('button', { type: 'submit', class: 'button-primary' }, '기업 등록');
+  const field = (label, name, props = {}) => el('label', { class: props.wide ? 'form-wide' : null }, label, el('input', { name, ...props, wide: null }));
+  const form = el('form', { class: 'card org-form', onsubmit: onSubmit },
+    el('h2', {}, '기업 등록'),
+    el('p', { class: 'muted form-wide' }, '기업 정보와 그 기업의 관리자 계정을 만듭니다. 관리자 아이디와 초기 비밀번호를 기업에 전달하세요.'),
+    el('div', { class: 'section-label' }, '기업 정보'),
+    field('기업명 *', 'name', { required: true, maxlength: '80' }),
+    field('사업자등록번호', 'businessNumber', { placeholder: '000-00-00000', maxlength: '20' }),
+    field('대표자', 'representative', { maxlength: '40' }),
+    field('주소', 'address', { maxlength: '120', wide: true }),
+    el('div', { class: 'section-label' }, '담당자'),
+    field('이름', 'contactName', { maxlength: '40' }),
+    field('연락처', 'contactPhone', { type: 'tel', maxlength: '20' }),
+    field('이메일', 'contactEmail', { type: 'email', maxlength: '120' }),
+    el('div', { class: 'section-label' }, '기업 관리자 계정'),
+    field('관리자 아이디 (이메일) *', 'adminEmail', { type: 'email', required: true, autocomplete: 'off', maxlength: '120' }),
+    field('초기 비밀번호 (8자 이상) *', 'adminPassword', { type: 'password', required: true, minlength: '8', autocomplete: 'new-password' }),
+    status,
+    el('div', { class: 'form-wide' }, button),
+  );
+  content.replaceChildren(form, el('h2', {}, '등록된 기업'), list);
+  loadOrganizations();
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(form).entries());
+    button.disabled = true;
+    status.replaceChildren();
+    try {
+      const result = await api.createOrganization(data);
+      if (token !== renderToken) return;
+      if (result.status === 'OK') {
+        status.replaceChildren(message(`‘${data.name.trim()}’ 기업을 등록했어요. 관리자 아이디: ${result.admin_email}`, 'success'));
+        form.reset();
+        loadOrganizations();
+      } else {
+        status.replaceChildren(message(ORG_RESULT_MESSAGES[result.status] ?? result.status, 'error'));
+      }
+    } catch (error) {
+      if (token === renderToken) status.replaceChildren(failure(error) ?? '');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function loadOrganizations() {
+    try {
+      const organizations = await api.allOrganizations();
+      if (token !== renderToken) return;
+      list.replaceChildren(organizations.length === 0 ? message('아직 등록된 기업이 없어요.') : el('div', { class: 'table-wrap' }, el('table', {},
+        el('thead', {}, el('tr', {}, ['기업명', '사업자등록번호', '대표자', '담당자', '관리자 아이디', '차량', '등록일']
+          .map((header) => el('th', { scope: 'col', class: header === '차량' ? 'num' : null }, header)))),
+        el('tbody', {}, organizations.map((org) => el('tr', {},
+          el('td', {}, org.name),
+          el('td', {}, org.business_number ?? '-'),
+          el('td', {}, org.representative ?? '-'),
+          el('td', {}, [org.contact_name, org.contact_phone].filter(Boolean).join(' · ') || '-'),
+          el('td', {}, org.admin_email ?? '-'),
+          el('td', { class: 'num' }, String(org.vehicles?.[0]?.count ?? 0)),
+          el('td', {}, formatDateTime(org.created_at).slice(0, 10)),
         ))),
       )));
     } catch (error) {

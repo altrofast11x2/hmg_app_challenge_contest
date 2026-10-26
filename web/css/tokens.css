@@ -1,0 +1,187 @@
+/* DriveLog 디자인 토큰 v0.1 (2026-10-26) — 원본: design/tokens/tokens.css
+   Color.kt와 같은 값 (Color.kt에서 생성). 토큰 이름: drivelog_text_primary → --drivelog-text-primary
+   다크가 기본(차량). 라이트는 data-theme="light" 또는 시스템 라이트 설정 */
+:root {
+  color-scheme: dark;
+  --drivelog-background: #0A0F16;
+  --drivelog-background-driving: #05080C;
+  --drivelog-surface: #121923;
+  --drivelog-surface-raised: #1A2330;
+  --drivelog-surface-pressed: #243041;
+  --drivelog-border: #2B3747;
+  --drivelog-border-strong: #3E4C5E;
+  --drivelog-text-primary: #F3F5F7;
+  --drivelog-text-secondary: #AEB8C5;
+  --drivelog-text-tertiary: #8693A3;
+  --drivelog-text-disabled: #566273;
+  --drivelog-button-primary-background: #2F6BE0;
+  --drivelog-button-primary-background-pressed: #2558BC;
+  --drivelog-button-primary-text: #FFFFFF;
+  --drivelog-button-secondary-background: #1A2330;
+  --drivelog-button-secondary-background-pressed: #243041;
+  --drivelog-button-secondary-text: #F3F5F7;
+  --drivelog-button-disabled-background: #161E29;
+  --drivelog-accent: #5CC6E8;
+  --drivelog-signature: #E5DACB;
+  --drivelog-signature-text: #2A2116;
+  --drivelog-selection-ring: #E5DACB;
+  --drivelog-purpose-commute-background: #5CC6E8;
+  --drivelog-purpose-commute-text: #05222D;
+  --drivelog-purpose-business-background: #2F6BE0;
+  --drivelog-purpose-business-text: #FFFFFF;
+  --drivelog-purpose-personal-background: #3A4555;
+  --drivelog-purpose-personal-text: #FFFFFF;
+  --drivelog-purpose-unclassified-background: #3A2E14;
+  --drivelog-purpose-unclassified-text: #F2B24C;
+  --drivelog-status-integrity: #45C98F;
+  --drivelog-status-integrity-container: #12291F;
+  --drivelog-status-warning: #F2B24C;
+  --drivelog-status-warning-container: #2E2410;
+  --drivelog-status-error: #FF7A6B;
+  --drivelog-status-error-container: #331713;
+  --drivelog-status-info: #5CC6E8;
+  --drivelog-scrim: rgba(5, 8, 12, 0.8);
+  /* 글자 — Asta Sans (SIL OFL 1.1). 웹: Google Fonts "Asta Sans" 또는 design/assets/fonts */
+  --drivelog-font-family: "Asta Sans", "Pretendard", system-ui, sans-serif;
+  --drivelog-display-large: 700 144px/152px var(--drivelog-font-family);
+  --drivelog-display: 700 96px/104px var(--drivelog-font-family);
+  --drivelog-headline: 700 56px/68px var(--drivelog-font-family);
+  --drivelog-title: 700 40px/52px var(--drivelog-font-family);
+  --drivelog-title-small: 600 34px/46px var(--drivelog-font-family);
+  --drivelog-body: 500 30px/44px var(--drivelog-font-family);
+  --drivelog-body-strong: 700 30px/44px var(--drivelog-font-family);
+  --drivelog-label: 600 28px/36px var(--drivelog-font-family);
+  --drivelog-label-small: 600 24px/32px var(--drivelog-font-family);
+  /* 관리자 웹(데스크톱 1440)은 차량보다 작게: 아래 web 스케일을 쓴다 */
+  --drivelog-web-headline: 700 32px/40px var(--drivelog-font-family);
+  --drivelog-web-title: 700 22px/30px var(--drivelog-font-family);
+  --drivelog-web-body: 500 15px/24px var(--drivelog-font-family);
+  --drivelog-web-label: 600 13px/18px var(--drivelog-font-family);
+  /* 간격 */
+  --drivelog-spacing-extra-small: 8px;
+  --drivelog-spacing-small: 16px;
+  --drivelog-spacing-medium: 24px;
+  --drivelog-spacing-large: 32px;
+  --drivelog-spacing-extra-large: 48px;
+  --drivelog-spacing-huge: 64px;
+  --drivelog-screen-padding-horizontal-landscape: 72px;
+  --drivelog-screen-padding-horizontal-portrait: 40px;
+  --drivelog-screen-padding-vertical: 48px;
+  /* 모서리 */
+  --drivelog-radius-small: 12px;
+  --drivelog-radius-medium: 20px;
+  --drivelog-radius-large: 32px;
+  --drivelog-radius-full: 999px;
+  /* 선 */
+  --drivelog-border-width: 2px;
+  --drivelog-selection-ring-width: 6px;
+  --drivelog-selection-ring-offset: 6px;
+  /* 터치 (가정값) */
+  --drivelog-touch-target-minimum: 80px;
+  --drivelog-button-height-medium: 96px;
+  --drivelog-button-height-large: 120px;
+  --drivelog-purpose-button-height-landscape: 300px;
+  --drivelog-purpose-button-height-portrait: 176px;
+  --drivelog-keypad-key-height-landscape: 128px;
+  --drivelog-keypad-key-height-portrait: 112px;
+  --drivelog-code-cell-width: 112px;
+  --drivelog-code-cell-height: 144px;
+  --drivelog-list-row-height: 112px;
+  --drivelog-top-bar-height: 112px;
+  --drivelog-badge-height: 48px;
+  --drivelog-icon-size-small: 32px;
+  --drivelog-icon-size-medium: 44px;
+  --drivelog-icon-size-large: 72px;
+  /* 동작 */
+  --drivelog-press-scale: 0.95;
+  --drivelog-press-duration: 100ms;
+  /* 그림자: 다크는 면 색으로 높이를 표현해 none, 라이트에서만 그림자 */
+  --drivelog-elevation-card: none;
+  --drivelog-elevation-dialog: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --drivelog-elevation-card: 0 2px 8px rgba(14, 26, 43, 0.08); --drivelog-elevation-dialog: 0 12px 32px rgba(14, 26, 43, 0.16);
+    --drivelog-background: #F4F1EC;
+    --drivelog-background-driving: #ECE7DF;
+    --drivelog-surface: #FFFFFF;
+    --drivelog-surface-raised: #FFFFFF;
+    --drivelog-surface-pressed: #E9E4DC;
+    --drivelog-border: #DCD5CA;
+    --drivelog-border-strong: #B9B0A3;
+    --drivelog-text-primary: #0E1A2B;
+    --drivelog-text-secondary: #4A5668;
+    --drivelog-text-tertiary: #5E6A7C;
+    --drivelog-text-disabled: #A3ABB6;
+    --drivelog-button-primary-background: #12305E;
+    --drivelog-button-primary-background-pressed: #0B2246;
+    --drivelog-button-primary-text: #FFFFFF;
+    --drivelog-button-secondary-background: #FFFFFF;
+    --drivelog-button-secondary-background-pressed: #E9E4DC;
+    --drivelog-button-secondary-text: #0E1A2B;
+    --drivelog-button-disabled-background: #E6E2DB;
+    --drivelog-accent: #1C6FB8;
+    --drivelog-signature: #D8C9B3;
+    --drivelog-signature-text: #2A2116;
+    --drivelog-selection-ring: #12305E;
+    --drivelog-purpose-commute-background: #177A9F;
+    --drivelog-purpose-commute-text: #FFFFFF;
+    --drivelog-purpose-business-background: #2F6BE0;
+    --drivelog-purpose-business-text: #FFFFFF;
+    --drivelog-purpose-personal-background: #4A5568;
+    --drivelog-purpose-personal-text: #FFFFFF;
+    --drivelog-purpose-unclassified-background: #FBEBCB;
+    --drivelog-purpose-unclassified-text: #7A4A00;
+    --drivelog-status-integrity: #15704A;
+    --drivelog-status-integrity-container: #DDF2E7;
+    --drivelog-status-warning: #8A4F00;
+    --drivelog-status-warning-container: #FBEBCB;
+    --drivelog-status-error: #C0392B;
+    --drivelog-status-error-container: #FADCD8;
+    --drivelog-status-info: #1C6FB8;
+    --drivelog-scrim: rgba(14, 26, 43, 0.6);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --drivelog-elevation-card: 0 2px 8px rgba(14, 26, 43, 0.08); --drivelog-elevation-dialog: 0 12px 32px rgba(14, 26, 43, 0.16);
+  --drivelog-background: #F4F1EC;
+  --drivelog-background-driving: #ECE7DF;
+  --drivelog-surface: #FFFFFF;
+  --drivelog-surface-raised: #FFFFFF;
+  --drivelog-surface-pressed: #E9E4DC;
+  --drivelog-border: #DCD5CA;
+  --drivelog-border-strong: #B9B0A3;
+  --drivelog-text-primary: #0E1A2B;
+  --drivelog-text-secondary: #4A5668;
+  --drivelog-text-tertiary: #5E6A7C;
+  --drivelog-text-disabled: #A3ABB6;
+  --drivelog-button-primary-background: #12305E;
+  --drivelog-button-primary-background-pressed: #0B2246;
+  --drivelog-button-primary-text: #FFFFFF;
+  --drivelog-button-secondary-background: #FFFFFF;
+  --drivelog-button-secondary-background-pressed: #E9E4DC;
+  --drivelog-button-secondary-text: #0E1A2B;
+  --drivelog-button-disabled-background: #E6E2DB;
+  --drivelog-accent: #1C6FB8;
+  --drivelog-signature: #D8C9B3;
+  --drivelog-signature-text: #2A2116;
+  --drivelog-selection-ring: #12305E;
+  --drivelog-purpose-commute-background: #177A9F;
+  --drivelog-purpose-commute-text: #FFFFFF;
+  --drivelog-purpose-business-background: #2F6BE0;
+  --drivelog-purpose-business-text: #FFFFFF;
+  --drivelog-purpose-personal-background: #4A5568;
+  --drivelog-purpose-personal-text: #FFFFFF;
+  --drivelog-purpose-unclassified-background: #FBEBCB;
+  --drivelog-purpose-unclassified-text: #7A4A00;
+  --drivelog-status-integrity: #15704A;
+  --drivelog-status-integrity-container: #DDF2E7;
+  --drivelog-status-warning: #8A4F00;
+  --drivelog-status-warning-container: #FBEBCB;
+  --drivelog-status-error: #C0392B;
+  --drivelog-status-error-container: #FADCD8;
+  --drivelog-status-info: #1C6FB8;
+  --drivelog-scrim: rgba(14, 26, 43, 0.6);
+}

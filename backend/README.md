@@ -9,13 +9,15 @@
 | `scripts/setup.mjs` | 마이그레이션 적용 + 익명 로그인 켜기 (Management API) |
 | `seed/seed.mjs` | 시연용 데모 조직, 관리자 계정, 연결 코드 (secret 키 사용) |
 | `supabase/migrations/0003_vehicle_admin_limits.sql` | 관리자는 차량 이름·기본 운전자만 수정, 차량 삭제 대신 `unpair_vehicle`(연결 해제) |
-| `seed/seed.sql` | `seed.mjs`와 같은 데모 데이터를 SQL로. 비밀번호를 넣으면 관리자 계정도 만든다 (실제 값은 `backend/.env`) |
+| `supabase/migrations/0004_developer_orgs.sql` | 개발자 계정(`developers`), 기업 정보 열, 개발자의 기업 등록 함수 `create_organization`(기업 관리자 계정도 만든다) |
+| `seed/seed.sql` | 개발자 계정, 데모 기업과 기업 관리자 계정, 시연용 연결 코드 (실제 값은 `backend/.env`) |
 | `.env.example` | 설정 예시. `backend/.env`로 복사해서 채운다 (**커밋 금지**) |
 
 ## 계정과 권한
 
 | 계정 | 로그인 | 볼 수 있는 것 | 쓸 수 있는 것 |
 |---|---|---|---|
+| 개발자 (`developers`) | 이메일·비밀번호 (웹) | 모든 기업 정보와 차량 수 (운행 기록은 볼 수 없음) | 기업 등록과 기업 관리자 계정 만들기 (`create_organization`) |
 | 관리자 (`admin`) | 이메일·비밀번호 (웹) | 조직의 차량, 운전자, 연결 코드, 모든 운행 | 연결 코드 발급, 차량 이름·기본 운전자, 차량 연결 해제, 운전자 추가 |
 | 운전자 (`driver`) | 이메일·비밀번호 (웹, 선택) | 자기 운행 (`drivers.user_id`가 연결된 경우) | 없음 |
 | 열람자 (`viewer`, M2) | 이메일·비밀번호 (웹) | 조직의 모든 운행 | 없음 (역할만 미리 만들어 둠) |

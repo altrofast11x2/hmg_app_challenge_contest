@@ -103,6 +103,6 @@ adb forward tcp:8088 tcp:8088
 ## 라이선스
 
 - 이 저장소의 코드: [MIT](LICENSE)
-- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, Kotlin·kotlinx 등 Apache License 2.0). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
+- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, Kotlin·kotlinx 등 Apache License 2.0, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
 - 관리자 웹(`web/`)은 외부 라이브러리를 쓰지 않습니다.
 - 현대자동차그룹·Pleos의 로고와 상표는 쓰지 않습니다.

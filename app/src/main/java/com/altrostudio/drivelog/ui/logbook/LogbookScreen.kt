@@ -9,15 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,11 +28,17 @@ import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.domain.logbook.LogbookRow
 import com.altrostudio.drivelog.ui.classify.PurposeButtons
 import com.altrostudio.drivelog.ui.components.BigButton
+import com.altrostudio.drivelog.ui.components.ButtonKind
+import com.altrostudio.drivelog.ui.components.DriveLogButton
+import com.altrostudio.drivelog.ui.components.DriveLogChip
+import com.altrostudio.drivelog.ui.components.DriveLogIcons
+import com.altrostudio.drivelog.ui.components.PurposeChip
 import com.altrostudio.drivelog.ui.components.ScreenScaffold
 import com.altrostudio.drivelog.ui.components.SummaryCard
 import com.altrostudio.drivelog.ui.components.formatKm
-import com.altrostudio.drivelog.ui.components.purposeLabel
-import com.altrostudio.drivelog.ui.theme.Dimens
+import com.altrostudio.drivelog.ui.components.isPortrait
+import com.altrostudio.drivelog.ui.theme.DriveLogTabularNumbers
+import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 import java.time.format.DateTimeFormatter
 
 /** 월별 운행기록부 (국세청 업무용승용차 운행기록부 열 순서) */
@@ -54,47 +56,49 @@ fun LogbookScreen(
     ScreenScaffold(title = stringResource(R.string.logbook_title), onBack = onBack, modifier = modifier) {
         // 요약과 표를 한 목록으로 스크롤한다 (2분할처럼 높이가 낮아도 표가 사라지지 않도록)
         BoxWithConstraints(modifier = Modifier.weight(1f)) {
-            val compact = maxWidth < Dimens.compactWidth
+            val compact = isPortrait(maxWidth)
             val rows = state.logbook?.rows.orEmpty()
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 item {
                     Column(
-                        modifier = Modifier.padding(bottom = Dimens.itemGap),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)
+                        modifier = Modifier.padding(bottom = DriveLogTheme.dimens.spacingMedium),
+                        verticalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingMedium)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
                             BigButton(stringResource(R.string.logbook_prev_month), onPreviousMonth, emphasized = false)
                             Text(
                                 stringResource(R.string.home_month_title, state.month.year, state.month.monthValue),
-                                style = MaterialTheme.typography.titleLarge
+                                style = DriveLogTheme.typography.title,
+                                color = DriveLogTheme.colors.textPrimary
                             )
                             BigButton(stringResource(R.string.logbook_next_month), onNextMonth, emphasized = false)
                         }
                         SummaryCard(summary = state.logbook?.summary, compact = compact)
-                        Text(integrityText(state.integrity), style = MaterialTheme.typography.bodyMedium)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+                        IntegrityLine(state.integrity)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
                             BigButton(
                                 text = stringResource(if (state.exporting) R.string.logbook_exporting else R.string.logbook_export),
                                 onClick = onExport,
                                 enabled = !state.exporting && rows.isNotEmpty()
                             )
-                            state.exportResult?.let { Text(exportText(it), style = MaterialTheme.typography.bodyMedium) }
+                            state.exportResult?.let { Text(exportText(it), style = DriveLogTheme.typography.label, color = DriveLogTheme.colors.textSecondary) }
                         }
                     }
                 }
                 if (rows.isEmpty()) {
-                    item { Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyLarge) }
+                    item { Text(stringResource(R.string.logbook_empty), style = DriveLogTheme.typography.body, color = DriveLogTheme.colors.textSecondary) }
                 } else {
                     if (!compact) item { TableHeader() }
                     items(rows, key = { it.tripId }) { row ->
                         if (compact) CompactRow(row) { classifyingTripId = row.tripId } else TableRow(row) { classifyingTripId = row.tripId }
-                        HorizontalDivider()
+                        HorizontalDivider(thickness = DriveLogTheme.dimens.borderWidth, color = DriveLogTheme.colors.border)
                     }
                     item {
                         Text(
                             stringResource(R.string.logbook_unclassified_note),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(top = Dimens.itemGap)
+                            style = DriveLogTheme.typography.label,
+                            color = DriveLogTheme.colors.textTertiary,
+                            modifier = Modifier.padding(top = DriveLogTheme.dimens.spacingMedium)
                         )
                     }
                 }
@@ -117,49 +121,60 @@ fun LogbookScreen(
 
 private val DATE_FORMAT = DateTimeFormatter.ofPattern("MM.dd (E)")
 
+// 표의 열 비율: 날짜, 사용자, 주행 전, 주행 후, 주행거리, 출퇴근용, 일반업무용, 비고, 구분
+private val COLUMN_WEIGHTS = listOf(1.3f, 1.3f, 1f, 1f, 1f, 1f, 1f, 2f, 1.4f)
+
 @Composable
 private fun TableHeader() {
+    val headers = listOf(
+        R.string.logbook_col_date, R.string.logbook_col_driver, R.string.logbook_col_start, R.string.logbook_col_end,
+        R.string.logbook_col_distance, R.string.logbook_col_commute, R.string.logbook_col_business, R.string.logbook_col_note,
+        R.string.logbook_col_purpose
+    )
     Row(verticalAlignment = Alignment.CenterVertically) {
-        HeaderCell(stringResource(R.string.logbook_col_date), Modifier.width(Dimens.logbookDateColumn))
-        HeaderCell(stringResource(R.string.logbook_col_driver), Modifier.width(Dimens.logbookDateColumn))
-        HeaderCell(stringResource(R.string.logbook_col_start), Modifier.weight(1f))
-        HeaderCell(stringResource(R.string.logbook_col_end), Modifier.weight(1f))
-        HeaderCell(stringResource(R.string.logbook_col_distance), Modifier.weight(1f))
-        HeaderCell(stringResource(R.string.logbook_col_commute), Modifier.weight(1f))
-        HeaderCell(stringResource(R.string.logbook_col_business), Modifier.weight(1f))
-        HeaderCell(stringResource(R.string.logbook_col_note), Modifier.weight(2f))
-        HeaderCell(stringResource(R.string.logbook_col_purpose), Modifier.weight(1.2f))
+        headers.zip(COLUMN_WEIGHTS).forEach { (header, weight) ->
+            Text(
+                stringResource(header),
+                style = DriveLogTheme.typography.labelSmall,
+                color = DriveLogTheme.colors.textSecondary,
+                modifier = Modifier
+                    .weight(weight)
+                    .padding(DriveLogTheme.dimens.spacingExtraSmall)
+            )
+        }
     }
 }
 
 @Composable
-private fun HeaderCell(text: String, modifier: Modifier) {
-    Text(text, style = MaterialTheme.typography.labelLarge, modifier = modifier.padding(Dimens.smallGap))
-}
-
-@Composable
 private fun TableRow(row: LogbookRow, onClassify: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = Dimens.touchTarget)) {
-        Cell(row.date.format(DATE_FORMAT), Modifier.width(Dimens.logbookDateColumn))
-        Cell(row.driver, Modifier.width(Dimens.logbookDateColumn))
-        Cell(formatKm(row.startOdometerKm), Modifier.weight(1f))
-        Cell(formatKm(row.endOdometerKm), Modifier.weight(1f))
-        Cell(formatKm(row.distanceKm), Modifier.weight(1f))
-        Cell(formatKm(row.commuteKm), Modifier.weight(1f))
-        Cell(formatKm(row.businessKm), Modifier.weight(1f))
-        Cell(row.note ?: "-", Modifier.weight(2f))
-        PurposeCell(row, onClassify, Modifier.weight(1.2f))
+    val cells = listOf(
+        row.date.format(DATE_FORMAT), row.driver, formatKm(row.startOdometerKm), formatKm(row.endOdometerKm),
+        formatKm(row.distanceKm), formatKm(row.commuteKm), formatKm(row.businessKm), row.note ?: "-"
+    )
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = DriveLogTheme.dimens.listRowHeight)) {
+        cells.zip(COLUMN_WEIGHTS).forEach { (text, weight) -> Cell(text, Modifier.weight(weight)) }
+        PurposeCell(row, onClassify, Modifier.weight(COLUMN_WEIGHTS.last()))
     }
 }
 
 @Composable
 private fun CompactRow(row: LogbookRow, onClassify: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = Dimens.touchTarget)) {
-        Column(modifier = Modifier.weight(1f).padding(Dimens.smallGap)) {
-            Text("${row.date.format(DATE_FORMAT)} · ${formatKm(row.distanceKm)} km", style = MaterialTheme.typography.titleMedium)
+    val dimens = DriveLogTheme.dimens
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = dimens.listRowHeight)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = dimens.spacingExtraSmall)
+        ) {
+            Text(
+                "${row.date.format(DATE_FORMAT)} · ${formatKm(row.distanceKm)} km",
+                style = DriveLogTheme.typography.bodyStrong.copy(fontFeatureSettings = DriveLogTabularNumbers),
+                color = DriveLogTheme.colors.textPrimary
+            )
             Text(
                 "${formatKm(row.startOdometerKm)} → ${formatKm(row.endOdometerKm)} km · ${row.note ?: "-"}",
-                style = MaterialTheme.typography.bodyMedium,
+                style = DriveLogTheme.typography.labelSmall,
+                color = DriveLogTheme.colors.textTertiary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -172,22 +187,21 @@ private fun CompactRow(row: LogbookRow, onClassify: () -> Unit) {
 private fun RowScope.Cell(text: String, modifier: Modifier) {
     Text(
         text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = DriveLogTheme.typography.label.copy(fontFeatureSettings = DriveLogTabularNumbers),
+        color = DriveLogTheme.colors.textPrimary,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
-        modifier = modifier.padding(Dimens.smallGap)
+        modifier = modifier.padding(DriveLogTheme.dimens.spacingExtraSmall)
     )
 }
 
-/** 미분류면 [분류] 버튼, 아니면 구분 이름 */
+/** 미분류면 [분류] 버튼, 아니면 용도 칩 */
 @Composable
 private fun PurposeCell(row: LogbookRow, onClassify: () -> Unit, modifier: Modifier = Modifier) {
     if (row.purpose == TripPurpose.UNCLASSIFIED) {
-        OutlinedButton(onClick = onClassify, modifier = modifier.heightIn(min = Dimens.touchTarget)) {
-            Text(stringResource(R.string.logbook_classify), style = MaterialTheme.typography.labelLarge)
-        }
+        DriveLogButton(text = stringResource(R.string.logbook_classify), onClick = onClassify, kind = ButtonKind.Secondary, modifier = modifier)
     } else {
-        Text(purposeLabel(row.purpose), style = MaterialTheme.typography.bodyMedium, modifier = modifier.padding(Dimens.smallGap))
+        PurposeChip(row.purpose, modifier = modifier.padding(DriveLogTheme.dimens.spacingExtraSmall))
     }
 }
 
@@ -195,11 +209,39 @@ private fun PurposeCell(row: LogbookRow, onClassify: () -> Unit, modifier: Modif
 private fun ClassifyDialog(row: LogbookRow, onSelect: (TripPurpose) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.classify_dialog_title, row.date.format(DATE_FORMAT))) },
+        containerColor = DriveLogTheme.colors.surfaceRaised,
+        title = {
+            Text(
+                stringResource(R.string.classify_dialog_title, row.date.format(DATE_FORMAT)),
+                style = DriveLogTheme.typography.title,
+                color = DriveLogTheme.colors.textPrimary
+            )
+        },
         text = { PurposeButtons(suggested = null, onSelect = onSelect, vertical = true, modifier = Modifier.fillMaxWidth()) },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = { DriveLogButton(text = stringResource(R.string.cancel), onClick = onDismiss, kind = ButtonKind.Text) }
     )
+}
+
+/** 해시 체인 확인 결과 한 줄 */
+@Composable
+private fun IntegrityLine(integrity: Integrity) {
+    val colors = DriveLogTheme.colors
+    when (integrity) {
+        is Integrity.Valid -> DriveLogChip(
+            text = integrityText(integrity),
+            background = colors.statusIntegrityContainer,
+            content = colors.statusIntegrity,
+            icon = DriveLogIcons.Shield
+        )
+        is Integrity.Broken -> DriveLogChip(
+            text = integrityText(integrity),
+            background = colors.statusErrorContainer,
+            content = colors.statusError,
+            icon = DriveLogIcons.Alert
+        )
+        Integrity.Checking -> Text(integrityText(integrity), style = DriveLogTheme.typography.label, color = colors.textSecondary)
+    }
 }
 
 @Composable

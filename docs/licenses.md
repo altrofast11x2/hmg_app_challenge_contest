@@ -10,6 +10,7 @@
 | AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외) | The Android Open Source Project | Apache License 2.0 |
 | OkHttp, Okio | Square | Apache License 2.0 |
 | Jetpack Compose (UI, Foundation, Material 3) | The Android Open Source Project | Apache License 2.0 |
+| Asta Sans (글꼴, `res/font/asta_sans_variable.ttf`) | The Asta Sans Project Authors | SIL Open Font License 1.1 (`res/raw/sil_ofl_1_1.txt`) |
 | Kotlin Standard Library, kotlin-reflect | JetBrains | Apache License 2.0 |
 | kotlinx.coroutines, kotlinx.serialization | JetBrains | Apache License 2.0 |
 | Dagger, Hilt (Pleos SDK가 포함) | Google | Apache License 2.0 |

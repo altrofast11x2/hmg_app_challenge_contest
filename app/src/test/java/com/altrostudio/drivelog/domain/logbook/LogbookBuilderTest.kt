@@ -52,6 +52,9 @@ class LogbookBuilderTest {
         assertEquals(42.0, summary.workKm, 0.001)
         assertEquals(70.0, summary.workRatioPercent!!, 0.001)
         assertEquals(1, summary.unclassifiedCount)
+        // 홈의 용도별 막대: 출퇴근 12 + 일반업무 30 + 비업무 10 + 미분류 8 = 60
+        assertEquals(10.0, summary.personalKm, 0.001)
+        assertEquals(8.0, summary.unclassifiedKm, 0.001)
     }
 
     @Test

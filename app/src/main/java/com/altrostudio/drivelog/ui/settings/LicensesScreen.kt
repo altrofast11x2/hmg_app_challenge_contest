@@ -1,10 +1,11 @@
 package com.altrostudio.drivelog.ui.settings
 
+import androidx.annotation.RawRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,17 +17,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.altrostudio.drivelog.R
-import com.altrostudio.drivelog.ui.components.BigButton
+import com.altrostudio.drivelog.ui.components.ButtonKind
+import com.altrostudio.drivelog.ui.components.DriveLogButton
 import com.altrostudio.drivelog.ui.components.ScreenScaffold
-import com.altrostudio.drivelog.ui.theme.Dimens
+import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
-/** 앱에 들어간 라이브러리 (release 빌드 의존성 기준, docs/licenses.md와 같게 유지) */
+/** 앱에 들어간 라이브러리·글꼴 (release 빌드 기준, docs/licenses.md와 같게 유지) */
 private data class OpenSourceLibrary(val name: String, val owner: String, val license: String)
 
 private const val APACHE_2 = "Apache License 2.0"
+private const val OFL_1_1 = "SIL Open Font License 1.1"
 
 private val LIBRARIES = listOf(
     OpenSourceLibrary("Pleos Connect SDK (Vehicle, NaviHelper)", "Pleos", "Pleos Playground 이용약관"),
+    OpenSourceLibrary("Asta Sans (글꼴)", "The Asta Sans Project Authors", OFL_1_1),
     OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("OkHttp, Okio", "Square", APACHE_2),
     OpenSourceLibrary("Jetpack Compose (UI, Foundation, Material 3)", "The Android Open Source Project", APACHE_2),
@@ -40,28 +44,37 @@ private val LIBRARIES = listOf(
     OpenSourceLibrary("JetBrains Java Annotations, JSpecify", "JetBrains, JSpecify", APACHE_2)
 )
 
+/** 보고 있는 라이선스 원문 (없으면 목록) */
+private enum class LicenseText(@RawRes val res: Int) { APACHE(R.raw.apache_license_2_0), OFL(R.raw.sil_ofl_1_1) }
+
 @Composable
 fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    var showApacheText by rememberSaveable { mutableStateOf(false) }
+    var shown by rememberSaveable { mutableStateOf<LicenseText?>(null) }
     val context = LocalContext.current
-    val apacheText = remember {
-        context.resources.openRawResource(R.raw.apache_license_2_0).bufferedReader().use { it.readText() }
+    val licenseText = remember(shown) {
+        shown?.let { text -> context.resources.openRawResource(text.res).bufferedReader().use { it.readText() } }
     }
+    val dimens = DriveLogTheme.dimens
+    val typography = DriveLogTheme.typography
+    val colors = DriveLogTheme.colors
     ScreenScaffold(title = stringResource(R.string.licenses_title), onBack = onBack, modifier = modifier) {
-        Text(stringResource(R.string.licenses_intro), style = MaterialTheme.typography.bodyLarge)
-        BigButton(
-            text = stringResource(if (showApacheText) R.string.licenses_hide_apache else R.string.licenses_show_apache),
-            onClick = { showApacheText = !showApacheText },
-            emphasized = false
-        )
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-            if (showApacheText) {
-                item { Text(apacheText, style = MaterialTheme.typography.bodyMedium) }
+        Text(stringResource(R.string.licenses_intro), style = typography.body, color = colors.textSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
+            if (shown != null) {
+                DriveLogButton(text = stringResource(R.string.licenses_back_to_list), onClick = { shown = null }, kind = ButtonKind.Secondary)
+            } else {
+                DriveLogButton(text = stringResource(R.string.licenses_show_apache), onClick = { shown = LicenseText.APACHE }, kind = ButtonKind.Secondary)
+                DriveLogButton(text = stringResource(R.string.licenses_show_ofl), onClick = { shown = LicenseText.OFL }, kind = ButtonKind.Secondary)
+            }
+        }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
+            if (licenseText != null) {
+                item { Text(licenseText, style = typography.labelSmall, color = colors.textSecondary) }
             } else {
                 items(LIBRARIES) { library ->
                     Column {
-                        Text(library.name, style = MaterialTheme.typography.titleMedium)
-                        Text("${library.owner} · ${library.license}", style = MaterialTheme.typography.bodyMedium)
+                        Text(library.name, style = typography.titleSmall, color = colors.textPrimary)
+                        Text("${library.owner} · ${library.license}", style = typography.label, color = colors.textSecondary)
                     }
                 }
             }

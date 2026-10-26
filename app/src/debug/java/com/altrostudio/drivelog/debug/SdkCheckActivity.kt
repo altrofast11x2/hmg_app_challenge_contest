@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -86,11 +85,11 @@ private fun SdkCheckScreen(state: SdkCheckState, actions: SdkCheckActions, modif
     ) {
         Text(
             text = if (state.drivingRestricted) "주행 중: 조작 잠김" else "정차 중: 조작 가능",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onPrimary,
+            style = DriveLogTheme.typography.title,
+            color = DriveLogTheme.colors.buttonPrimaryText,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (state.drivingRestricted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                .background(if (state.drivingRestricted) DriveLogTheme.colors.statusError else DriveLogTheme.colors.buttonPrimaryBackground)
                 .padding(16.dp)
         )
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -130,13 +129,13 @@ private fun SdkCheckScreen(state: SdkCheckState, actions: SdkCheckActions, modif
                     }
                 }
                 ValueRow("해시 체인", state.chain, actions.verifyChain, enabled)
-                Text(text = "최근 운행 (최신 순)", style = MaterialTheme.typography.labelLarge)
-                state.trips.forEach { line -> Text(text = line, style = MaterialTheme.typography.bodyMedium) }
+                Text(text = "최근 운행 (최신 순)", style = DriveLogTheme.typography.labelSmall)
+                state.trips.forEach { line -> Text(text = line, style = DriveLogTheme.typography.label) }
             }
         }
-        Text(text = "이벤트 기록 (최근 순)", style = MaterialTheme.typography.titleMedium)
+        Text(text = "이벤트 기록 (최근 순)", style = DriveLogTheme.typography.titleSmall)
         LazyColumn(modifier = Modifier.weight(0.5f)) {
-            items(state.log) { line -> Text(text = line, style = MaterialTheme.typography.bodyMedium) }
+            items(state.log) { line -> Text(text = line, style = DriveLogTheme.typography.label) }
         }
     }
 }
@@ -153,7 +152,7 @@ private fun Section(title: String, modifier: Modifier = Modifier, content: @Comp
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleLarge)
+        Text(text = title, style = DriveLogTheme.typography.title)
         content()
     }
 }
@@ -162,8 +161,8 @@ private fun Section(title: String, modifier: Modifier = Modifier, content: @Comp
 private fun ValueRow(label: String, value: String, onRefresh: (() -> Unit)? = null, enabled: Boolean = true) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.labelLarge)
-            Text(text = value, style = MaterialTheme.typography.titleMedium)
+            Text(text = label, style = DriveLogTheme.typography.labelSmall)
+            Text(text = value, style = DriveLogTheme.typography.titleSmall)
         }
         if (onRefresh != null) {
             Button(onClick = onRefresh, enabled = enabled, modifier = Modifier.heightIn(min = 56.dp)) {

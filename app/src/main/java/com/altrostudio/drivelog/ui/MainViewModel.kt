@@ -14,6 +14,7 @@ import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
+import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,13 +42,21 @@ data class MainUiState(
     val pairing: Pairing? = null,
     val pairingSkipped: Boolean = false,
     val pendingUploads: Int = 0,
-    val lastSync: SyncOutcome? = null
+    val lastSync: SyncOutcome? = null,
+    /** 최근 완료 운행 (새것부터, 홈의 최근 운행 카드) */
+    val recentTrips: List<TripEntity> = emptyList(),
+    /** 분류하지 않은 완료 운행 (오래된 것부터, 홈의 분류 배너와 분류 순서) */
+    val unclassifiedTrips: List<TripEntity> = emptyList(),
+    /** 완료 운행 목록을 처음 받기 전 (홈 로딩 표시) */
+    val tripsLoaded: Boolean = false
 ) {
     val drivingTrip: TripEntity? get() = activeTrip?.takeIf { it.status == TripStatus.DRIVING }
     val parkedTrip: TripEntity? get() = activeTrip?.takeIf { it.status == TripStatus.PARKED }
 }
 
 private data class SyncInfo(val pairing: Pairing?, val skipped: Boolean, val pending: Int, val lastOutcome: SyncOutcome?)
+
+private data class TripLists(val recent: List<TripEntity>, val unclassified: List<TripEntity>)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModel(
@@ -75,6 +84,14 @@ class MainViewModel(
         container.sync.lastOutcome
     ) { pairing, skipped, pending, lastOutcome -> SyncInfo(pairing, skipped, pending, lastOutcome) }
 
+    private val tripLists: Flow<TripLists> = container.trips.observeTrips().map { trips ->
+        val completed = trips.filter { it.status == TripStatus.COMPLETED }
+        TripLists(
+            recent = completed.sortedByDescending { it.startedAt }.take(RECENT_TRIP_COUNT),
+            unclassified = completed.filter { it.purpose == TripPurpose.UNCLASSIFIED }.sortedBy { it.startedAt }
+        )
+    }
+
     val state: StateFlow<MainUiState> = combine(
         container.consent.consentGiven,
         container.vehicle.drivingRestricted.onStart { emit(true) }.catch { emit(false) },
@@ -93,6 +110,8 @@ class MainViewModel(
         )
     }.combine(syncInfo) { main, sync ->
         main.copy(pairing = sync.pairing, pairingSkipped = sync.skipped, pendingUploads = sync.pending, lastSync = sync.lastOutcome)
+    }.combine(tripLists.onStart { emit(TripLists(emptyList(), emptyList())) }) { main, lists ->
+        main.copy(recentTrips = lists.recent, unclassifiedTrips = lists.unclassified, tripsLoaded = main.monthSummary != null)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -110,6 +129,14 @@ class MainViewModel(
 
     fun classify(purpose: TripPurpose) = container.recorder.classify(purpose)
 
+    /** 미분류로 끝난 지난 운행을 분류한다 (홈의 [지금 분류하기]) */
+    fun classifyPast(tripId: String, purpose: TripPurpose) {
+        viewModelScope.launch { container.trips.classify(tripId, purpose, TripRecorder.DRIVER_ACTOR, System.currentTimeMillis()) }
+    }
+
+    /** 같은 목적지에서 지난번에 고른 업무 분류 */
+    suspend fun suggestionFor(trip: TripEntity): TripPurpose? = trip.endAddress?.let { container.trips.suggestPurpose(it) }
+
     fun skipPairing() = container.pairing.skip()
 
     fun withdraw() {
@@ -118,6 +145,7 @@ class MainViewModel(
 
     companion object {
         private const val STOP_TIMEOUT_MS = 5_000L
+        private const val RECENT_TRIP_COUNT = 4
 
         val Factory = viewModelFactory {
             initializer {

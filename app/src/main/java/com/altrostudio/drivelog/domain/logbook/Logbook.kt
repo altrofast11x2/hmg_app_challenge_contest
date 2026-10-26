@@ -30,7 +30,10 @@ data class LogbookSummary(
     val commuteKm: Double,
     val businessKm: Double,
     val tripCount: Int,
-    val unclassifiedCount: Int
+    val unclassifiedCount: Int,
+    /** 비업무 거리, 미분류 거리 (홈의 용도별 막대에 쓴다) */
+    val personalKm: Double = 0.0,
+    val unclassifiedKm: Double = 0.0
 ) {
     /** 업무용 사용거리 = 출퇴근용 + 일반 업무용 */
     val workKm: Double get() = commuteKm + businessKm
@@ -70,7 +73,9 @@ object LogbookBuilder {
             commuteKm = rows.sumOf { it.commuteKm },
             businessKm = rows.sumOf { it.businessKm },
             tripCount = rows.size,
-            unclassifiedCount = rows.count { it.purpose == TripPurpose.UNCLASSIFIED }
+            unclassifiedCount = rows.count { it.purpose == TripPurpose.UNCLASSIFIED },
+            personalKm = rows.filter { it.purpose == TripPurpose.PERSONAL }.sumOf { it.distanceKm },
+            unclassifiedKm = rows.filter { it.purpose == TripPurpose.UNCLASSIFIED }.sumOf { it.distanceKm }
         )
         return Logbook(month, rows, summary)
     }

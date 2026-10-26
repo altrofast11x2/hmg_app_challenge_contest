@@ -1,4 +1,4 @@
-// 관리자 웹 화면: 로그인 → 운행기록부 / 차량 / 연결 코드
+// 관리자 웹 화면: 로그인 → 운행기록부 / 차량(연결 코드 발급 포함)
 // 서버에서 온 글자는 항상 textContent로 넣는다 (innerHTML을 쓰지 않아 스크립트 삽입을 막는다).
 import * as api from './api.js';
 import { buildLogbook, csvFileName, km, kstParts, logbookCsv, monthRange, PURPOSE_LABELS } from './logbook.js';

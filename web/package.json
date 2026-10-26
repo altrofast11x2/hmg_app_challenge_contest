@@ -5,6 +5,7 @@
   "description": "자동 운행기록부 관리자 웹 (의존성 없음)",
   "scripts": {
     "config": "node scripts/write-config.mjs",
+    "build": "node scripts/build.mjs",
     "start": "node scripts/serve.mjs",
     "test": "node --test"
   }

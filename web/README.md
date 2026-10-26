@@ -21,6 +21,20 @@ cd web && node --test               # 운행기록부·CSV 단위 테스트
 - `write-config.mjs`는 환경 변수 `SUPABASE_URL`·`SUPABASE_PUBLISHABLE_KEY`를 먼저 보고, 없으면 루트 `local.properties`의 `supabase.url`·`supabase.anonKey`를 읽습니다. secret/service_role 키를 넣으면 거부합니다.
 - `serve.mjs`는 개발용 서버입니다. 이 PC(127.0.0.1)에서만 열리고 `web/` 밖의 파일과 `scripts/`·`test/`는 내보내지 않습니다.
 
+## 배포 (Vercel)
+
+빌드 단계가 없는 정적 사이트라, 공개할 파일만 모은 `web/dist`를 그대로 올린다 (`scripts/`·`test/`·README는 올라가지 않는다).
+
+```bash
+node web/scripts/build.mjs                       # web/dist 생성 (config.js 포함, 커밋 금지)
+vercel login                                     # 처음 한 번 (사용자가 직접)
+vercel link --cwd web/dist --project altrostudio-drivelog --scope altrofast11x2s-projects --yes   # 처음 한 번
+vercel deploy --cwd web/dist --prod --yes
+```
+
+- `vercel.json`이 보안 헤더(다른 사이트가 이 화면을 틀 안에 넣지 못하게 막기 등)를 붙인다.
+- 2026-10-26 Vercel MCP 연결로는 프로젝트 생성이 거부돼서(403) CLI로 배포한다.
+
 ## 구조
 
 | 파일 | 내용 |

@@ -29,3 +29,6 @@ node_modules/
 
 # web/ 설정 (Supabase 주소·공개 키). web/scripts/write-config.mjs가 만든다
 web/js/config.js
+
+# web/ 배포 폴더 (web/scripts/build.mjs가 만든다, config.js와 .vercel 연결 정보 포함)
+web/dist/

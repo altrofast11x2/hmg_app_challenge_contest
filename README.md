@@ -79,7 +79,7 @@ adb forward tcp:8088 tcp:8088
 
 | 용도 | 값 |
 |---|---|
-| 관리자 웹 로그인 | https://altrostudio-drivelog.vercel.app · `admin@email.com` (비밀번호는 저장소에 두지 않습니다. 전달 방법은 제출 전에 정합니다) |
+| 관리자 웹 로그인 | https://altrostudio-drivelog.vercel.app · 아이디 `AltroStudio` (비밀번호는 저장소에 두지 않습니다. 전달 방법은 제출 전에 정합니다) |
 | 차량 연결 코드 (시연용, 여러 번 사용 가능, 2027-02-28까지) | `422511` |
 
 데모 조직과 계정은 `backend/seed/`에서만 만들고, APK에는 들어가지 않습니다.

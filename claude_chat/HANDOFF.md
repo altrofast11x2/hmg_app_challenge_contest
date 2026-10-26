@@ -36,7 +36,7 @@
 - 2026-10-26부터 **main 브랜치에서 작업**한다 (altrofast11x2를 main에 합침). main의 `.github/workflows/supabase-keepalive.yml`이 하루 두 번 서버에 조회를 보낸다. 저장소 Secrets `SUPABASE_URL`·`SUPABASE_PUBLISHABLE_KEY`는 사용자가 직접 등록한다 (`gh secret set`은 Claude Code 권한 판단에서 막힘).
 - **제출 전 점검: 관리자 비밀번호 바꾸기.** 지금 비밀번호는 사용자가 정한 값(GitHub 아이디와 같음)이라 추측하기 쉽고 대화 기록에도 남아 있다. 저장소 공개·웹 배포 전에 `seed.sql`로 바꾼다.
 - **제출 전 점검: Supabase 무료 프로젝트는 7일 동안 사용이 적으면 일시 정지된다** (정지 1주 전 경고 메일, 정지 후 90일 안에 대시보드에서 재개). 심사 기간(11/15~12/4)에 정지되지 않게 할 방법을 정해야 한다. 정지되면 API가 540을 돌려주고, 앱은 서버 오류로 보고 이 차량에만 기록한다.
-- 관리자 계정 이메일은 `admin@email.com` (사용자 지정). 개인정보 처리방침 문의처도 이 주소로 넣었다. **제출 전 점검: 문의처를 실제 연락처로 바꿀지 확인** (email.com은 실제 메일 서비스 도메인이다).
+- 관리자 웹 계정은 아이디 `AltroStudio` (2026-10-26 사용자 지정, 내부 이메일 `altrostudio@drivelog.invalid`, 처음엔 admin@email.com이었다). 개인정보 처리방침 문의처는 `admin@email.com` 그대로다. **제출 전 점검: 문의처를 실제 연락처로 바꿀지 확인** (email.com은 실제 메일 서비스 도메인이다).
 - Virtual Console은 브라우저 없이 `curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Drive"` 같은 HTTP API로 조작할 수 있다 (`memory/pleos-dev-environment.md`).
 
 ## 결정 사항

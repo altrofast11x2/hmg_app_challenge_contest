@@ -43,7 +43,7 @@ function toSession(auth) {
     accessToken: auth.access_token,
     refreshToken: auth.refresh_token,
     expiresAtMs: Date.now() + auth.expires_in * 1000,
-    user: { id: auth.user.id, email: auth.user.email },
+    user: { id: auth.user.id, email: auth.user.email, name: auth.user.user_metadata?.display_name ?? null },
   };
 }
 
@@ -103,11 +103,26 @@ const eq = (value) => `eq.${encodeURIComponent(value)}`;
 
 // ─── 로그인 ───────────────────────────────────────────────────────────
 
-export async function signIn(email, password) {
+// Supabase는 이메일로 로그인한다. 아이디(예: AltroStudio)는 실제로 존재할 수 없는 예약 도메인(.invalid)의 주소로 바꾼다
+const ID_EMAIL_DOMAIN = 'drivelog.invalid';
+
+/** 아이디 또는 이메일 → 로그인 이메일. 아이디는 대소문자를 구분하지 않는다 */
+export function loginEmail(idOrEmail) {
+  const value = idOrEmail.trim();
+  return value.includes('@') ? value : `${value.toLowerCase()}@${ID_EMAIL_DOMAIN}`;
+}
+
+export async function signIn(idOrEmail, password) {
   saveSession(toSession(await send('/auth/v1/token?grant_type=password', {
-    method: 'POST', body: { email, password },
+    method: 'POST', body: { email: loginEmail(idOrEmail), password },
   })));
   return session.user;
+}
+
+/** 화면에 보일 이름: 계정에 적힌 표시 이름, 없으면 아이디(아이디로 만든 계정) 또는 이메일 */
+export function displayName(user) {
+  if (user.name) return user.name;
+  return user.email?.endsWith(`@${ID_EMAIL_DOMAIN}`) ? user.email.slice(0, -ID_EMAIL_DOMAIN.length - 1) : user.email;
 }
 
 /** 이 브라우저에서만 로그아웃한다 (기본값 global은 같은 계정을 쓰는 다른 사람까지 로그아웃시킨다) */

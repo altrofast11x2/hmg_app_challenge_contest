@@ -9,7 +9,9 @@
 do $$
 declare
   v_org_name text := 'AltroStudio 데모';
-  v_admin_email text := 'admin@email.com';
+  -- 관리자 웹은 아이디 AltroStudio로 로그인한다. 웹이 아이디를 이 주소로 바꾼다 (web/js/api.js loginEmail)
+  v_admin_email text := 'altrostudio@drivelog.invalid';
+  v_admin_display text := 'AltroStudio';
   v_admin_password text := '<비밀번호>';
   v_code text := '<6자리 숫자>';  -- 심사·시연용 연결 코드 (여러 번 쓸 수 있고 2027-02-28까지 유효)
   v_admin uuid;
@@ -34,7 +36,7 @@ begin
       ) values (
         '00000000-0000-0000-0000-000000000000', v_admin, 'authenticated', 'authenticated', v_admin_email,
         extensions.crypt(v_admin_password, extensions.gen_salt('bf')), now(),
-        '{"provider": "email", "providers": ["email"]}', '{}', now(), now(),
+        '{"provider": "email", "providers": ["email"]}', jsonb_build_object('display_name', v_admin_display), now(), now(),
         '', '', '', ''
       );
       insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
@@ -45,7 +47,9 @@ begin
       );
     else
       update auth.users
-      set encrypted_password = extensions.crypt(v_admin_password, extensions.gen_salt('bf')), updated_at = now()
+      set encrypted_password = extensions.crypt(v_admin_password, extensions.gen_salt('bf')),
+          raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('display_name', v_admin_display),
+          updated_at = now()
       where id = v_admin;
     end if;
   end if;

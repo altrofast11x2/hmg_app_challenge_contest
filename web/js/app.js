@@ -112,7 +112,9 @@ function renderLogin(notice) {
   const button = el('button', { type: 'submit', class: 'button-primary' }, '로그인');
   const form = el('form', { class: 'card login', onsubmit: onSubmit },
     el('h1', {}, '자동 운행기록부 관리자'),
-    el('label', {}, '이메일', el('input', { name: 'email', type: 'email', autocomplete: 'username', required: true })),
+    el('label', {}, '아이디 또는 이메일', el('input', {
+      name: 'id', type: 'text', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false', required: true,
+    })),
     el('label', {}, '비밀번호',
       el('input', { name: 'password', type: 'password', autocomplete: 'current-password', required: true })),
     status,
@@ -126,10 +128,10 @@ function renderLogin(notice) {
     button.disabled = true;
     button.textContent = '로그인 중…';
     try {
-      await api.signIn(String(data.get('email')).trim(), String(data.get('password')));
+      await api.signIn(String(data.get('id')), String(data.get('password')));
       await enter();
     } catch (error) {
-      const text = error.code === 'invalid_credentials' ? '이메일 또는 비밀번호가 맞지 않아요.' : error.message;
+      const text = error.code === 'invalid_credentials' ? '아이디 또는 비밀번호가 맞지 않아요.' : error.message;
       status.replaceChildren(message(text, 'error'));
       button.disabled = false;
       button.textContent = '로그인';
@@ -144,7 +146,7 @@ async function enter() {
     if (state.orgs.length === 0) {
       setScreen(el('main', { class: 'center' },
         el('h1', {}, '관리자 권한이 없어요'),
-        el('p', {}, `${api.currentUser().email} 계정은 관리자로 등록된 조직이 없어요.`),
+        el('p', {}, `${api.displayName(api.currentUser())} 계정은 관리자로 등록된 조직이 없어요.`),
         el('button', { class: 'button-secondary', onclick: logout }, '로그아웃'),
       ));
       return;
@@ -187,7 +189,7 @@ function renderMain() {
       el('strong', { class: 'brand' }, '자동 운행기록부'),
       orgPicker,
       el('span', { class: 'spacer' }),
-      el('span', { class: 'user' }, api.currentUser().email),
+      el('span', { class: 'user' }, api.displayName(api.currentUser())),
       el('button', { class: 'button-text', onclick: logout }, '로그아웃'),
     ),
     el('nav', { class: 'tabs', role: 'tablist' }, TABS.map((tab) => el('button', {

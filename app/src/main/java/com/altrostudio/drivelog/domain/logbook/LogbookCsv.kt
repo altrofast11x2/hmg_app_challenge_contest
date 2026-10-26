@@ -10,7 +10,7 @@ import java.util.Locale
  */
 object LogbookCsv {
 
-    const val BOM = "﻿"
+    const val BOM = "\uFEFF"
 
     private val HEADER = listOf(
         "사용일자", "사용자", "주행 전 계기판 거리(km)", "주행 후 계기판 거리(km)", "주행거리(km)",

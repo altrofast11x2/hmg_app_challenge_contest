@@ -22,6 +22,10 @@
 
 테스트에만 쓰고 앱에 들어가지 않는 것: JUnit 4 (Eclipse Public License 1.0), kotlinx-coroutines-test (Apache License 2.0), AndroidX Test (Apache License 2.0)
 
-폰트, 아이콘, 이미지: 앱 아이콘과 알림 아이콘은 직접 그린 벡터이고, 외부 폰트·아이콘·음원은 쓰지 않습니다. 디자인 자산이 추가되면 `design/assets/`의 라이선스를 여기에 옮깁니다.
+폰트, 아이콘, 이미지: 글꼴은 위 표의 Asta Sans(SIL OFL 1.1, 상업 이용 가능) 하나입니다. 앱 아이콘·알림 아이콘과 화면의 선 아이콘(`DriveLogIcons.kt`, `design/mockups`에서 옮김)은 팀이 직접 그린 벡터이고, 외부 아이콘·이미지·음원은 쓰지 않습니다. 디자인 자산이 추가되면 `design/assets/`의 라이선스를 여기에 옮깁니다.
+
+## 관리자 웹 (`web/`)
+
+JavaScript 라이브러리는 쓰지 않습니다. 글꼴 Asta Sans(SIL Open Font License 1.1)만 Google Fonts에서 불러옵니다.
 
 새 라이브러리를 추가하면 이 표와 `app/src/main/java/com/altrostudio/drivelog/ui/settings/LicensesScreen.kt`를 함께 고칩니다.

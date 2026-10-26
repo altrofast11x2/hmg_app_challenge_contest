@@ -1,7 +1,7 @@
 package com.altrostudio.drivelog.ui
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,7 +9,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,7 +55,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
     // 홈의 [지금 분류하기]: 지금 분류 중인 미분류 운행
     var classifyingTripId by rememberSaveable { mutableStateOf<String?>(null) }
     val connectViewModel: ConnectViewModel = viewModel(factory = ConnectViewModel.Factory)
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
 
     BackHandler(enabled = !state.drivingRestricted && state.consentGiven && destination.parent != null) {
         destination = destination.parent ?: Destination.HOME

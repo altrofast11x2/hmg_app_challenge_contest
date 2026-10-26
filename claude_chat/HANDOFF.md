@@ -16,7 +16,7 @@
 | 8. GitHub, release APK, README, docs 4종 | 완료: `apk/AltroStudio_DriveLog_release.apk`(v2 서명, 에뮬레이터 설치·실행 1.3~1.6초), README(심사용 빠른 시작·APK·개발자 메모·라이선스), `docs/status.md`·`demo-script.md`·`business.md`, `sdk-usage.md` 갱신 |
 | 디자인 v0.1 | A01~A03 명세대로, 나머지 화면은 토큰만 (커밋 d13b8a1). 명세와 다른 점은 `design/REQUESTS.md`. 관리자 웹도 같은 토큰·Asta Sans·다크 테마 |
 | 실서버 시험 (2026-10-26) | 에뮬레이터 release 앱: 시연용 코드 연결 → 운행 3건 → 서버 업로드·비업무 주소 삭제·해시 체인 확인, 웹(기업 계정)에 표시. Virtual Console HTTP는 브라우저 heartbeat(`POST /browser/session?client=…`, 1초)가 끊기면 `emulator_inactive` → 직접 heartbeat를 보내며 시험했다 |
-| 9. 제출 직전 점검 | 계획 |
+| 9. 제출 직전 점검 | 점검표 보고함 (2026-10-26). 새 AVD(같은 Pleos 이미지로 새로 만듦)에 release APK 설치 → 동의 → 코드 422511 연결 → 주행 1건 → 서버 반영 확인 후, 시험 차량·AVD는 지움. release lint 오류 2건(LocalActivity, CSV BOM 문자) 고치고 APK 다시 빌드. 단위 55개·웹 10개 통과, 전체 이력 비밀값 검사 통과. `docs/plan-summary.md`(기획서 요약) 추가. **남은 것: 사용자 결정 항목(공개 범위, 데모 비밀번호 전달, LICENSE 저작자, 문의처, 옛 브랜치)과 Secrets 등록** |
 
 - 8단계 release 시험에서 찾아 고친 버그 (6단계 코드가 실제 기기에서 서버와 통신한 적이 없었다)
   1. 서버 주소·키를 `BuildConfig` 상수로 넣었더니 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 채운 뒤에도 증분 빌드에 빈 값이 남았다 → 문자열 리소스(`resValue`)로 바꿔 실행 중에 읽는다

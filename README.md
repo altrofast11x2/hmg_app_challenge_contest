@@ -17,6 +17,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 | release APK | [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) |
 | 관리자 웹 | https://altrostudio-drivelog.vercel.app |
 | 구현 현황 | [docs/status.md](docs/status.md) |
+| 기획 요약 (심사 항목별) | [docs/plan-summary.md](docs/plan-summary.md) |
 | Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
 | 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |
 | 사업성 | [docs/business.md](docs/business.md) |
@@ -50,6 +51,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
 3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결되고, [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
 4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜹니다. 용도를 한 번 누르면 월별 운행기록부에 들어갑니다.
+5. 새로 만든 AVD는 시간대가 한국이 아니라서 운행 시각이 다르게 보일 수 있습니다. 한국 시간으로 보려면 `adb shell service call alarm 3 s16 Asia/Seoul`을 실행합니다.
 
 시연 흐름은 [docs/demo-script.md](docs/demo-script.md), 사용한 Pleos SDK는 [docs/sdk-usage.md](docs/sdk-usage.md)에 있습니다.
 
@@ -128,7 +130,7 @@ adb forward tcp:8088 tcp:8088
 
 ## APK 위치
 
-- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 24 MB)
+- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 26 MB)
 - 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
 - APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
 
@@ -146,5 +148,5 @@ adb forward tcp:8088 tcp:8088
 
 - 이 저장소의 코드: [MIT](LICENSE)
 - 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, Kotlin·kotlinx 등 Apache License 2.0, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
-- 관리자 웹(`web/`)은 외부 라이브러리를 쓰지 않습니다.
+- 관리자 웹(`web/`)은 외부 JavaScript 라이브러리를 쓰지 않고, 글꼴 Asta Sans만 Google Fonts에서 불러옵니다.
 - 현대자동차그룹·Pleos의 로고와 상표는 쓰지 않습니다.

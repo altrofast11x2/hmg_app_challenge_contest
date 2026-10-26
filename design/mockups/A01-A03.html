@@ -1,0 +1,529 @@
+<title>DriveLog 화면 A1–A3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Asta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* 페이지: 다크 고정 단일 룩 (차량 목업 감상용). 프레임 안은 design/tokens/tokens.css 값 그대로 */
+:root{color-scheme:dark;--page-bg:#07090D;--page-fg:#E8ECF1;--page-muted:#9AA5B3;--page-line:#202835;--page-chip:#141A23;--page-accent:#E5DACB;--font:"Asta Sans","Pretendard",system-ui,sans-serif}
+body{background:var(--page-bg);color:var(--page-fg);font:15px/1.6 var(--font);margin:0}
+.page{max-width:1640px;margin:0 auto;padding-block:32px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+.head{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
+.head h1{font:700 30px/1.2 var(--font);margin:0;text-wrap:balance}
+.head p{margin:6px 0 0;color:var(--page-muted);max-width:68ch}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tools button,.tools a{font:600 14px/1 var(--font);color:var(--page-fg);background:var(--page-chip);border:1px solid var(--page-line);border-radius:999px;padding:10px 16px;text-decoration:none;cursor:pointer}
+.tools button[aria-pressed="true"]{background:var(--page-accent);color:#2A2116;border-color:var(--page-accent)}
+.tools button:focus-visible,.tools a:focus-visible{outline:2px solid var(--page-accent);outline-offset:2px}
+section{display:flex;flex-direction:column;gap:18px;scroll-margin-top:24px}
+.sh{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px}
+.sh h2{font:700 22px/1.3 var(--font);margin:0}
+.sh .code{font:600 13px/1 var(--font);letter-spacing:.06em;color:var(--page-accent)}
+.notes{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 24px;color:var(--page-muted)}
+.notes li{min-width:0}
+.notes b{color:var(--page-fg);font-weight:600}
+.flabel{font:600 13px/1 var(--font);letter-spacing:.06em;color:var(--page-muted);text-transform:uppercase}
+.frame{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:12px;border:1px solid var(--page-line);background:#000;max-width:100%}
+.screen{position:absolute;left:0;top:0;width:2560px;height:1440px;transform-origin:0 0;transform:scale(var(--s,.5))}
+
+/* design/tokens/tokens.css 값을 .car 범위로 옮김 */
+.car {
+  color-scheme: dark;
+  --drivelog-background: #0A0F16;
+  --drivelog-background-driving: #05080C;
+  --drivelog-surface: #121923;
+  --drivelog-surface-raised: #1A2330;
+  --drivelog-surface-pressed: #243041;
+  --drivelog-border: #2B3747;
+  --drivelog-border-strong: #3E4C5E;
+  --drivelog-text-primary: #F3F5F7;
+  --drivelog-text-secondary: #AEB8C5;
+  --drivelog-text-tertiary: #8693A3;
+  --drivelog-text-disabled: #566273;
+  --drivelog-button-primary-background: #2F6BE0;
+  --drivelog-button-primary-background-pressed: #2558BC;
+  --drivelog-button-primary-text: #FFFFFF;
+  --drivelog-button-secondary-background: #1A2330;
+  --drivelog-button-secondary-background-pressed: #243041;
+  --drivelog-button-secondary-text: #F3F5F7;
+  --drivelog-button-disabled-background: #161E29;
+  --drivelog-accent: #5CC6E8;
+  --drivelog-signature: #E5DACB;
+  --drivelog-signature-text: #2A2116;
+  --drivelog-selection-ring: #E5DACB;
+  --drivelog-purpose-commute-background: #5CC6E8;
+  --drivelog-purpose-commute-text: #05222D;
+  --drivelog-purpose-business-background: #2F6BE0;
+  --drivelog-purpose-business-text: #FFFFFF;
+  --drivelog-purpose-personal-background: #3A4555;
+  --drivelog-purpose-personal-text: #FFFFFF;
+  --drivelog-purpose-unclassified-background: #3A2E14;
+  --drivelog-purpose-unclassified-text: #F2B24C;
+  --drivelog-status-integrity: #45C98F;
+  --drivelog-status-integrity-container: #12291F;
+  --drivelog-status-warning: #F2B24C;
+  --drivelog-status-warning-container: #2E2410;
+  --drivelog-status-error: #FF7A6B;
+  --drivelog-status-error-container: #331713;
+  --drivelog-status-info: #5CC6E8;
+  --drivelog-scrim: rgba(5, 8, 12, 0.8);
+  /* 글자 — Asta Sans (SIL OFL 1.1). 웹: Google Fonts "Asta Sans" 또는 design/assets/fonts */
+  --drivelog-font-family: "Asta Sans", "Pretendard", system-ui, sans-serif;
+  --drivelog-display-large: 700 144px/152px var(--drivelog-font-family);
+  --drivelog-display: 700 96px/104px var(--drivelog-font-family);
+  --drivelog-headline: 700 56px/68px var(--drivelog-font-family);
+  --drivelog-title: 700 40px/52px var(--drivelog-font-family);
+  --drivelog-title-small: 600 34px/46px var(--drivelog-font-family);
+  --drivelog-body: 500 30px/44px var(--drivelog-font-family);
+  --drivelog-body-strong: 700 30px/44px var(--drivelog-font-family);
+  --drivelog-label: 600 28px/36px var(--drivelog-font-family);
+  --drivelog-label-small: 600 24px/32px var(--drivelog-font-family);
+  /* 관리자 웹(데스크톱 1440)은 차량보다 작게: 아래 web 스케일을 쓴다 */
+  --drivelog-web-headline: 700 32px/40px var(--drivelog-font-family);
+  --drivelog-web-title: 700 22px/30px var(--drivelog-font-family);
+  --drivelog-web-body: 500 15px/24px var(--drivelog-font-family);
+  --drivelog-web-label: 600 13px/18px var(--drivelog-font-family);
+  /* 간격 */
+  --drivelog-spacing-extra-small: 8px;
+  --drivelog-spacing-small: 16px;
+  --drivelog-spacing-medium: 24px;
+  --drivelog-spacing-large: 32px;
+  --drivelog-spacing-extra-large: 48px;
+  --drivelog-spacing-huge: 64px;
+  --drivelog-screen-padding-horizontal-landscape: 72px;
+  --drivelog-screen-padding-horizontal-portrait: 40px;
+  --drivelog-screen-padding-vertical: 48px;
+  /* 모서리 */
+  --drivelog-radius-small: 12px;
+  --drivelog-radius-medium: 20px;
+  --drivelog-radius-large: 32px;
+  --drivelog-radius-full: 999px;
+  /* 선 */
+  --drivelog-border-width: 2px;
+  --drivelog-selection-ring-width: 6px;
+  --drivelog-selection-ring-offset: 6px;
+  /* 터치 (가정값) */
+  --drivelog-touch-target-minimum: 80px;
+  --drivelog-button-height-medium: 96px;
+  --drivelog-button-height-large: 120px;
+  --drivelog-purpose-button-height-landscape: 300px;
+  --drivelog-purpose-button-height-portrait: 176px;
+  --drivelog-keypad-key-height-landscape: 128px;
+  --drivelog-keypad-key-height-portrait: 112px;
+  --drivelog-code-cell-width: 112px;
+  --drivelog-code-cell-height: 144px;
+  --drivelog-list-row-height: 112px;
+  --drivelog-top-bar-height: 112px;
+  --drivelog-badge-height: 48px;
+  --drivelog-icon-size-small: 32px;
+  --drivelog-icon-size-medium: 44px;
+  --drivelog-icon-size-large: 72px;
+  /* 동작 */
+  --drivelog-press-scale: 0.95;
+  --drivelog-press-duration: 100ms;
+  /* 그림자: 다크는 면 색으로 높이를 표현해 none, 라이트에서만 그림자 */
+  --drivelog-elevation-card: none;
+  --drivelog-elevation-dialog: none;
+}
+.car[data-theme="light"] {
+  color-scheme: light;
+  --drivelog-elevation-card: 0 2px 8px rgba(14, 26, 43, 0.08); --drivelog-elevation-dialog: 0 12px 32px rgba(14, 26, 43, 0.16);
+  --drivelog-background: #F4F1EC;
+  --drivelog-background-driving: #ECE7DF;
+  --drivelog-surface: #FFFFFF;
+  --drivelog-surface-raised: #FFFFFF;
+  --drivelog-surface-pressed: #E9E4DC;
+  --drivelog-border: #DCD5CA;
+  --drivelog-border-strong: #B9B0A3;
+  --drivelog-text-primary: #0E1A2B;
+  --drivelog-text-secondary: #4A5668;
+  --drivelog-text-tertiary: #5E6A7C;
+  --drivelog-text-disabled: #A3ABB6;
+  --drivelog-button-primary-background: #12305E;
+  --drivelog-button-primary-background-pressed: #0B2246;
+  --drivelog-button-primary-text: #FFFFFF;
+  --drivelog-button-secondary-background: #FFFFFF;
+  --drivelog-button-secondary-background-pressed: #E9E4DC;
+  --drivelog-button-secondary-text: #0E1A2B;
+  --drivelog-button-disabled-background: #E6E2DB;
+  --drivelog-accent: #1C6FB8;
+  --drivelog-signature: #D8C9B3;
+  --drivelog-signature-text: #2A2116;
+  --drivelog-selection-ring: #12305E;
+  --drivelog-purpose-commute-background: #177A9F;
+  --drivelog-purpose-commute-text: #FFFFFF;
+  --drivelog-purpose-business-background: #2F6BE0;
+  --drivelog-purpose-business-text: #FFFFFF;
+  --drivelog-purpose-personal-background: #4A5568;
+  --drivelog-purpose-personal-text: #FFFFFF;
+  --drivelog-purpose-unclassified-background: #FBEBCB;
+  --drivelog-purpose-unclassified-text: #7A4A00;
+  --drivelog-status-integrity: #15704A;
+  --drivelog-status-integrity-container: #DDF2E7;
+  --drivelog-status-warning: #8A4F00;
+  --drivelog-status-warning-container: #FBEBCB;
+  --drivelog-status-error: #C0392B;
+  --drivelog-status-error-container: #FADCD8;
+  --drivelog-status-info: #1C6FB8;
+  --drivelog-scrim: rgba(14, 26, 43, 0.6);
+}
+
+/* ===== 차량 화면 ===== */
+.car{font-family:var(--drivelog-font-family);color:var(--drivelog-text-primary);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.car *{box-sizing:border-box}
+.sys{position:absolute;display:flex;align-items:center;justify-content:center;font:500 26px/1.3 var(--drivelog-font-family);color:#7E8896;background:repeating-linear-gradient(135deg,#141922 0 18px,#0E1218 18px 36px);text-align:center}
+.sys.status{left:0;top:0;width:2560px;height:72px}
+.sys.drive{left:0;top:72px;width:760px;height:1224px}
+.sys.gnb{left:0;top:1296px;width:2560px;height:144px}
+.sys.other{left:1660px;top:72px;width:900px;height:1224px;border-left:4px solid #000}
+.win{position:absolute;left:760px;top:72px;width:1800px;height:1224px;background:var(--drivelog-background);padding:48px 72px;display:flex;flex-direction:column;gap:32px;overflow:hidden}
+.win.p{width:900px;padding:48px 40px}
+.top{height:112px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.top .l{display:flex;align-items:center;gap:20px;min-width:0}
+.t-dl{font:var(--drivelog-display-large)}.t-d{font:var(--drivelog-display)}.t-h{font:var(--drivelog-headline)}.t-t{font:var(--drivelog-title)}.t-ts{font:var(--drivelog-title-small)}.t-b{font:var(--drivelog-body)}.t-bs{font:var(--drivelog-body-strong)}.t-l{font:var(--drivelog-label)}.t-ls{font:var(--drivelog-label-small)}
+.c2{color:var(--drivelog-text-secondary)}.c3{color:var(--drivelog-text-tertiary)}
+.i{width:44px;height:44px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn{height:96px;border:0;border-radius:var(--drivelog-radius-medium);font:var(--drivelog-title-small);display:flex;align-items:center;justify-content:center;gap:16px;padding:0 48px;font-family:var(--drivelog-font-family)}
+.btn.lg{height:120px;font:var(--drivelog-title)}
+.primary{background:var(--drivelog-button-primary-background);color:var(--drivelog-button-primary-text)}
+.secondary{background:var(--drivelog-button-secondary-background);color:var(--drivelog-button-secondary-text);box-shadow:inset 0 0 0 2px var(--drivelog-border-strong)}
+.sand{background:var(--drivelog-signature);color:var(--drivelog-signature-text)}
+.textbtn{background:none;color:var(--drivelog-text-secondary);height:80px;padding:0 24px;font:var(--drivelog-label)}
+.ibtn{width:80px;height:80px;border-radius:999px;border:0;background:var(--drivelog-button-secondary-background);color:var(--drivelog-text-primary);display:flex;align-items:center;justify-content:center}
+.card{background:var(--drivelog-surface);border-radius:var(--drivelog-radius-large);padding:48px;box-shadow:var(--drivelog-elevation-card)}
+.chip{height:48px;padding:0 20px;border-radius:999px;display:inline-flex;align-items:center;gap:10px;font:var(--drivelog-label-small);white-space:nowrap;flex:none}
+.chip .i{width:28px;height:28px}
+.chip.neutral{background:var(--drivelog-surface-raised);color:var(--drivelog-text-secondary)}
+.chip.integrity{background:var(--drivelog-status-integrity-container);color:var(--drivelog-status-integrity)}
+.chip.commute{background:var(--drivelog-purpose-commute-background);color:var(--drivelog-purpose-commute-text)}
+.chip.business{background:var(--drivelog-purpose-business-background);color:var(--drivelog-purpose-business-text)}
+.chip.personal{background:var(--drivelog-purpose-personal-background);color:var(--drivelog-purpose-personal-text)}
+.chip.unclassified{background:var(--drivelog-purpose-unclassified-background);color:var(--drivelog-purpose-unclassified-text)}
+.appmark{width:96px;height:96px;border-radius:24px;background:#12305E;display:flex;align-items:center;justify-content:center;flex:none}
+.appmark svg{width:64px;height:64px}
+
+/* A01 */
+.a01{display:flex;gap:64px;flex:1;min-height:0}
+.a01 .scroll{flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;overflow:hidden;position:relative}
+.a01 .side{width:528px;flex:none;display:flex;flex-direction:column;gap:32px}
+.ctitle{display:flex;align-items:center;gap:20px;color:var(--drivelog-accent);margin-bottom:28px}
+.ctitle span{color:var(--drivelog-text-primary);font:var(--drivelog-title)}
+.rows{display:grid;grid-template-columns:260px 1fr;gap:20px 24px}
+.rows .k{font:var(--drivelog-body-strong)}.rows .v{font:var(--drivelog-body);color:var(--drivelog-text-secondary)}
+.sum{display:flex;flex-direction:column;gap:20px}
+.sum div{display:flex;gap:16px;align-items:flex-start;font:var(--drivelog-body)}
+.sum .i{width:36px;height:36px;color:var(--drivelog-status-integrity);margin-top:4px}
+.scrollbar{position:absolute;right:0;top:0;width:8px;height:44%;border-radius:8px;background:var(--drivelog-border-strong)}
+.bottombar{margin:0 -40px -48px;padding:32px 40px 48px;border-top:2px solid var(--drivelog-border);display:flex;flex-direction:column;gap:16px;background:var(--drivelog-background)}
+
+/* A02 */
+.a02{display:flex;gap:56px;flex:1;min-height:0;align-items:center}
+.a02 .left{width:860px;display:flex;flex-direction:column;gap:32px}
+.cells{display:flex;gap:16px}
+.cells .gap{width:24px}
+.cell{width:112px;height:144px;border-radius:var(--drivelog-radius-medium);background:var(--drivelog-surface-raised);box-shadow:inset 0 0 0 2px var(--drivelog-border);display:flex;align-items:center;justify-content:center;font:var(--drivelog-display);position:relative}
+.cell.filled{box-shadow:inset 0 0 0 2px var(--drivelog-border-strong)}
+.cell.cur{box-shadow:inset 0 0 0 4px var(--drivelog-accent)}
+.cell.cur::after{content:"";position:absolute;bottom:24px;left:32px;width:48px;height:6px;border-radius:3px;background:var(--drivelog-accent)}
+.cell.err{box-shadow:inset 0 0 0 4px var(--drivelog-status-error)}
+.p .cell{width:104px;height:128px}
+.statusline{height:48px;display:flex;align-items:center;gap:12px;font:var(--drivelog-label)}
+.statusline.err{color:var(--drivelog-status-error)}
+.statusline .i{width:36px;height:36px}
+.divider{height:2px;background:var(--drivelog-border)}
+.keypad{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.key{height:128px;border:0;border-radius:var(--drivelog-radius-medium);background:var(--drivelog-button-secondary-background);color:var(--drivelog-text-primary);font:var(--drivelog-headline);display:flex;align-items:center;justify-content:center;font-family:var(--drivelog-font-family)}
+.key.small{font:var(--drivelog-label);color:var(--drivelog-text-secondary)}
+.key.pressed{background:var(--drivelog-button-secondary-background-pressed);transform:scale(.95)}
+.key .i{width:52px;height:52px}
+.p .keypad{gap:16px;flex:none}
+.p .key{height:112px}
+
+/* A03 */
+.banner{height:136px;flex:none;border-radius:var(--drivelog-radius-large);background:var(--drivelog-purpose-unclassified-background);box-shadow:inset 0 0 0 2px var(--drivelog-status-warning);padding:0 28px 0 40px;display:flex;align-items:center;gap:24px}
+.banner .i{width:52px;height:52px;color:var(--drivelog-purpose-unclassified-text)}
+.banner .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.banner .tt{font:var(--drivelog-title);color:var(--drivelog-purpose-unclassified-text)}
+.p .banner{height:auto;flex-direction:column;align-items:stretch;padding:32px;gap:24px}
+.p .banner .row{display:flex;gap:20px;align-items:center}
+.cards{display:flex;gap:32px;flex:1;min-height:0}
+.month{width:1020px;flex:none;display:flex;flex-direction:column;gap:36px}
+.month .hd{display:flex;align-items:center;gap:20px}
+.nums{display:flex;gap:96px}
+.num{display:flex;flex-direction:column;gap:8px}
+.num .v{display:flex;align-items:baseline;gap:12px}
+.bar{height:24px;border-radius:999px;overflow:hidden;display:flex;gap:4px}
+.bar span{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:16px 40px}
+.legend div{display:flex;align-items:center;gap:12px;font:var(--drivelog-label);color:var(--drivelog-text-secondary)}
+.legend i{width:20px;height:20px;border-radius:6px;display:block}
+.legend b{font:var(--drivelog-body-strong);color:var(--drivelog-text-primary)}
+.recent{flex:1;min-width:0;display:flex;flex-direction:column}
+.recent .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.trip{height:112px;display:flex;align-items:center;gap:20px;border-top:2px solid var(--drivelog-border)}
+.trip:first-of-type{border-top:0}
+.trip .w{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.trip .w .t-ls{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trip .r{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.p .cards{flex-direction:column;gap:24px}
+.p .month{width:auto;gap:28px;padding:40px}
+.p .nums{gap:48px}
+.p .recent{padding:40px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 2.8v5.7c0 4.6-3.2 8-7.5 9.5-4.3-1.5-7.5-4.9-7.5-9.5V5.8z"/><path d="M8.6 12.1l2.4 2.4 4.4-4.6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.2A9.8 9.8 0 0 1 12 5c5 0 8.5 4.4 9.5 7-.4 1-1.2 2.4-2.4 3.7M6.3 6.6C4.5 7.9 3.1 9.8 2.5 12c1 2.6 4.5 7 9.5 7 1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><path d="M12 12h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11M11 10.5V5a1.5 1.5 0 0 1 3 0v5.5M14 10.5V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5a5.5 5.5 0 0 1-4.7-2.6L4 14.3a1.5 1.5 0 0 1 2.4-1.8L8 14"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.5 2.5a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9a7.5 7.5 0 0 0 2.6 1.5l.5 2.5h4l.5-2.5a7.5 7.5 0 0 0 2.6-1.5l2.3.9 2-3.4z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 18.5z"/><path d="M9.5 14l2 2 3.5-3.6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v5M12 16.3h.01"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M10 6.5L4.5 12l5.5 5.5M5 12h14.5"/><path d="M19.5 7.5v9" opacity="0"/></symbol>
+  <symbol id="i-backspace" viewBox="0 0 24 24"><path d="M8.5 5.5H20v13H8.5L3 12z"/><path d="M11.5 9.5l5 5M16.5 9.5l-5 5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4.5 16.5v-4l1.8-4.6A2 2 0 0 1 8.2 6.5h7.6a2 2 0 0 1 1.9 1.4l1.8 4.6v4"/><path d="M3.5 16.5h17v2.5h-3v-1.5h-11V19h-3z"/><path d="M4.5 12.5h15M7.5 14.5h1M15.5 14.5h1"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V19.5h4.5v-5h3v5H18V9.5"/></symbol>
+  <symbol id="i-work" viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.6 3.8-5.6 7.5-5.6s6.7 2 7.5 5.6"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6M12 16.6h.01"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-odo" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/><path d="M7.5 19.5h9" /></symbol>
+</svg>
+
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>DriveLog 화면 A1–A3</h1>
+      <p>콘셉트 Quiet Navy · 2560×1440 에뮬레이터 기준 · 회색 빗금은 시스템 UI 자리(가정값). 각 화면은 Landscape(전체 앱 창)와 Portrait(2분할 절반) 두 가지.</p>
+    </div>
+    <div class="tools" role="group" aria-label="보기 설정">
+      <a href="#A01">A1 동의</a><a href="#A02">A2 연결</a><a href="#A03">A3 홈</a>
+      <button type="button" id="theme-dark" aria-pressed="true">다크</button>
+      <button type="button" id="theme-light" aria-pressed="false">라이트</button>
+    </div>
+  </header>
+
+  <!-- ================= A01 ================= -->
+  <section id="A01">
+    <div class="sh"><span class="code">A01 · 정차 중</span><h2>첫 실행 개인정보 동의</h2></div>
+    <ul class="notes">
+      <li><b>동의 처리</b> — "동의하고 시작"을 누를 때만. 뒤로가기·빈 곳 터치·앱 전환은 동의 아님</li>
+      <li><b>주행 중</b> — 동의 내용을 숨기고 "정차 후 시작할 수 있어요"만 표시, 터치 요소 없음</li>
+      <li><b>Portrait</b> — 내용은 스크롤, 버튼 두 개는 아래 고정</li>
+    </ul>
+    <div class="flabel">Landscape · 1800×1224</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div>
+      <div class="win">
+        <div class="top"><div class="l"><span class="t-h">시작하기 전에</span></div><span class="chip neutral">단계 1 / 2</span></div>
+        <div class="a01">
+          <div class="scroll">
+            <div class="scrollbar"></div>
+            <div class="card" style="margin-right:24px">
+              <div class="ctitle"><svg class="i"><use href="#i-list"/></svg><span>수집하는 정보</span></div>
+              <div class="rows">
+                <div class="k">주행거리</div><div class="v">운행 전·후 계기판 누적거리 (차량에서 직접 읽음)</div>
+                <div class="k">운행 시각</div><div class="v">시작·종료 시각</div>
+                <div class="k">출발·도착지</div><div class="v">주소 (업무 운행만)</div>
+                <div class="k">배터리 잔량</div><div class="v">운행 전·후 (%)</div>
+                <div class="k">차량 식별</div><div class="v">차대번호(VIN). 확인되지 않으면 앱이 만든 기기 ID</div>
+                <div class="k">운행 용도</div><div class="v">출퇴근 / 일반업무 / 비업무 (직접 선택)</div>
+              </div>
+            </div>
+            <div class="card" style="margin-right:24px">
+              <div class="ctitle"><svg class="i"><use href="#i-eyeoff"/></svg><span>수집하지 않는 정보</span></div>
+              <div class="rows">
+                <div class="k">실시간 위치</div><div class="v">이동 중 위치와 경로는 저장하지 않아요</div>
+                <div class="k">비업무 주소</div><div class="v">비업무 운행은 거리만 기록해요</div>
+              </div>
+            </div>
+            <div class="card" style="margin-right:24px">
+              <div class="ctitle"><svg class="i"><use href="#i-target"/></svg><span>이용 목적</span></div>
+            </div>
+          </div>
+          <div class="side">
+            <div style="display:flex;align-items:center;gap:24px"><div class="appmark"><svg class="i" style="color:#E5DACB"><use href="#i-odo"/></svg></div><span class="t-t">자동 운행기록부</span></div>
+            <div class="sum">
+              <div><svg class="i"><use href="#i-check"/></svg>주행거리는 차가 직접 기록해요</div>
+              <div><svg class="i"><use href="#i-check"/></svg>실시간 위치는 수집하지 않아요</div>
+              <div><svg class="i"><use href="#i-check"/></svg>설정에서 언제든 철회할 수 있어요</div>
+            </div>
+            <div style="flex:1"></div>
+            <button class="btn lg primary">동의하고 시작</button>
+            <button class="btn secondary">동의하지 않음</button>
+            <div class="t-ls c3">‘동의하고 시작’을 눌러야 동의로 처리돼요</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="flabel">Portrait · 900×1224 (2분할)</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div><div class="sys other">다른 앱 (2분할)</div>
+      <div class="win p">
+        <div class="top"><span class="t-t">시작하기 전에</span><span class="chip neutral">1 / 2</span></div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:24px;position:relative">
+          <div class="sum">
+            <div><svg class="i"><use href="#i-check"/></svg>주행거리는 차가 직접 기록해요</div>
+            <div><svg class="i"><use href="#i-check"/></svg>실시간 위치는 수집하지 않아요</div>
+            <div><svg class="i"><use href="#i-check"/></svg>설정에서 언제든 철회할 수 있어요</div>
+          </div>
+          <div class="card" style="padding:40px">
+            <div class="ctitle"><svg class="i"><use href="#i-list"/></svg><span>수집하는 정보</span></div>
+            <div class="rows" style="grid-template-columns:200px 1fr">
+              <div class="k">주행거리</div><div class="v">운행 전·후 계기판 누적거리</div>
+              <div class="k">운행 시각</div><div class="v">시작·종료 시각</div>
+              <div class="k">출발·도착지</div><div class="v">주소 (업무 운행만)</div>
+              <div class="k">배터리 잔량</div><div class="v">운행 전·후 (%)</div>
+            </div>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn lg primary">동의하고 시작</button>
+          <button class="btn secondary">동의하지 않음</button>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ================= A02 ================= -->
+  <section id="A02">
+    <div class="sh"><span class="code">A02 · 정차 중</span><h2>차량 연결</h2></div>
+    <ul class="notes">
+      <li><b>입력</b> — 앱 키패드만 사용. 6자리가 차면 자동 확인, 별도 연결 버튼 없음</li>
+      <li><b>상태</b> — Landscape는 입력 중, Portrait는 코드 오류 상태</li>
+      <li><b>주행 중</b> — 입력 중이던 숫자를 지우고 "정차 후 연결할 수 있어요"로 교체</li>
+    </ul>
+    <div class="flabel">Landscape · 입력 중 (5번 키 누름 상태)</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div>
+      <div class="win">
+        <div class="top"><div class="l"><span class="t-h">차량 연결</span></div><span class="chip neutral">단계 2 / 2</span></div>
+        <div class="a02">
+          <div class="left">
+            <div class="t-h">연결 코드를 입력하세요</div>
+            <div class="t-b c2">관리자 웹 › 차량 › 연결 코드 발급에서 받은 6자리 숫자예요.<br>코드는 [10분] 동안 유효해요.</div>
+            <div class="cells"><div class="cell filled">4</div><div class="cell filled">8</div><div class="cell filled">2</div><div class="gap"></div><div class="cell cur"></div><div class="cell"></div><div class="cell"></div></div>
+            <div class="statusline"></div>
+            <div class="divider"></div>
+            <div class="t-ls c3" style="display:flex;align-items:center;gap:12px"><svg class="i" style="width:32px;height:32px"><use href="#i-car"/></svg>이 차량: 차대번호 미확인 · 기기 ID로 등록돼요</div>
+          </div>
+          <div class="keypad">
+            <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+            <button class="key">4</button><button class="key pressed">5</button><button class="key">6</button>
+            <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+            <button class="key small">전체 지움</button><button class="key">0</button><button class="key" aria-label="한 글자 지움"><svg class="i"><use href="#i-backspace"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="flabel">Portrait · 오류: 코드 틀림</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div><div class="sys other">다른 앱 (2분할)</div>
+      <div class="win p" style="gap:24px">
+        <div class="top"><span class="t-t">차량 연결</span><span class="chip neutral">2 / 2</span></div>
+        <div class="t-t">연결 코드를 입력하세요</div>
+        <div class="cells"><div class="cell err">4</div><div class="cell err">8</div><div class="cell err">2</div><div class="gap" style="width:16px"></div><div class="cell err">9</div><div class="cell err">1</div><div class="cell err">7</div></div>
+        <div class="statusline err"><svg class="i"><use href="#i-alert"/></svg>코드가 맞지 않아요. 다시 확인해 주세요</div>
+        <div class="keypad">
+          <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+          <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+          <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+          <button class="key small">전체 지움</button><button class="key">0</button><button class="key" aria-label="한 글자 지움"><svg class="i"><use href="#i-backspace"/></svg></button>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ================= A03 ================= -->
+  <section id="A03">
+    <div class="sh"><span class="code">A03 · 정차 중</span><h2>홈</h2></div>
+    <ul class="notes">
+      <li><b>맨 위</b> — 미분류 운행이 있을 때만 분류 배너. 화면의 유일한 샌드 버튼</li>
+      <li><b>업무사용비율</b> — (출퇴근 + 일반업무) ÷ 총 주행거리. 예시 1,022.7 ÷ 1,284.6 = 79.6%</li>
+      <li><b>주행 중</b> — 홈 전체를 A04 주행 중 화면으로 즉시 교체</li>
+    </ul>
+    <div class="flabel">Landscape · 미분류 3건 (예시 데이터)</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div>
+      <div class="win">
+        <div class="top"><div class="l"><span class="t-h">자동 운행기록부</span></div><div class="l"><span class="chip neutral"><svg class="i"><use href="#i-cloud"/></svg>동기화됨</span><button class="ibtn" aria-label="설정"><svg class="i"><use href="#i-gear"/></svg></button></div></div>
+        <div class="banner">
+          <svg class="i"><use href="#i-help"/></svg>
+          <div class="txt"><span class="tt">분류하지 않은 운행 3건</span><span class="t-b c2">가장 오래된 운행: 10/24 21:10</span></div>
+          <button class="btn sand" style="width:360px">지금 분류하기</button>
+        </div>
+        <div class="cards">
+          <div class="card month">
+            <div class="hd"><span class="t-t">10월</span><span class="chip integrity"><svg class="i"><use href="#i-shield"/></svg>차량 기록</span></div>
+            <div class="nums">
+              <div class="num"><span class="t-l c2">총 주행거리</span><span class="v"><span class="t-d">1,284.6</span><span class="t-t c2">km</span></span></div>
+              <div class="num"><span class="t-l c2">업무사용비율 · 미분류 제외</span><span class="v"><span class="t-d">79.6</span><span class="t-t c2">%</span></span></div>
+            </div>
+            <div class="bar" role="img" aria-label="출퇴근 32.1%, 일반업무 47.5%, 비업무 17.6%, 미분류 2.8%">
+              <span style="width:32.07%;background:var(--drivelog-purpose-commute-background)"></span><span style="width:47.54%;background:var(--drivelog-purpose-business-background)"></span><span style="width:17.62%;background:var(--drivelog-purpose-personal-background)"></span><span style="width:2.77%;background:var(--drivelog-border-strong)"></span>
+            </div>
+            <div class="legend">
+              <div><i style="background:var(--drivelog-purpose-commute-background)"></i>출퇴근 <b>412.0</b></div>
+              <div><i style="background:var(--drivelog-purpose-business-background)"></i>일반업무 <b>610.7</b></div>
+              <div><i style="background:var(--drivelog-purpose-personal-background)"></i>비업무 <b>226.3</b></div>
+              <div><i style="background:var(--drivelog-border-strong)"></i>미분류 <b>35.6</b></div>
+            </div>
+            <div style="flex:1"></div>
+            <button class="btn secondary" style="align-self:flex-start"><svg class="i"><use href="#i-list"/></svg>월별 운행기록부 보기</button>
+          </div>
+          <div class="card recent">
+            <div class="hd"><span class="t-t">최근 운행</span><button class="btn textbtn">전체 보기</button></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/26 09:12</span><span class="t-ls c3">본사 → 거래처 A</span></div><div class="r"><span class="t-ts">23.4 km</span><span class="chip business"><svg class="i"><use href="#i-work"/></svg>일반업무</span></div></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/25 18:40</span><span class="t-ls c3">거래처 B → 본사</span></div><div class="r"><span class="t-ts">18.2 km</span><span class="chip unclassified"><svg class="i"><use href="#i-help"/></svg>미분류</span></div></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/25 08:05</span><span class="t-ls c3">자택 → 본사</span></div><div class="r"><span class="t-ts">17.9 km</span><span class="chip commute"><svg class="i"><use href="#i-home"/></svg>출퇴근</span></div></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/24 21:10</span><span class="t-ls c3">주소 저장 안 함</span></div><div class="r"><span class="t-ts">9.8 km</span><span class="chip personal"><svg class="i"><use href="#i-person"/></svg>비업무</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="flabel">Portrait · 미분류 3건</div>
+    <div class="frame"><div class="screen car">
+      <div class="sys status">상태 표시줄 · 시스템</div><div class="sys drive">드라이빙뷰<br>시스템</div><div class="sys gnb">GNB 앱·공조 바 · 시스템</div><div class="sys other">다른 앱 (2분할)</div>
+      <div class="win p" style="gap:24px">
+        <div class="top"><span class="t-t">자동 운행기록부</span><div class="l" style="gap:12px"><span class="chip neutral" aria-label="동기화됨"><svg class="i"><use href="#i-cloud"/></svg></span><button class="ibtn" aria-label="설정"><svg class="i"><use href="#i-gear"/></svg></button></div></div>
+        <div class="banner">
+          <div class="row"><svg class="i"><use href="#i-help"/></svg><span class="tt">분류하지 않은 운행 3건</span></div>
+          <button class="btn sand">지금 분류하기</button>
+        </div>
+        <div class="cards">
+          <div class="card month">
+            <div class="hd"><span class="t-t">10월</span><span class="chip integrity"><svg class="i"><use href="#i-shield"/></svg>차량 기록</span></div>
+            <div class="nums">
+              <div class="num"><span class="t-l c2">총 주행거리</span><span class="v"><span class="t-h">1,284.6</span><span class="t-ts c2">km</span></span></div>
+              <div class="num"><span class="t-l c2">업무사용비율</span><span class="v"><span class="t-h">79.6</span><span class="t-ts c2">%</span></span></div>
+            </div>
+            <div class="bar" role="img" aria-label="출퇴근 32.1%, 일반업무 47.5%, 비업무 17.6%, 미분류 2.8%">
+              <span style="width:32.07%;background:var(--drivelog-purpose-commute-background)"></span><span style="width:47.54%;background:var(--drivelog-purpose-business-background)"></span><span style="width:17.62%;background:var(--drivelog-purpose-personal-background)"></span><span style="width:2.77%;background:var(--drivelog-border-strong)"></span>
+            </div>
+          </div>
+          <div class="card recent">
+            <div class="hd"><span class="t-t">최근 운행</span><button class="btn textbtn">전체 보기</button></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/26 09:12</span><span class="t-ls c3">본사 → 거래처 A</span></div><div class="r"><span class="t-ts">23.4 km</span><span class="chip business"><svg class="i"><use href="#i-work"/></svg>일반업무</span></div></div>
+            <div class="trip"><div class="w"><span class="t-bs">10/25 18:40</span><span class="t-ls c3">거래처 B → 본사</span></div><div class="r"><span class="t-ts">18.2 km</span><span class="chip unclassified"><svg class="i"><use href="#i-help"/></svg>미분류</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+// 프레임 크기에 맞춰 2560×1440 화면을 축소
+const fit=()=>document.querySelectorAll('.frame').forEach(f=>f.firstElementChild.style.setProperty('--s',f.clientWidth/2560));
+fit(); try{new ResizeObserver(fit).observe(document.body)}catch(e){addEventListener('resize',fit)}
+// 차량 화면 테마 전환 (페이지는 다크 고정)
+const setTheme=t=>{document.querySelectorAll('.car').forEach(c=>c.dataset.theme=t);document.getElementById('theme-dark').setAttribute('aria-pressed',t==='dark');document.getElementById('theme-light').setAttribute('aria-pressed',t==='light');try{localStorage.setItem('dl-theme',t)}catch(e){}};
+document.getElementById('theme-dark').onclick=()=>setTheme('dark');
+document.getElementById('theme-light').onclick=()=>setTheme('light');
+let saved='dark';try{saved=localStorage.getItem('dl-theme')||'dark'}catch(e){} setTheme(saved);
+</script>

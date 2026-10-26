@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 앱 아이콘: 직접 그린 운행기록부 장부 + 자동 완료 체크 (외부 아이콘 미사용) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M41,31H67A4,4 0,0 1,71 35V73A4,4 0,0 1,67 77H41A4,4 0,0 1,37 73V35A4,4 0,0 1,41 31Z" />
+    <path
+        android:pathData="M43,41H65M43,49H65M43,57H57"
+        android:strokeWidth="3"
+        android:strokeColor="#0B3D5C"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M51,67L55.5,71.5L65,62"
+        android:strokeWidth="3.5"
+        android:strokeColor="#2BB673"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

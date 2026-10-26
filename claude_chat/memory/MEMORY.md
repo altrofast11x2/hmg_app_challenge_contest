@@ -1,0 +1,9 @@
+- [User profile](user-profile.md) — Android 입문자(JS 경험), 팀 AltroStudio, 단계마다 멈추고 보고
+- [Respond in Korean](respond-in-korean.md) — 모든 설명은 한국어로만 (영어 섞이면 사용자가 지적함)
+- [DriveLog project](drivelog-project.md) — 아이디어 '자동 운행기록부' 확정, 명세는 claude_chat/SPEC.md, 진행 단계
+- [Design collaboration](design-collaboration.md) — 디자인 담당은 claude.ai "Claude 앱 개발 연결" 채팅, design/ 폴더와 REQUESTS.md로 소통
+- [Git branch workflow](git-branch-workflow.md) — hmg_app_challenge_contest의 altrofast11x2 브랜치, 백업 altrofast11x2_backup, push 전 확인
+- [Secrets policy](secrets-policy.md) — 비밀값 커밋·APK 금지 (10/24 "API 키 앱 내장 허용"을 대체)
+- [No browser on desktop 1](no-browser-on-desktop1.md) — 브라우저 탭·창을 띄우지 말고 Virtual Console은 HTTP API(curl)로
+- [Notify when done](notify-when-done.md) — 단계가 끝나 사용자를 기다릴 때 msg 명령으로 PC에 알림 창 띄우기
+- [Pleos dev environment](pleos-dev-environment.md) — JDK 17 직접 지정, AVD user 10, MSYS 경로, SDK 함정

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- SDK 연결 확인 화면. 기어 D에서도 값 변화를 보려고 주의 분산 최적화로 선언하고, 버튼은 주행 중에 잠근다 -->
+        <activity
+            android:name=".debug.SdkCheckActivity"
+            android:exported="true"
+            android:label="@string/sdk_check_label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+    </application>
+
+</manifest>

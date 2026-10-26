@@ -1,0 +1,8 @@
+# local.properties 로 복사해서 채운다. local.properties 는 PC마다 다르고 커밋하지 않는다.
+# sdk.dir 은 Android Studio가 자동으로 넣는다.
+sdk.dir=C\:\\Users\\<사용자>\\AppData\\Local\\Android\\Sdk
+
+# Supabase 프로젝트 주소와 공개 키 (Project Settings > API Keys 의 Publishable key(sb_publishable_...) 또는 Legacy 탭의 anon 키).
+# 공개 키는 앱에 들어가도 되는 키이고 데이터 보호는 RLS가 맡는다. service_role 키는 절대 넣지 않는다.
+supabase.url=https://<project-ref>.supabase.co
+supabase.anonKey=

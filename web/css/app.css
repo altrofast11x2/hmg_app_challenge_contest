@@ -93,16 +93,18 @@ label input { font: var(--drivelog-web-body); color: var(--drivelog-text-primary
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--drivelog-spacing-small);
   padding: var(--drivelog-spacing-small) var(--drivelog-spacing-large);
   background: var(--drivelog-surface);
   border-bottom: var(--drivelog-border-width) solid var(--drivelog-border);
 }
-.brand { font: var(--drivelog-web-title); }
+.brand { font: var(--drivelog-web-title); white-space: nowrap; }
 .org-name { color: var(--drivelog-text-secondary); }
 .spacer { flex: 1; }
-.user { color: var(--drivelog-text-secondary); }
+.user { color: var(--drivelog-text-secondary); white-space: nowrap; }
+.topbar .button-text { white-space: nowrap; }
 
 .tabs { display: flex; gap: var(--drivelog-spacing-extra-small); padding: 0 var(--drivelog-spacing-large); background: var(--drivelog-surface); border-bottom: var(--drivelog-border-width) solid var(--drivelog-border); }
 .tab { background: none; border: 0; border-bottom: calc(var(--drivelog-border-width) * 2) solid transparent; border-radius: 0; color: var(--drivelog-text-secondary); padding: var(--drivelog-spacing-small) var(--drivelog-spacing-medium); }
@@ -112,6 +114,8 @@ main > .content { max-width: 1280px; margin: 0 auto; padding: var(--drivelog-spa
 
 .toolbar { display: flex; align-items: center; gap: var(--drivelog-spacing-extra-small); flex-wrap: wrap; margin-bottom: var(--drivelog-spacing-medium); }
 .month { margin: 0 var(--drivelog-spacing-extra-small); min-width: 8em; text-align: center; }
+.period { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--drivelog-spacing-extra-small); color: var(--drivelog-text-secondary); }
+.period-label { font: var(--drivelog-web-label); margin-left: var(--drivelog-spacing-small); white-space: nowrap; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--drivelog-spacing-small); margin-bottom: var(--drivelog-spacing-medium); }
 .stat { background: var(--drivelog-surface); border-radius: var(--drivelog-radius-medium); padding: var(--drivelog-spacing-medium); display: flex; flex-direction: column; gap: var(--drivelog-spacing-extra-small); box-shadow: var(--drivelog-elevation-card); }

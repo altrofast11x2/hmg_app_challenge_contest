@@ -1,7 +1,9 @@
 // 앱의 LogbookBuilderTest·LogbookCsvTest와 같은 기대값으로 웹 계산을 확인한다
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOM, buildLogbook, csvFileName, kstParts, logbookCsv, monthRange } from '../js/logbook.js';
+import {
+  BOM, buildLogbook, csvFileName, kstParts, logbookCsv, monthPeriod, periodLabel, periodMonth, periodRange, pickPeriod,
+} from '../js/logbook.js';
 
 // 2026-10-26(월) 09:00 한국 시간
 const MON_9AM = Date.UTC(2026, 9, 26, 0, 0);
@@ -25,10 +27,29 @@ const names = { drivers: { d1: '기본 운전자' }, vehicles: { v1: '데모 차
 const lines = (csv) => csv.slice(BOM.length).split('\r\n');
 
 test('달의 범위는 한국 시간 1일 0시부터 다음 달 1일 0시 전까지다', () => {
-  const [from, to] = monthRange(2026, 10);
+  const [from, to] = periodRange(monthPeriod(2026, 10));
   assert.equal(from, Date.UTC(2026, 8, 30, 15, 0));
   assert.equal(to, Date.UTC(2026, 9, 31, 15, 0));
   assert.deepEqual(kstParts(from), { date: '2026-10-01', weekday: '목', time: '00:00' });
+  assert.deepEqual(monthPeriod(2028, 2), { from: '2028-02-01', to: '2028-02-29' });
+});
+
+test('날짜로 고른 기간은 끝 날짜 하루를 포함하고, 시작과 끝이 바뀌면 바로잡는다', () => {
+  const [from, to] = periodRange({ from: '2026-10-03', to: '2026-10-03' });
+  assert.equal(to - from, 24 * 60 * 60 * 1000);
+  assert.deepEqual(kstParts(from).date, '2026-10-03');
+  assert.deepEqual(pickPeriod('2026-10-17', '2026-10-03'), { period: { from: '2026-10-03', to: '2026-10-17' } });
+  assert.ok(pickPeriod('2026-10-03', '').error);
+  assert.ok(pickPeriod('2025-01-01', '2026-10-01').error, '366일이 넘는 기간은 막는다');
+  assert.deepEqual(pickPeriod('2025-10-01', '2026-09-30'), { period: { from: '2025-10-01', to: '2026-09-30' } });
+});
+
+test('한 달 전체를 고르면 달로 보이고, 아니면 날짜 범위로 보인다', () => {
+  assert.deepEqual(periodMonth({ from: '2026-10-01', to: '2026-10-31' }), { year: 2026, month: 10 });
+  assert.equal(periodMonth({ from: '2026-10-01', to: '2026-10-30' }), null);
+  assert.equal(periodLabel({ from: '2026-10-01', to: '2026-10-31' }), '2026년 10월');
+  assert.equal(periodLabel({ from: '2026-10-03', to: '2026-10-17' }), '2026.10.03 – 2026.10.17');
+  assert.equal(periodLabel({ from: '2026-10-03', to: '2026-10-03' }), '2026.10.03');
 });
 
 test('업무용 사용거리는 출퇴근과 일반업무만 더하고 미분류·비업무는 넣지 않는다', () => {
@@ -84,6 +105,7 @@ test('여러 차량을 함께 내보낼 때만 차량 열을 넣는다', () => {
 });
 
 test('CSV 파일 이름에 쓸 수 없는 글자는 바꾼다', () => {
-  assert.equal(csvFileName(2026, 10), 'DriveLog_2026-10.csv');
-  assert.equal(csvFileName(2026, 3, '영업 1호/차'), 'DriveLog_2026-03_영업_1호_차.csv');
+  assert.equal(csvFileName(monthPeriod(2026, 10)), 'DriveLog_2026-10.csv');
+  assert.equal(csvFileName(monthPeriod(2026, 3), '영업 1호/차'), 'DriveLog_2026-03_영업_1호_차.csv');
+  assert.equal(csvFileName({ from: '2026-10-03', to: '2026-10-17' }), 'DriveLog_2026-10-03_2026-10-17.csv');
 });

@@ -12,12 +12,54 @@ export const PURPOSE_LABELS = {
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-/** 그 달에 시작한 운행을 고르는 범위 [from, to) (epoch 밀리초) */
-export function monthRange(year, month) {
-  return [Date.UTC(year, month - 1, 1) - KST_OFFSET_MS, Date.UTC(year, month, 1) - KST_OFFSET_MS];
-}
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 한 번에 고를 수 있는 기간 (서버 응답이 너무 커지지 않게, 운행기록부 한 사업연도 정도) */
+export const MAX_PERIOD_DAYS = 366;
 
 const pad = (n) => String(n).padStart(2, '0');
+
+/**
+ * 기간 { from: '2026-10-03', to: '2026-10-17' } (한국 날짜, 끝 날짜 포함)에 시작한 운행을 고르는 범위 [from, to) (epoch 밀리초)
+ */
+export function periodRange({ from, to }) {
+  const [y1, m1, d1] = from.split('-').map(Number);
+  const [y2, m2, d2] = to.split('-').map(Number);
+  return [Date.UTC(y1, m1 - 1, d1) - KST_OFFSET_MS, Date.UTC(y2, m2 - 1, d2 + 1) - KST_OFFSET_MS];
+}
+
+/** 그 달 전체 기간 { from: '2026-10-01', to: '2026-10-31' } */
+export function monthPeriod(year, month) {
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return { from: `${year}-${pad(month)}-01`, to: `${year}-${pad(month)}-${pad(lastDay)}` };
+}
+
+/** 기간이 한 달 전체면 { year, month }, 아니면 null */
+export function periodMonth(period) {
+  const [year, month] = period.from.split('-').map(Number);
+  const whole = monthPeriod(year, month);
+  return whole.from === period.from && whole.to === period.to ? { year, month } : null;
+}
+
+/**
+ * 날짜 칸 두 개에서 고른 값을 기간으로 바꾼다. 시작이 끝보다 늦으면 서로 바꾼다.
+ * 반환: { period } 또는 { error: '화면에 보여 줄 문장' }
+ */
+export function pickPeriod(from, to) {
+  if (!from || !to) return { error: '시작 날짜와 끝 날짜를 모두 고르세요.' };
+  const period = from <= to ? { from, to } : { from: to, to: from };
+  const [start, end] = periodRange(period);
+  if ((end - start) / DAY_MS > MAX_PERIOD_DAYS) return { error: `기간은 ${MAX_PERIOD_DAYS}일까지 고를 수 있어요.` };
+  return { period };
+}
+
+/** 화면 제목: 한 달 전체면 '2026년 10월', 아니면 '2026.10.03 – 2026.10.17' */
+export function periodLabel(period) {
+  const month = periodMonth(period);
+  if (month) return `${month.year}년 ${month.month}월`;
+  const dotted = (date) => date.replaceAll('-', '.');
+  return period.from === period.to ? dotted(period.from) : `${dotted(period.from)} – ${dotted(period.to)}`;
+}
 
 /** epoch 밀리초 → 한국 시간 { date: '2026-10-26', weekday: '월', time: '14:05' } */
 export function kstParts(ms) {
@@ -82,7 +124,7 @@ export function buildLogbook(trips, names = {}) {
   };
 }
 
-export const BOM = '﻿';
+export const BOM = '\uFEFF';
 
 const HEADER = [
   '사용일자', '사용자', '주행 전 계기판 거리(km)', '주행 후 계기판 거리(km)', '주행거리(km)',
@@ -124,9 +166,10 @@ export function logbookCsv(logbook, { includeVehicle = false } = {}) {
   return BOM + [header, ...rows, ...footer].map((line) => line.map(escapeCsv).join(',')).join('\r\n') + '\r\n';
 }
 
-/** 파일 이름에 쓸 수 없는 글자는 _로 바꾼다 */
-export function csvFileName(year, month, vehicleName) {
-  const base = `DriveLog_${year}-${pad(month)}`;
+/** 한 달 전체면 DriveLog_2026-10, 아니면 DriveLog_2026-10-03_2026-10-17. 파일 이름에 쓸 수 없는 글자는 _로 바꾼다 */
+export function csvFileName(period, vehicleName) {
+  const month = periodMonth(period);
+  const base = month ? `DriveLog_${month.year}-${pad(month.month)}` : `DriveLog_${period.from}_${period.to}`;
   return vehicleName ? `${base}_${vehicleName.replace(/[\\/:*?"<>|\s]+/g, '_')}.csv` : `${base}.csv`;
 }
 

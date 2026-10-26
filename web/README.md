@@ -5,7 +5,7 @@
 | 화면 | 할 수 있는 것 |
 |---|---|
 | 로그인 | 관리자 아이디(예: AltroStudio) 또는 이메일 + 비밀번호. 아이디는 웹이 내부 주소 `<아이디>@drivelog.invalid`로 바꿔 로그인한다 (관리자로 등록된 조직이 없으면 안내) |
-| 운행기록부 | 월 이동, 차량 고르기(전체/한 대), 월 요약(총 주행거리·업무용 사용거리·업무사용비율·미분류), 국세청 서식 열의 표, CSV 내려받기 |
+| 운행기록부 | 월 이동·달 바로 고르기, 날짜로 기간 고르기(시작~끝, 366일까지), 차량 고르기(전체/한 대), 기간 요약(총 주행거리·업무용 사용거리·업무사용비율·미분류), 국세청 서식 열의 표, CSV 내려받기 |
 | 기업 등록 (개발자 계정) | 기업 정보(기업명·사업자등록번호·대표자·주소·담당자)와 기업 관리자 계정(아이디·초기 비밀번호)을 만들어 등록, 등록된 기업 목록과 차량 수 |
 | 차량 | **연결 코드 발급**(6자리, 10분 유효, 1회용, 남은 시간 표시), 지금 쓸 수 있는 코드 목록(시연용 코드 포함), 연결된 차량 목록(이름, VIN 또는 "VIN 미확인", 기본 운전자, 연결 상태), 연결 해제 |
 
@@ -44,7 +44,7 @@ vercel deploy --cwd web/dist --prod --yes
 |---|---|
 | `index.html` | 진입점. Content-Security-Policy로 이 사이트의 파일과 Supabase API만 허용 |
 | `js/api.js` | 로그인·토큰 갱신·조회·코드 발급·연결 해제 (Supabase REST) |
-| `js/logbook.js` | 월별 운행기록부 계산과 CSV. 앱의 `LogbookBuilder`·`LogbookCsv`와 같은 규칙 (DOM을 쓰지 않아 Node에서 시험) |
+| `js/logbook.js` | 운행기록부 계산(달·날짜 기간)과 CSV. 앱의 `LogbookBuilder`·`LogbookCsv`와 같은 규칙 (DOM을 쓰지 않아 Node에서 시험) |
 | `js/app.js` | 화면. 서버에서 온 글자는 `textContent`로만 넣는다 |
 | `css/tokens.css` | `design/tokens/tokens.css` 복사본 (디자인이 바뀌면 다시 복사한다) |
 | `css/app.css` | 스타일. 색·글자·간격·모서리는 tokens.css의 `drivelog_` 토큰만 쓰고, 앱과 같은 남색 다크 테마·Asta Sans(Google Fonts) |

@@ -1,7 +1,9 @@
 // 관리자 웹 화면: 로그인 → 운행기록부 / 차량(연결 코드 발급 포함)
 // 서버에서 온 글자는 항상 textContent로 넣는다 (innerHTML을 쓰지 않아 스크립트 삽입을 막는다).
 import * as api from './api.js';
-import { buildLogbook, csvFileName, km, kstParts, logbookCsv, monthRange, PURPOSE_LABELS } from './logbook.js';
+import {
+  buildLogbook, csvFileName, km, kstParts, logbookCsv, monthPeriod, periodLabel, periodMonth, periodRange, pickPeriod, PURPOSE_LABELS,
+} from './logbook.js';
 
 const root = document.getElementById('app');
 
@@ -15,7 +17,7 @@ const state = {
   orgs: [],
   org: null,
   tab: 'logbook',
-  month: currentMonth(),
+  period: monthPeriod(currentMonth().year, currentMonth().month), // 운행기록부 기간 (한국 날짜, 끝 날짜 포함)
   vehicleId: '', // 빈칸 = 전체 차량
   vehicles: [],
   drivers: [],
@@ -237,21 +239,42 @@ function renderMain() {
 // ─── 운행기록부 ────────────────────────────────────────────────────────
 
 async function renderLogbook(content, token) {
-  const { year, month } = state.month;
+  const { period } = state;
+  // ◀ ▶와 달 칸은 기간 시작 날짜가 든 달을 기준으로 움직인다
+  const [year, month] = period.from.split('-').map(Number);
   const now = currentMonth();
+  const today = kstParts(Date.now()).date;
   const isCurrentMonth = year === now.year && month === now.month;
+  const showMonth = (pickedYear, pickedMonth) => {
+    state.period = monthPeriod(pickedYear, pickedMonth);
+    renderMain();
+  };
   const moveMonth = (delta) => {
     const date = new Date(Date.UTC(year, month - 1 + delta, 1));
-    state.month = { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
-    renderMain();
+    showMonth(date.getUTCFullYear(), date.getUTCMonth() + 1);
   };
   const csvButton = el('button', { class: 'button-primary', disabled: true }, 'CSV 내려받기');
   const body = el('div', {}, message('불러오는 중…'));
 
+  // 날짜 칸 두 개로 기간을 고른다 (사용자 피드백 2026-10-27: 달 단위 말고 날짜로도 고르고 싶다)
+  const fromInput = el('input', { type: 'date', 'aria-label': '시작 날짜', value: period.from, max: today });
+  const toInput = el('input', { type: 'date', 'aria-label': '끝 날짜', value: period.to, max: today });
+  const applyDates = () => {
+    const picked = pickPeriod(fromInput.value, toInput.value);
+    if (picked.error) {
+      body.replaceChildren(message(picked.error));
+      return;
+    }
+    state.period = picked.period;
+    renderMain();
+  };
+  fromInput.addEventListener('change', applyDates);
+  toInput.addEventListener('change', applyDates);
+
   content.replaceChildren(
     el('div', { class: 'toolbar' },
       el('button', { class: 'button-secondary', onclick: () => moveMonth(-1), 'aria-label': '이전 달' }, '◀'),
-      el('h2', { class: 'month' }, `${year}년 ${month}월`),
+      el('h2', { class: 'month' }, periodLabel(period)),
       el('button', {
         class: 'button-secondary', onclick: () => moveMonth(1), disabled: isCurrentMonth, 'aria-label': '다음 달',
       }, '▶'),
@@ -264,10 +287,10 @@ async function renderLogbook(content, token) {
         onchange: (event) => {
           const [pickedYear, pickedMonth] = event.target.value.split('-').map(Number);
           if (!pickedYear || !pickedMonth) return;
-          state.month = { year: pickedYear, month: pickedMonth };
-          renderMain();
+          showMonth(pickedYear, pickedMonth);
         },
       }),
+      el('span', { class: 'period' }, el('span', { class: 'period-label' }, '기간'), fromInput, '~', toInput),
       el('select', {
         'aria-label': '차량',
         onchange: (event) => {
@@ -284,7 +307,7 @@ async function renderLogbook(content, token) {
   );
 
   try {
-    const [from, to] = monthRange(year, month);
+    const [from, to] = periodRange(period);
     const rows = await api.trips(state.org.id, from, to, state.vehicleId || undefined);
     if (token !== renderToken) return;
     const logbook = buildLogbook(rows, names());
@@ -292,9 +315,9 @@ async function renderLogbook(content, token) {
     csvButton.disabled = logbook.rows.length === 0;
     csvButton.addEventListener('click', () => download(
       logbookCsv(logbook, { includeVehicle: !selected }),
-      csvFileName(year, month, selected && vehicleName(selected)),
+      csvFileName(period, selected && vehicleName(selected)),
     ));
-    body.replaceChildren(logbookSummary(logbook.summary), logbookTable(logbook, !selected));
+    body.replaceChildren(logbookSummary(logbook.summary), logbookTable(logbook, !selected, periodMonth(period) != null));
   } catch (error) {
     if (token === renderToken) body.replaceChildren(failure(error) ?? '');
   }
@@ -311,8 +334,8 @@ function logbookSummary(summary) {
   );
 }
 
-function logbookTable(logbook, includeVehicle) {
-  if (logbook.rows.length === 0) return message('이 달에 기록된 운행이 없어요.');
+function logbookTable(logbook, includeVehicle, wholeMonth) {
+  if (logbook.rows.length === 0) return message(wholeMonth ? '이 달에 기록된 운행이 없어요.' : '이 기간에 기록된 운행이 없어요.');
   const headers = ['사용일자', includeVehicle && '차량', '사용자', '시간', '주행 전(km)', '주행 후(km)', '주행거리(km)',
     '출퇴근용(km)', '일반업무용(km)', '비고(방문처)', '구분'].filter(Boolean);
   return el('div', { class: 'table-wrap' }, el('table', {},

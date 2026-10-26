@@ -36,6 +36,12 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
    - Windows/Linux: `https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-sys-img.xml`
 2. `Device Manager > Create device > Automotive > Pleos Connect v2.1.0`
 3. Advanced Settings: Boot **Cold**, RAM **4 GB**. Quick boot로 실행하면 차량 데이터(VHAL)를 쓸 수 없습니다.
+4. 에뮬레이터는 Google Play 서비스(GMS)가 없는 이미지입니다.
+5. 부팅 직후 Wi-Fi가 연결된 것처럼 보여도 인터넷이 안 되는 경우가 있었습니다. 이때 Wi-Fi를 껐다 켜면 연결됩니다.
+   ```bash
+   adb shell cmd wifi set-wifi-enabled disabled
+   adb shell cmd wifi set-wifi-enabled enabled
+   ```
 
 ### Virtual Console (차량 상태 시뮬레이션)
 

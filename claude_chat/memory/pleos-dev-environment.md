@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T04:07:05.859Z
+  modified: 2026-10-26T05:03:20.189Z
 ---
 
 2026-10-22~24에 이전 폴더(C:\dev\hmg_app_challenge_contest)에서 검증하고 10-26에 DriveLog에서 다시 확인한 구성:
@@ -30,7 +30,8 @@ metadata:
 - `distractionOptimized` meta-data는 adb로 설치한 앱에도 적용된다 (기어 D에서도 화면이 가려지지 않음). D에서는 계기판에 20km/h가 표시된다.
 - Virtual Console 경고등 카드는 AAOS PARKING_BRAKE_ON을 바꾸지 않는다. 전비·연비 API는 전부 미지원이고 배터리 잔량(%)만 된다. VIN은 "invalid".
 - NaviHelper `getCurrentLocationInfo()`는 경로 안내 없이도 주소를 준다. `getDestinationInfo()`는 경로가 없으면 빈 값(0,0)을 준다.
-- 사용자가 연 브라우저 탭은 Chrome 확장이 제어하지 못한다. Virtual Console을 직접 조작할 때는 새 탭(tabs_context_mcp createIfEmpty)에서 http://127.0.0.1:8088/ → Emulation Controls를 쓴다.
+- Virtual Console은 브라우저 없이 HTTP API로 조작한다 (`adb forward tcp:8088 tcp:8088` 후): `curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Drive|Park|Reverse|Neutral"`, `curl -X PUT "http://127.0.0.1:8088/vehicle/odometer?traveled_distance_km=125"`. 다른 항목은 `GET /vehicle/catalog`의 각 기능 `write_endpoint`와 `control.field`를 보고 `PUT <write_endpoint>?<field>=<값>`. 현재 값은 `GET /vehicle/state`. 사용자가 연 브라우저 탭은 Chrome 확장이 제어하지 못한다.
+- debug 빌드는 `adb exec-out run-as com.altrostudio.drivelog --user 10 cat databases/drivelog.db`(+ -wal, -shm)로 DB를 꺼내 Python sqlite3로 확인할 수 있다 (Windows 경로는 `cygpath -w`).
 
 Pleos SDK 함정 (이전 세션 실측, 구현 전에 문서로 다시 확인할 것):
 - Nexus에는 Vehicle 2.3.1이 없다. 2.3.2를 쓴다. Pleos 이미지는 `cmdline-tools\19.0`의 sdkmanager로 설치한다.

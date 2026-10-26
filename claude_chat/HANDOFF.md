@@ -9,8 +9,12 @@
 | 1. 프로젝트 생성 | 완료: assembleDebug와 단위 테스트 성공, `Pleos_Connect_v2.1`에 설치·실행 확인 |
 | 2. 환경 점검 (GMS 확인, 문서 읽기, 구현 계획과 백엔드 제안) | 완료 (GMS 없음 → Supabase 결정) |
 | 3. SDK 연결과 debug 확인 화면 | 완료: 기어·주행 제한·계기판·잔량·주소를 에뮬레이터와 Virtual Console에서 검증. 결과는 `docs/sdk-usage.md` |
-| 4. Room, 운행 감지 상태 머신, 해시 체인, 단위 테스트 | 다음 차례 (목표 11/1) |
-| 5~9 | 계획 |
+| 4. Room, 운행 감지 상태 머신, 해시 체인, 단위 테스트 | 완료: 단위 테스트 28개 통과, 에뮬레이터에서 분류 완료·미분류 자동 종료·강제 종료 후 복원 검증. 해시 규칙은 `docs/integrity.md` |
+| 5. 동의, 주행 중 화면, 정차 후 분류, 월별 기록부, CSV, 라이선스 화면 | 다음 차례 |
+| 6~9 | 계획 |
+
+- 지금은 동의 화면이 없어서 debug 빌드의 "SDK 확인 (debug)" 화면에서 [기록 시작 (디버그: 동의 처리)]를 눌러야 기록 서비스가 켜진다. 이 에뮬레이터에는 동의 = true, 정차 대기 = 30초로 설정돼 있다.
+- Virtual Console은 브라우저 없이 `curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Drive"` 같은 HTTP API로 조작할 수 있다 (`memory/pleos-dev-environment.md`).
 
 ## 결정 사항
 

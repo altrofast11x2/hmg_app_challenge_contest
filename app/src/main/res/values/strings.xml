@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">자동 운행기록부</string>
     <string name="welcome_tagline">차가 알아서 쓰는 운행기록부</string>
+    <string name="recording_channel_name">운행 기록</string>
+    <string name="recording_notification_text">운행을 자동으로 기록하고 있습니다</string>
 </resources>

@@ -1,0 +1,197 @@
+package com.altrostudio.drivelog.domain.trip
+
+import android.util.Log
+import com.altrostudio.drivelog.data.navi.NaviArrival
+import com.altrostudio.drivelog.data.navi.NaviDataSource
+import com.altrostudio.drivelog.data.trip.TripPurpose
+import com.altrostudio.drivelog.data.trip.TripRepository
+import com.altrostudio.drivelog.data.trip.TripStatus
+import com.altrostudio.drivelog.data.vehicle.GearPosition
+import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToLong
+
+/**
+ * 운행 자동 감지. 기어 변화를 [TripStateMachine]에 넣고, 나온 할 일을 DB에 바로 저장한다.
+ * 시동이 꺼지면 앱이 갑자기 죽을 수 있어 상태가 바뀔 때마다 즉시 저장하고, 다시 시작하면 진행 중인 운행을 이어 간다.
+ * 모든 입력은 한 줄로 차례차례 처리한다 (동시에 DB를 고치지 않도록).
+ */
+class TripRecorder(
+    private val vehicle: VehicleDataSource,
+    private val navi: NaviDataSource,
+    private val trips: TripRepository,
+    private val vehicleId: suspend () -> String,
+    private val parkedTimeoutMs: () -> Long,
+    private val scope: CoroutineScope,
+    private val now: () -> Long = System::currentTimeMillis,
+    newTripId: () -> String = { UUID.randomUUID().toString() }
+) {
+
+    private val machine = TripStateMachine(parkedTimeoutMs, newTripId)
+    private val inputs = Channel<Input>(Channel.UNLIMITED)
+    private val started = AtomicBoolean(false)
+    private val _state = MutableStateFlow<TripState>(TripState.Idle)
+    val state: StateFlow<TripState> = _state.asStateFlow()
+
+    private var lastOdometerKm: Float? = null
+    private var parkedTimer: Job? = null
+
+    // 앱이 주행 중에 죽었다가 다시 켜졌다면, 마지막으로 주행을 확인한 시각을 종료 시각으로 쓴다
+    private var restoredLastSeenAt: Long? = null
+
+    fun start() {
+        if (!started.compareAndSet(false, true)) return
+        scope.launch {
+            val id = vehicleId()
+            restore()
+            launch { vehicle.odometerKm.catch { log("계기판 구독 실패", it) }.collect { inputs.send(Input.Odometer(it)) } }
+            launch { vehicle.gear.catch { log("기어 구독 실패", it) }.collect { inputs.send(Input.Event(TripEvent.GearChanged(it, now()))) } }
+            launch { navi.arrivals.catch { log("내비 도착 구독 실패", it) }.collect { inputs.send(Input.Arrival(it)) } }
+            for (input in inputs) {
+                try {
+                    handle(input, id)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    log("운행 기록 처리 실패: $input", e)
+                }
+            }
+        }
+    }
+
+    /** 정차 중 운전자가 고른 용도로 운행을 마친다. 주행 중에는 무시된다 */
+    fun classify(purpose: TripPurpose) {
+        inputs.trySend(Input.Event(TripEvent.Classified(purpose, now())))
+    }
+
+    private suspend fun restore() {
+        val active = trips.activeTrip() ?: return
+        when (active.status) {
+            TripStatus.DRIVING -> {
+                _state.value = TripState.Driving(active.id)
+                restoredLastSeenAt = active.lastSeenAt
+            }
+            TripStatus.PARKED -> {
+                _state.value = TripState.Parked(active.id, active.endedAt ?: active.lastSeenAt)
+                updateParkedTimer(isTick = false)
+            }
+            TripStatus.COMPLETED -> Unit
+        }
+    }
+
+    private suspend fun handle(input: Input, vehicleId: String) {
+        when (input) {
+            is Input.Odometer -> {
+                lastOdometerKm = input.km
+                (state.value as? TripState.Driving)?.let { trips.touch(it.tripId, now()) }
+            }
+            is Input.Arrival -> activeTripId()?.let { trips.addStop(it, input.arrival, now()) }
+            is Input.Event -> {
+                val event = adjustForRestore(input.event)
+                val transition = machine.reduce(state.value, event)
+                _state.value = transition.state
+                transition.effect?.let { apply(it, vehicleId) }
+                updateParkedTimer(isTick = event is TripEvent.Tick)
+            }
+        }
+    }
+
+    private suspend fun apply(effect: TripEffect, vehicleId: String) {
+        when (effect) {
+            is TripEffect.StartTrip -> {
+                // 먼저 저장하고(앱이 곧바로 죽어도 운행이 남도록) 느린 값은 이어서 채운다
+                trips.startTrip(effect.tripId, vehicleId, effect.at, currentOdometerKm())
+                trips.updateStart(
+                    effect.tripId,
+                    readOrNull { vehicle.readBatterySocPercent() },
+                    readOrNull { navi.currentPlace() }?.address
+                )
+            }
+            is TripEffect.MarkParked -> {
+                trips.markParked(effect.tripId, effect.at, currentOdometerKm())
+                trips.updateEnd(
+                    effect.tripId,
+                    readOrNull { vehicle.readBatterySocPercent() },
+                    readOrNull { navi.currentPlace() }?.address,
+                    readOrNull { vehicle.readEfficiency() }
+                )
+            }
+            is TripEffect.ResumeDriving -> trips.resumeDriving(effect.tripId, now())
+            is TripEffect.CompleteTrip -> {
+                trips.completeTrip(effect.tripId, effect.at)
+                effect.purpose?.let { trips.classify(effect.tripId, it, DRIVER_ACTOR, effect.at) }
+            }
+        }
+    }
+
+    private fun adjustForRestore(event: TripEvent): TripEvent {
+        if (event !is TripEvent.GearChanged) return event
+        val lastSeenAt = restoredLastSeenAt ?: return event
+        restoredLastSeenAt = null
+        return if (event.gear == GearPosition.PARK) event.copy(at = lastSeenAt) else event
+    }
+
+    /** 정차 중이면 대기 시간이 끝날 때 확인 신호를 보낸다 */
+    private fun updateParkedTimer(isTick: Boolean) {
+        val parked = state.value as? TripState.Parked
+        if (parked == null) {
+            parkedTimer?.cancel()
+            parkedTimer = null
+            return
+        }
+        if (parkedTimer?.isActive == true && !isTick) return
+        parkedTimer?.cancel()
+        parkedTimer = scope.launch {
+            delay((parked.parkedAt + parkedTimeoutMs() - now()).coerceAtLeast(0))
+            inputs.send(Input.Event(TripEvent.Tick(now())))
+        }
+    }
+
+    private fun activeTripId(): String? = when (val current = state.value) {
+        is TripState.Driving -> current.tripId
+        is TripState.Parked -> current.tripId
+        TripState.Idle -> null
+    }
+
+    /** 소수 첫째 자리까지 (Float 오차가 DB에 남지 않도록) */
+    private suspend fun currentOdometerKm(): Double? =
+        (lastOdometerKm ?: readOrNull { vehicle.readOdometerKm() })?.let { (it * 10).roundToLong() / 10.0 }
+
+    private suspend fun <T> readOrNull(read: suspend () -> T?): T? = try {
+        read()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        // 차량이 지원하지 않는 값(예: 에뮬레이터의 전비)은 흔하므로 한 줄로만 남긴다
+        Log.w(TAG, "차량·내비 값 읽기 실패: ${e.message}")
+        null
+    }
+
+    private fun log(message: String, error: Throwable) {
+        Log.w(TAG, message, error)
+    }
+
+    private sealed interface Input {
+        data class Event(val event: TripEvent) : Input
+        data class Odometer(val km: Float?) : Input
+        data class Arrival(val arrival: NaviArrival) : Input
+    }
+
+    companion object {
+        private const val TAG = "DriveLog/Recorder"
+
+        /** M1은 차량마다 기본 운전자 1명 (M2에서 운전자 선택) */
+        const val DRIVER_ACTOR = "driver:default"
+    }
+}

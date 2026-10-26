@@ -17,11 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.altrostudio.drivelog.service.TripRecorderService
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 동의 화면은 5단계에서 만든다. 동의한 경우에만 운행 기록을 켠다
+        if ((application as DriveLogApp).container.preferences.consentGiven) TripRecorderService.start(this)
         enableEdgeToEdge()
         setContent {
             DriveLogTheme {

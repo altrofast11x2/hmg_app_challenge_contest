@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -40,6 +41,20 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // 단위 테스트에서 android.util.Log 호출이 실패하지 않도록 기본값을 돌려준다
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+ksp {
+    // DB 구조를 파일로 남겨 버전이 바뀔 때 마이그레이션을 검증한다
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+androidComponents {
+    // Fake 구현은 debug 소스에만 있으므로 단위 테스트는 debug 빌드로만 돌린다
+    beforeVariants(selector().withBuildType("release")) { it.enableUnitTest = false }
 }
 
 dependencies {
@@ -48,6 +63,9 @@ dependencies {
     implementation(libs.pleos.navihelper)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -59,6 +77,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

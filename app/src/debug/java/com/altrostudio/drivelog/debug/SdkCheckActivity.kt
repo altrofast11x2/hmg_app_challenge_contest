@@ -28,9 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
-/** debug 빌드 전용: Pleos SDK와 AAOS Car API 연결 확인 화면 */
+/** debug 빌드 전용: Pleos SDK·AAOS Car API 연결과 운행 기록 엔진 확인 화면 */
 class SdkCheckActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,11 +43,17 @@ class SdkCheckActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SdkCheckScreen(
                         state = state,
-                        onReadVin = viewModel::readVin,
-                        onReadEfficiency = viewModel::readEfficiency,
-                        onReadBattery = viewModel::readBattery,
-                        onReadCurrentPlace = viewModel::readCurrentPlace,
-                        onReadDestination = viewModel::readDestination,
+                        actions = SdkCheckActions(
+                            readVin = viewModel::readVin,
+                            readEfficiency = viewModel::readEfficiency,
+                            readBattery = viewModel::readBattery,
+                            readCurrentPlace = viewModel::readCurrentPlace,
+                            readDestination = viewModel::readDestination,
+                            startRecording = viewModel::startRecording,
+                            toggleDemoTimeout = viewModel::toggleDemoTimeout,
+                            classify = viewModel::classify,
+                            verifyChain = viewModel::verifyChain
+                        ),
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -55,16 +62,20 @@ class SdkCheckActivity : ComponentActivity() {
     }
 }
 
+private class SdkCheckActions(
+    val readVin: () -> Unit,
+    val readEfficiency: () -> Unit,
+    val readBattery: () -> Unit,
+    val readCurrentPlace: () -> Unit,
+    val readDestination: () -> Unit,
+    val startRecording: () -> Unit,
+    val toggleDemoTimeout: () -> Unit,
+    val classify: (TripPurpose) -> Unit,
+    val verifyChain: () -> Unit
+)
+
 @Composable
-private fun SdkCheckScreen(
-    state: SdkCheckState,
-    onReadVin: () -> Unit,
-    onReadEfficiency: () -> Unit,
-    onReadBattery: () -> Unit,
-    onReadCurrentPlace: () -> Unit,
-    onReadDestination: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun SdkCheckScreen(state: SdkCheckState, actions: SdkCheckActions, modifier: Modifier = Modifier) {
     // 주행 중에는 버튼을 잠근다 (조작은 정차 중에만)
     val enabled = !state.drivingRestricted
     Column(
@@ -87,21 +98,54 @@ private fun SdkCheckScreen(
                 ValueRow("계기판 누적 거리", state.odometer)
                 ValueRow("기어 (AAOS GEAR_SELECTION)", state.gear)
                 ValueRow("주차 브레이크 (AAOS PARKING_BRAKE_ON)", state.parkingBrake)
-                ValueRow("VIN", state.vin, onReadVin, enabled)
-                ValueRow("연비 / 전비", state.efficiency, onReadEfficiency, enabled)
-                ValueRow("배터리 잔량", state.battery, onReadBattery, enabled)
+                ValueRow("VIN", state.vin, actions.readVin, enabled)
+                ValueRow("연비 / 전비", state.efficiency, actions.readEfficiency, enabled)
+                ValueRow("배터리 잔량", state.battery, actions.readBattery, enabled)
+                ValueRow("현재 위치 (NaviHelper)", state.currentPlace, actions.readCurrentPlace, enabled)
+                ValueRow("목적지 (NaviHelper)", state.destination, actions.readDestination, enabled)
             }
-            Section(title = "NaviHelper", modifier = Modifier.weight(1f)) {
-                ValueRow("현재 위치", state.currentPlace, onReadCurrentPlace, enabled)
-                ValueRow("목적지", state.destination, onReadDestination, enabled)
+            Section(title = "운행 기록 엔진", modifier = Modifier.weight(1f)) {
+                ValueRow("상태", state.recorderState)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = actions.startRecording,
+                        enabled = enabled && !state.consentGiven,
+                        modifier = Modifier.heightIn(min = 56.dp)
+                    ) {
+                        Text(if (state.consentGiven) "기록 켜짐" else "기록 시작 (디버그: 동의 처리)")
+                    }
+                    Button(onClick = actions.toggleDemoTimeout, enabled = enabled, modifier = Modifier.heightIn(min = 56.dp)) {
+                        Text("정차 대기 ${state.parkedTimeout}")
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PURPOSE_LABELS.forEach { (purpose, label) ->
+                        Button(
+                            onClick = { actions.classify(purpose) },
+                            enabled = enabled && state.canClassify,
+                            modifier = Modifier.heightIn(min = 56.dp)
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+                ValueRow("해시 체인", state.chain, actions.verifyChain, enabled)
+                Text(text = "최근 운행 (최신 순)", style = MaterialTheme.typography.labelLarge)
+                state.trips.forEach { line -> Text(text = line, style = MaterialTheme.typography.bodyMedium) }
             }
         }
         Text(text = "이벤트 기록 (최근 순)", style = MaterialTheme.typography.titleMedium)
-        LazyColumn(modifier = Modifier.weight(0.6f)) {
+        LazyColumn(modifier = Modifier.weight(0.5f)) {
             items(state.log) { line -> Text(text = line, style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }
+
+private val PURPOSE_LABELS = listOf(
+    TripPurpose.COMMUTE to "출퇴근",
+    TripPurpose.BUSINESS to "일반업무",
+    TripPurpose.PERSONAL to "비업무"
+)
 
 @Composable
 private fun Section(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {

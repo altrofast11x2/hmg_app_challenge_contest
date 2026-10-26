@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -42,11 +44,14 @@ fun ClassificationScreen(
             .padding(Dimens.screenPadding)
     ) {
         val compact = maxWidth < Dimens.compactWidth
-        Column(verticalArrangement = Arrangement.spacedBy(Dimens.sectionGap)) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(Dimens.sectionGap)
+        ) {
             Text(stringResource(R.string.classify_title), style = MaterialTheme.typography.headlineMedium)
             if (compact) {
                 TripSummary(trip)
-                PurposeButtons(suggestion, onSelect, vertical = true)
+                PurposeButtons(suggestion, onSelect, vertical = true, modifier = Modifier.fillMaxWidth())
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sectionGap)) {
                     TripSummary(trip, Modifier.weight(1f))
@@ -82,36 +87,40 @@ fun PurposeButtons(
     vertical: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val purposes = listOf(TripPurpose.COMMUTE, TripPurpose.BUSINESS, TripPurpose.PERSONAL)
-    val content: @Composable (TripPurpose, Modifier) -> Unit = { purpose, itemModifier ->
-        PurposeButton(purpose, purpose == suggested, onSelect, itemModifier)
-    }
     if (vertical) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-            purposes.forEach { content(it, Modifier.fillMaxWidth()) }
+            for (purpose in PURPOSES) {
+                PurposeButton(purpose, purpose == suggested, onSelect, Modifier.fillMaxWidth())
+            }
         }
     } else {
         Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-            purposes.forEach { content(it, Modifier.weight(1f)) }
+            for (purpose in PURPOSES) {
+                PurposeButton(purpose, purpose == suggested, onSelect, Modifier.weight(1f))
+            }
         }
     }
 }
 
+private val PURPOSES = listOf(TripPurpose.COMMUTE, TripPurpose.BUSINESS, TripPurpose.PERSONAL)
+
 @Composable
 private fun PurposeButton(purpose: TripPurpose, suggested: Boolean, onSelect: (TripPurpose) -> Unit, modifier: Modifier) {
     val buttonModifier = modifier.heightIn(min = Dimens.purposeButtonHeight)
-    val label: @Composable () -> Unit = {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(purposeLabel(purpose), style = MaterialTheme.typography.headlineSmall)
-            when {
-                suggested -> Text(stringResource(R.string.classify_suggested), style = MaterialTheme.typography.labelLarge)
-                purpose == TripPurpose.PERSONAL -> Text(stringResource(R.string.classify_personal_note), style = MaterialTheme.typography.labelLarge)
-            }
-        }
-    }
     if (suggested) {
-        Button(onClick = { onSelect(purpose) }, modifier = buttonModifier) { label() }
+        Button(onClick = { onSelect(purpose) }, modifier = buttonModifier) { PurposeLabel(purpose, suggested = true) }
     } else {
-        OutlinedButton(onClick = { onSelect(purpose) }, modifier = buttonModifier) { label() }
+        OutlinedButton(onClick = { onSelect(purpose) }, modifier = buttonModifier) { PurposeLabel(purpose, suggested = false) }
+    }
+}
+
+@Composable
+private fun PurposeLabel(purpose: TripPurpose, suggested: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(purposeLabel(purpose), style = MaterialTheme.typography.headlineSmall)
+        when {
+            suggested -> Text(stringResource(R.string.classify_suggested), style = MaterialTheme.typography.labelLarge)
+            purpose == TripPurpose.PERSONAL -> Text(stringResource(R.string.classify_personal_note), style = MaterialTheme.typography.labelLarge)
+        }
     }
 }

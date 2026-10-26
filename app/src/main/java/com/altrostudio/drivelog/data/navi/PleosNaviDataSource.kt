@@ -85,18 +85,25 @@ class PleosNaviDataSource(context: Context) : NaviDataSource, AutoCloseable {
         naviHelper.release()
     }
 
-    /** 응답을 먼저 구독한 다음 요청을 보낸다. 연결 실패나 응답 없음이면 null */
-    private suspend fun <T> request(replies: Flow<T>, send: () -> Unit): T? = withTimeoutOrNull(REPLY_TIMEOUT_MS) {
-        if (!connected.await()) return@withTimeoutOrNull null
-        coroutineScope {
-            val reply = async(start = CoroutineStart.UNDISPATCHED) { replies.first() }
-            send()
-            reply.await()
+    /**
+     * 응답을 먼저 구독한 다음 요청을 보낸다. 연결 실패나 응답 없음이면 null.
+     * 차량이 막 켜졌을 때는 내비 서비스 연결이 3초 넘게 걸려서, 연결과 응답 대기 시간을 따로 잡는다.
+     */
+    private suspend fun <T> request(replies: Flow<T>, send: () -> Unit): T? {
+        val isConnected = withTimeoutOrNull(CONNECT_TIMEOUT_MS) { connected.await() } ?: false
+        if (!isConnected) return null
+        return withTimeoutOrNull(REPLY_TIMEOUT_MS) {
+            coroutineScope {
+                val reply = async(start = CoroutineStart.UNDISPATCHED) { replies.first() }
+                send()
+                reply.await()
+            }
         }
     }
 
     private companion object {
         const val TAG = "DriveLog/Navi"
+        const val CONNECT_TIMEOUT_MS = 10_000L
         const val REPLY_TIMEOUT_MS = 3_000L
     }
 }

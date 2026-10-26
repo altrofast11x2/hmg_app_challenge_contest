@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T05:03:20.189Z
+  modified: 2026-10-26T05:46:24.733Z
 ---
 
 2026-10-22~24에 이전 폴더(C:\dev\hmg_app_challenge_contest)에서 검증하고 10-26에 DriveLog에서 다시 확인한 구성:
@@ -31,6 +31,9 @@ metadata:
 - Virtual Console 경고등 카드는 AAOS PARKING_BRAKE_ON을 바꾸지 않는다. 전비·연비 API는 전부 미지원이고 배터리 잔량(%)만 된다. VIN은 "invalid".
 - NaviHelper `getCurrentLocationInfo()`는 경로 안내 없이도 주소를 준다. `getDestinationInfo()`는 경로가 없으면 빈 값(0,0)을 준다.
 - Virtual Console은 브라우저 없이 HTTP API로 조작한다 (`adb forward tcp:8088 tcp:8088` 후): `curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Drive|Park|Reverse|Neutral"`, `curl -X PUT "http://127.0.0.1:8088/vehicle/odometer?traveled_distance_km=125"`. 다른 항목은 `GET /vehicle/catalog`의 각 기능 `write_endpoint`와 `control.field`를 보고 `PUT <write_endpoint>?<field>=<값>`. 현재 값은 `GET /vehicle/state`. 사용자가 연 브라우저 탭은 Chrome 확장이 제어하지 못한다.
+- 2분할(좁은 창) 시험은 `adb shell wm density 320`(앱 창 1682px → 841dp)으로 한다. `wm size`는 Pleos 홈이 앱 창(TaskView) 크기를 바꾸지 않고 잘라서 보여 줘서 쓸모없다. 끝나면 `wm density reset`.
+- 시간대: `adb shell service call alarm 3 s16 Asia/Seoul` (time_zone_detector는 shell 권한 없음). 에뮬레이터 내비는 `adb emu geo fix`를 따르지 않아 도착 이벤트를 일으킬 수 없다.
+- 사용자가 데스크톱 2의 Virtual Console로 직접 시험하기도 한다. 내가 만들지 않은 운행이 DB에 보이면 먼저 시각을 확인한다.
 - debug 빌드는 `adb exec-out run-as com.altrostudio.drivelog --user 10 cat databases/drivelog.db`(+ -wal, -shm)로 DB를 꺼내 Python sqlite3로 확인할 수 있다 (Windows 경로는 `cygpath -w`).
 
 Pleos SDK 함정 (이전 세션 실측, 구현 전에 문서로 다시 확인할 것):

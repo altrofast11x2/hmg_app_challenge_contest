@@ -52,39 +52,51 @@ fun LogbookScreen(
 ) {
     var classifyingTripId by rememberSaveable { mutableStateOf<String?>(null) }
     ScreenScaffold(title = stringResource(R.string.logbook_title), onBack = onBack, modifier = modifier) {
+        // 요약과 표를 한 목록으로 스크롤한다 (2분할처럼 높이가 낮아도 표가 사라지지 않도록)
         BoxWithConstraints(modifier = Modifier.weight(1f)) {
             val compact = maxWidth < Dimens.compactWidth
-            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-                    BigButton(stringResource(R.string.logbook_prev_month), onPreviousMonth, emphasized = false)
-                    Text(
-                        stringResource(R.string.home_month_title, state.month.year, state.month.monthValue),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    BigButton(stringResource(R.string.logbook_next_month), onNextMonth, emphasized = false)
-                }
-                SummaryCard(summary = state.logbook?.summary, compact = compact)
-                Text(integrityText(state.integrity), style = MaterialTheme.typography.bodyMedium)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
-                    BigButton(
-                        text = stringResource(if (state.exporting) R.string.logbook_exporting else R.string.logbook_export),
-                        onClick = onExport,
-                        enabled = !state.exporting && state.logbook?.rows?.isNotEmpty() == true
-                    )
-                    state.exportResult?.let { Text(exportText(it), style = MaterialTheme.typography.bodyMedium) }
-                }
-                val rows = state.logbook?.rows.orEmpty()
-                if (rows.isEmpty()) {
-                    Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyLarge)
-                } else {
-                    if (!compact) TableHeader()
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(rows, key = { it.tripId }) { row ->
-                            if (compact) CompactRow(row) { classifyingTripId = row.tripId } else TableRow(row) { classifyingTripId = row.tripId }
-                            HorizontalDivider()
+            val rows = state.logbook?.rows.orEmpty()
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                item {
+                    Column(
+                        modifier = Modifier.padding(bottom = Dimens.itemGap),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+                            BigButton(stringResource(R.string.logbook_prev_month), onPreviousMonth, emphasized = false)
+                            Text(
+                                stringResource(R.string.home_month_title, state.month.year, state.month.monthValue),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            BigButton(stringResource(R.string.logbook_next_month), onNextMonth, emphasized = false)
+                        }
+                        SummaryCard(summary = state.logbook?.summary, compact = compact)
+                        Text(integrityText(state.integrity), style = MaterialTheme.typography.bodyMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+                            BigButton(
+                                text = stringResource(if (state.exporting) R.string.logbook_exporting else R.string.logbook_export),
+                                onClick = onExport,
+                                enabled = !state.exporting && rows.isNotEmpty()
+                            )
+                            state.exportResult?.let { Text(exportText(it), style = MaterialTheme.typography.bodyMedium) }
                         }
                     }
-                    Text(stringResource(R.string.logbook_unclassified_note), style = MaterialTheme.typography.bodyMedium)
+                }
+                if (rows.isEmpty()) {
+                    item { Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyLarge) }
+                } else {
+                    if (!compact) item { TableHeader() }
+                    items(rows, key = { it.tripId }) { row ->
+                        if (compact) CompactRow(row) { classifyingTripId = row.tripId } else TableRow(row) { classifyingTripId = row.tripId }
+                        HorizontalDivider()
+                    }
+                    item {
+                        Text(
+                            stringResource(R.string.logbook_unclassified_note),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = Dimens.itemGap)
+                        )
+                    }
                 }
             }
         }

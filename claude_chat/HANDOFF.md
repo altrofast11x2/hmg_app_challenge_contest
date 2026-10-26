@@ -15,8 +15,10 @@
 | 7~9 | 계획 |
 
 - 5단계 화면은 "구조 먼저"로 만들었다. 색·글자는 Material 테마 이름으로만, 간격·크기는 `ui/theme/Dimens.kt`로만 참조한다. 디자인 토큰이 오면 `Color.kt`·`Type.kt`·`Dimens.kt`·`Theme.kt`만 바꾼다 (`design/REQUESTS.md`에 요청함).
-- 에뮬레이터 시간대가 미국 태평양 시간이라 운행기록부 날짜가 하루 이를 수 있다. 촬영 전에 서울 시간대로 바꾼다.
-- 2분할(Portrait) 배치는 코드에 있지만 에뮬레이터 화면으로는 아직 확인하지 않았다.
+- 디자인은 기능을 모두 만든 뒤에 입힌다 (2026-10-26 사용자 결정).
+- 에뮬레이터 시간대를 Asia/Seoul로 바꿨다 (`adb shell service call alarm 3 s16 Asia/Seoul`, 자동 시간대 끔). 새 AVD를 쓰면 다시 해야 한다.
+- 2분할(Portrait) 배치는 `adb shell wm density 320`으로 앱 창을 841dp로 만들어 확인했다 (`wm size`는 Pleos 홈이 앱 창 크기를 바꾸지 않고 잘라 보여서 시험이 안 된다). 확인 후 `wm density reset`.
+- 관리자 계정 이메일은 `admin@email.com` (사용자 지정). 개인정보 처리방침 문의처도 이 주소로 넣었다. **제출 전 점검: 문의처를 실제 연락처로 바꿀지 확인** (email.com은 실제 메일 서비스 도메인이다).
 - Virtual Console은 브라우저 없이 `curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Drive"` 같은 HTTP API로 조작할 수 있다 (`memory/pleos-dev-environment.md`).
 
 ## 결정 사항

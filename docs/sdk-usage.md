@@ -12,7 +12,7 @@
 | 운행 전후 배터리 잔량 (전비 대신) | Vehicle · EvBattery | `checkEvBatteryStateOfChargeCapabilities(...)`<br>`getEvBatteryStateOfCharge(onComplete: (Int?) -> Unit, ...)` | `pleos.car.permission.CAR_ENERGY` | ✅ Virtual Console Battery SOC 100→80% 반영 |
 | 연비·전비 (차량이 지원할 때만) | Vehicle · EvBattery / Fuel | `getCurrentEvEfficiency(...)`, `getCurrentFuelEconomy(...)` | `CAR_ENERGY` | ❌ 에뮬레이터 미지원 (순간·충전 후·누적 전비, 연료 값 모두 `not supported`). 실차에서 지원되면 함께 기록 |
 | 운행 시작 주소, 종료 주소 | NaviHelper | `getCurrentLocationInfo()` → 리스너 `onCurrentLocationInfo(CurrentLocationInfo)`<br>`CurrentLocationInfo(latitude, longitude, heading, address, routeId, currentRouteIndex)` | `pleos.car.permission.NAVI_ROUTE` | ✅ 경로 안내가 없어도 주소가 온다 ("수정구 시흥동", 0.4~1.1초) |
-| 방문처 (목적지·경유지 도착 기록) | NaviHelper | `onDestinationArrived(DestinationArrivedInfo(duration, distance, name, address))`<br>`onWayPointArrived(WaypointArrivedInfo(...))`, `getDestinationInfo()` → `onDestinationInfo(DestinationInfo)` | `NAVI_ROUTE` | 부분: 경로가 없으면 빈 값이 와서 값 없음으로 처리. 경로 안내 중 값과 도착 이벤트는 미검증 (Virtual Console에 내비 경로 시뮬레이션이 없음) |
+| 방문처 (목적지·경유지 도착 기록) | NaviHelper | `onDestinationArrived(DestinationArrivedInfo(duration, distance, name, address))`<br>`onWayPointArrived(WaypointArrivedInfo(...))`, `getDestinationInfo()` → `onDestinationInfo(DestinationInfo)` | `NAVI_ROUTE` | 부분: 경로가 없으면 빈 값이 와서 값 없음으로 처리. 경로 안내 중 값과 도착 이벤트는 에뮬레이터에서 확인할 수 없다 (Virtual Console에 경로 시뮬레이션이 없고, 내비는 에뮬레이터 GPS `adb emu geo fix`를 따르지 않는다. 2026-10-26 확인). 도착 정보가 없으면 종료 주소를 비고로 쓴다 |
 
 ## Pleos SDK가 아닌 AAOS 표준 API
 
@@ -43,4 +43,4 @@
 ## SDK 수명주기 (소스 확인)
 
 - Vehicle: `Vehicle(context)` → `initialize()` (내부에서 서비스 연결 시작) → `getOdometer()`, `getCarInfo()`, `getEvBattery()`, `getFuel()` → `release()`. 모든 조회는 IPC 비동기 콜백(`onComplete`/`onFailed`)이고, 콜백이 끝나기 전에 `release()`하지 않는다. 첫 조회는 서비스 연결 때문에 1~2.4초가 걸렸고, 이후에는 0.4~0.8초였다.
-- NaviHelper: `NaviHelper(context)` → `initialize(onConnected: () -> Unit, onFailed: (Throwable) -> Unit)` → `addListener(NaviHelperEventListener)` → `get*Info()` (결과는 리스너로 도착) → `removeListener()` → `release()`
+- NaviHelper: `NaviHelper(context)` → `initialize(onConnected: () -> Unit, onFailed: (Throwable) -> Unit)` → `addListener(NaviHelperEventListener)` → `get*Info()` (결과는 리스너로 도착) → `removeListener()` → `release()`. 앱을 막 켰을 때는 서비스 연결이 3초 넘게 걸린 적이 있어 연결은 최대 10초, 응답은 3초까지 기다린다.

@@ -14,6 +14,7 @@
 | 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 코드 완료 (단위 테스트 50개). Supabase 프로젝트(ref `ggpychjlddrgbakxjyew`)에 MCP로 0001~0003 적용, advisors 점검, seed.sql로 데모 조직·관리자(`admin@email.com`, 비밀번호는 `backend/.env`)·연결 코드 `422511` 생성, 관리자 로그인·RLS를 실제 API로 확인. **남은 것: 사용자가 대시보드에서 익명 로그인 켜기 → 에뮬레이터에서 연결·동기화 시험** |
 | 7. web/ 관리자 최소판 | 구현 완료(로그인, 운행기록부·CSV, 차량·연결 해제, 연결 코드 발급). 웹 단위 테스트 8개, Node로 API 연동 확인, headless Edge로 화면 확인. **남은 것: 실제 운행 데이터로 표 확인, 배포(어디에 올릴지 사용자 확인)** |
 | 8. GitHub, release APK, README, docs 4종 | 완료: `apk/AltroStudio_DriveLog_release.apk`(v2 서명, 에뮬레이터 설치·실행 1.3~1.6초), README(심사용 빠른 시작·APK·개발자 메모·라이선스), `docs/status.md`·`demo-script.md`·`business.md`, `sdk-usage.md` 갱신 |
+| 디자인 v0.1 | A01~A03 명세대로, 나머지 화면은 토큰만 (커밋 d13b8a1). 명세와 다른 점은 `design/REQUESTS.md` |
 | 9. 제출 직전 점검 | 계획 |
 
 - 8단계 release 시험에서 찾아 고친 버그 (6단계 코드가 실제 기기에서 서버와 통신한 적이 없었다)

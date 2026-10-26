@@ -2,7 +2,47 @@
 
 AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (Pleos Connect 앱)
 
-> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV), 서버(Supabase) 스키마·권한·연결 코드·동기화 코드, 관리자 웹 최소판을 만들었습니다. 차량 앱과 서버를 실제로 연결해 동기화하는 시험은 아직 진행 중입니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
+**차가 알아서 쓰는 업무용 승용차 운행기록부.** 주행 중에는 조작할 것이 없고, 정차 후 한 번 눌러 용도만 고르면 월별 운행기록부가 완성됩니다.
+
+| 첫 실행 동의 | 차량 연결 (6자리 코드) | 홈 |
+|---|---|---|
+| ![첫 실행 동의 화면](docs/images/a01-consent.png) | ![차량 연결 화면](docs/images/a02-connect.png) | ![홈 화면](docs/images/a03-home.png) |
+
+> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV, 디자인 v0.1), 서버(Supabase) 스키마·권한·연결 코드·동기화 코드, 관리자 웹 최소판을 만들었습니다. 차량 앱과 서버를 실제로 연결해 동기화하는 시험은 아직 진행 중입니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
+
+## 바로가기
+
+| 항목 | 위치 |
+|---|---|
+| release APK | [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) |
+| 관리자 웹 | https://altrostudio-drivelog.vercel.app |
+| 구현 현황 | [docs/status.md](docs/status.md) |
+| Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
+| 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |
+| 사업성 | [docs/business.md](docs/business.md) |
+| 기록 무결성 (해시 체인) | [docs/integrity.md](docs/integrity.md) |
+
+## 핵심 기능
+
+- **자동 기록**: 기어가 P를 벗어나면 운행 시작, P에서 끝. 주행 전·후 계기판 거리를 Pleos Vehicle SDK에서 직접 읽어 넣습니다.
+- **주행 중 조작 0**: 주행 중에는 터치할 요소가 없는 화면만 보입니다. 정차하면 용도를 고르는 화면이 뜹니다.
+- **원탭 분류**: 출퇴근 / 일반업무 / 비업무. 같은 목적지는 지난번 분류를 먼저 제안하고, 비업무 운행은 주소를 지우고 거리만 남깁니다.
+- **국세청 서식 월별 운행기록부와 CSV**: 업무사용비율까지 자동 계산하고, Excel에서 바로 열리는 CSV로 내보냅니다.
+- **고칠 수 없는 기록**: 차량별 해시 체인과 수정 이력으로 기록이 바뀐 흔적을 찾아냅니다.
+- **회사 연결**: 관리자 웹에서 받은 6자리 코드를 정차 중 한 번 입력하면 조직에 등록되고, 기록은 오프라인 우선으로 올라갑니다. 서버 없이도 차량 안에서 모든 기능이 동작합니다.
+- **관리자 웹**: 차량 연결 코드 발급, 모든 차량의 월별 운행기록부와 CSV.
+
+## 저장소 구조
+
+| 폴더 | 내용 |
+|---|---|
+| `app/` | 차량 앱 (Kotlin, Jetpack Compose, Room, WorkManager) |
+| `web/` | 관리자 웹 (HTML·CSS·JavaScript, 설치할 패키지 없음) |
+| `backend/` | Supabase 스키마·권한(RLS)·함수, 시연용 데모 데이터 |
+| `docs/` | 구현 현황, SDK 활용, 시연 시나리오, 사업성, 무결성, 라이선스 |
+| `design/` | 디자인 기준 (토큰, 화면 명세, 목업) |
+| `apk/` | release 서명 APK |
+| `claude_chat/` | 개발 과정의 AI 협업 기록과 인수인계 문서 |
 
 ## 빠르게 해 보기 (심사용)
 

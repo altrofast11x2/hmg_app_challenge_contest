@@ -1,5 +1,10 @@
 package com.altrostudio.drivelog.ui.logbook
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -10,22 +15,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import com.altrostudio.drivelog.R
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.domain.logbook.LogbookRow
+import com.altrostudio.drivelog.domain.logbook.MonthChoice
 import com.altrostudio.drivelog.ui.classify.PurposeButtons
 import com.altrostudio.drivelog.ui.components.BigButton
 import com.altrostudio.drivelog.ui.components.ButtonKind
@@ -37,8 +52,10 @@ import com.altrostudio.drivelog.ui.components.ScreenScaffold
 import com.altrostudio.drivelog.ui.components.SummaryCard
 import com.altrostudio.drivelog.ui.components.formatKm
 import com.altrostudio.drivelog.ui.components.isPortrait
+import com.altrostudio.drivelog.ui.theme.DriveLogMotion
 import com.altrostudio.drivelog.ui.theme.DriveLogTabularNumbers
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 /** 월별 운행기록부 (국세청 업무용승용차 운행기록부 열 순서) */
@@ -46,8 +63,7 @@ import java.time.format.DateTimeFormatter
 fun LogbookScreen(
     state: LogbookUiState,
     onBack: () -> Unit,
-    onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit,
+    onSelectMonth: (YearMonth) -> Unit,
     onClassify: (tripId: String, purpose: TripPurpose) -> Unit,
     onExport: () -> Unit,
     modifier: Modifier = Modifier
@@ -64,15 +80,13 @@ fun LogbookScreen(
                         modifier = Modifier.padding(bottom = DriveLogTheme.dimens.spacingMedium),
                         verticalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingMedium)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
-                            BigButton(stringResource(R.string.logbook_prev_month), onPreviousMonth, emphasized = false)
-                            Text(
-                                stringResource(R.string.home_month_title, state.month.year, state.month.monthValue),
-                                style = DriveLogTheme.typography.title,
-                                color = DriveLogTheme.colors.textPrimary
-                            )
-                            BigButton(stringResource(R.string.logbook_next_month), onNextMonth, emphasized = false)
-                        }
+                        // 이전·다음 달 버튼을 여러 번 누르지 않도록 달을 바로 고른다 (사용자 피드백 2026-10-26)
+                        MonthPicker(months = state.months, selected = state.month, onSelect = onSelectMonth)
+                        Text(
+                            stringResource(R.string.home_month_title, state.month.year, state.month.monthValue),
+                            style = DriveLogTheme.typography.title,
+                            color = DriveLogTheme.colors.textPrimary
+                        )
                         SummaryCard(summary = state.logbook?.summary, compact = compact)
                         IntegrityLine(state.integrity)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
@@ -115,6 +129,79 @@ fun LogbookScreen(
                 classifyingTripId = null
             },
             onDismiss = { classifyingTripId = null }
+        )
+    }
+}
+
+/** 월 목록: 가로로 넘기며 달을 바로 고른다. 운행이 있는 달은 건수를 보여 준다 */
+@Composable
+private fun MonthPicker(months: List<MonthChoice>, selected: YearMonth, onSelect: (YearMonth) -> Unit) {
+    val dimens = DriveLogTheme.dimens
+    val selectedIndex = months.indexOfFirst { it.month == selected }
+    val listState = rememberLazyListState()
+    // 고른 달이 보이도록 (처음 열 때와 목록이 바뀔 때)
+    LaunchedEffect(months.size, selectedIndex) {
+        if (selectedIndex >= 0) listState.scrollToItem((selectedIndex - MONTHS_BEFORE_SELECTED).coerceAtLeast(0))
+    }
+    LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
+        itemsIndexed(months, key = { _, choice -> choice.month.toString() }) { index, choice ->
+            MonthChip(
+                choice = choice,
+                selected = choice.month == selected,
+                showYear = index == 0 || choice.month.monthValue == 1,
+                onClick = { onSelect(choice.month) }
+            )
+        }
+    }
+}
+
+// 고른 달 앞에 보여 줄 달 수
+private const val MONTHS_BEFORE_SELECTED = 3
+
+@Composable
+private fun MonthChip(choice: MonthChoice, selected: Boolean, showYear: Boolean, onClick: () -> Unit) {
+    val colors = DriveLogTheme.colors
+    val dimens = DriveLogTheme.dimens
+    val typography = DriveLogTheme.typography
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale = if (pressed) DriveLogMotion.PRESS_SCALE else 1f
+    val shape = RoundedCornerShape(dimens.radiusMedium)
+    val background = when {
+        selected -> colors.buttonPrimaryBackground
+        pressed -> colors.buttonSecondaryBackgroundPressed
+        else -> colors.buttonSecondaryBackground
+    }
+    val main = when {
+        selected -> colors.buttonPrimaryText
+        choice.tripCount == 0 -> colors.textTertiary
+        else -> colors.textPrimary
+    }
+    val sub = if (selected) colors.buttonPrimaryText else colors.textTertiary
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .heightIn(min = dimens.touchTargetMinimum)
+            .clip(shape)
+            .background(background)
+            .then(if (selected) Modifier else Modifier.border(dimens.borderWidth, colors.border, shape))
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
+            .padding(horizontal = dimens.spacingMedium, vertical = dimens.spacingExtraSmall)
+    ) {
+        Text(
+            if (showYear) stringResource(R.string.logbook_month_chip_year, choice.month.year) else " ",
+            style = typography.labelSmall,
+            color = sub
+        )
+        Text(stringResource(R.string.home_month, choice.month.monthValue), style = typography.titleSmall, color = main)
+        Text(
+            if (choice.tripCount > 0) stringResource(R.string.count_value, choice.tripCount) else "–",
+            style = typography.labelSmall,
+            color = sub
         )
     }
 }

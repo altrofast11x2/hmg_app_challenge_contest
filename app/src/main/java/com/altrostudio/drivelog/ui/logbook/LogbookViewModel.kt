@@ -9,9 +9,12 @@ import com.altrostudio.drivelog.AppContainer
 import com.altrostudio.drivelog.DriveLogApp
 import com.altrostudio.drivelog.data.trip.ChainVerification
 import com.altrostudio.drivelog.data.trip.TripPurpose
+import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.domain.logbook.Logbook
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
 import com.altrostudio.drivelog.domain.logbook.LogbookCsv
+import com.altrostudio.drivelog.domain.logbook.LogbookMonths
+import com.altrostudio.drivelog.domain.logbook.MonthChoice
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,7 +46,9 @@ data class LogbookUiState(
     val logbook: Logbook? = null,
     val integrity: Integrity = Integrity.Checking,
     val exporting: Boolean = false,
-    val exportResult: ExportResult? = null
+    val exportResult: ExportResult? = null,
+    /** 바로 고를 수 있는 달 (오래된 달부터, 이번 달까지) */
+    val months: List<MonthChoice> = emptyList()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -66,11 +71,15 @@ class LogbookViewModel(
             _state.update { it.copy(month = logbook.month, logbook = logbook) }
             verifyIntegrity()
         }.launchIn(viewModelScope)
+
+        container.trips.observeTrips().map { trips ->
+            val started = trips.filter { it.status == TripStatus.COMPLETED }.map { it.startedAt }
+            LogbookMonths.choices(started, YearMonth.now(zone), zone)
+        }.onEach { months -> _state.update { it.copy(months = months) } }.launchIn(viewModelScope)
     }
 
-    fun previousMonth() = changeMonth(month.value.minusMonths(1))
-
-    fun nextMonth() = changeMonth(month.value.plusMonths(1))
+    /** 월 목록에서 고른 달로 바로 이동한다 */
+    fun selectMonth(selected: YearMonth) = changeMonth(selected)
 
     /** 미분류였던 지난 운행을 분류한다 (정차 중에만 보이는 화면) */
     fun classify(tripId: String, purpose: TripPurpose) {

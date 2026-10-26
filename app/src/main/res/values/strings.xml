@@ -50,8 +50,6 @@
 
     <!-- 운행기록부 -->
     <string name="logbook_title">월별 운행기록부</string>
-    <string name="logbook_prev_month">◀ 이전 달</string>
-    <string name="logbook_next_month">다음 달 ▶</string>
     <string name="logbook_empty">이 달에는 운행 기록이 없습니다</string>
     <string name="logbook_col_date">사용일자</string>
     <string name="logbook_col_driver">사용자</string>
@@ -217,4 +215,5 @@
 
     <string name="licenses_show_ofl">SIL OFL 1.1 전문 보기</string>
     <string name="licenses_back_to_list">목록으로</string>
+    <string name="logbook_month_chip_year">%1$d년</string>
 </resources>

@@ -7,7 +7,8 @@
 | 소프트웨어 | 저작권자 | 라이선스 |
 |---|---|---|
 | Pleos Connect SDK (Vehicle 2.3.2, NaviHelper 3.0.5) | Pleos | Pleos Playground 이용약관 |
-| AndroidX (Core, Activity, Lifecycle, Room, SQLite 외) | The Android Open Source Project | Apache License 2.0 |
+| AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외) | The Android Open Source Project | Apache License 2.0 |
+| OkHttp, Okio | Square | Apache License 2.0 |
 | Jetpack Compose (UI, Foundation, Material 3) | The Android Open Source Project | Apache License 2.0 |
 | Kotlin Standard Library, kotlin-reflect | JetBrains | Apache License 2.0 |
 | kotlinx.coroutines, kotlinx.serialization | JetBrains | Apache License 2.0 |

@@ -4,6 +4,8 @@ import com.altrostudio.drivelog.data.navi.NaviArrival
 import com.altrostudio.drivelog.data.trip.ChainHeadEntity
 import com.altrostudio.drivelog.data.trip.ChainVerification
 import com.altrostudio.drivelog.data.trip.ChangeField
+import com.altrostudio.drivelog.data.trip.PendingUploads
+import com.altrostudio.drivelog.data.trip.SyncState
 import com.altrostudio.drivelog.data.trip.TripChangeEntity
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripLedger
@@ -141,6 +143,35 @@ class FakeTripRepository(
             .maxByOrNull { it.startedAt }
             ?.purpose
     }
+
+    override suspend fun pendingUploads(limit: Int): PendingUploads = mutex.withLock {
+        PendingUploads(
+            trips.value.filter { it.status == TripStatus.COMPLETED && it.syncState == SyncState.PENDING && it.chainSeq != null }
+                .sortedBy { it.chainSeq }
+                .take(limit),
+            changes.filter { it.syncState == SyncState.PENDING }.sortedBy { it.chainSeq }.take(limit)
+        )
+    }
+
+    override suspend fun markUploaded(trips: List<TripEntity>, changes: List<TripChangeEntity>) = mutex.withLock {
+        val uploaded = trips.associate { it.id to it.updatedAt }
+        this.trips.value = this.trips.value.map {
+            if (uploaded[it.id] == it.updatedAt) it.copy(syncState = SyncState.SYNCED) else it
+        }
+        val uploadedChanges = changes.map { it.id }.toSet()
+        this.changes.replaceAll { if (it.id in uploadedChanges) it.copy(syncState = SyncState.SYNCED) else it }
+    }
+
+    override fun observePendingCount(): Flow<Int> = trips.map { list ->
+        list.count { it.status == TripStatus.COMPLETED && it.syncState == SyncState.PENDING } +
+            changes.count { it.syncState == SyncState.PENDING }
+    }
+
+    override suspend fun assignOrg(orgId: String, driverId: String?) = mutex.withLock {
+        trips.value = trips.value.map { if (it.orgId == null) it.copy(orgId = orgId, driverId = driverId) else it }
+    }
+
+    override suspend fun chainHeads(): List<ChainHeadEntity> = mutex.withLock { heads.values.toList() }
 
     override suspend fun deleteAll() = mutex.withLock {
         trips.value = emptyList()

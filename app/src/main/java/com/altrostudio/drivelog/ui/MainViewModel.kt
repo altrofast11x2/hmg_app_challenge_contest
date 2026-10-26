@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.altrostudio.drivelog.AppContainer
 import com.altrostudio.drivelog.DriveLogApp
+import com.altrostudio.drivelog.data.sync.Pairing
+import com.altrostudio.drivelog.data.sync.SyncOutcome
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
@@ -35,11 +37,17 @@ data class MainUiState(
     /** 정차 중 운행의 목적지에서 지난번에 고른 업무 분류 */
     val suggestion: TripPurpose? = null,
     val month: YearMonth = YearMonth.now(),
-    val monthSummary: LogbookSummary? = null
+    val monthSummary: LogbookSummary? = null,
+    val pairing: Pairing? = null,
+    val pairingSkipped: Boolean = false,
+    val pendingUploads: Int = 0,
+    val lastSync: SyncOutcome? = null
 ) {
     val drivingTrip: TripEntity? get() = activeTrip?.takeIf { it.status == TripStatus.DRIVING }
     val parkedTrip: TripEntity? get() = activeTrip?.takeIf { it.status == TripStatus.PARKED }
 }
+
+private data class SyncInfo(val pairing: Pairing?, val skipped: Boolean, val pending: Int, val lastOutcome: SyncOutcome?)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModel(
@@ -60,6 +68,13 @@ class MainViewModel(
         container.trips.observeCompletedTrips(from, to).map { LogbookBuilder.build(month, it, zone, driverName = "").summary }
     }
 
+    private val syncInfo: Flow<SyncInfo> = combine(
+        container.pairing.pairing,
+        container.pairing.skipped,
+        container.trips.observePendingCount().onStart { emit(0) },
+        container.sync.lastOutcome
+    ) { pairing, skipped, pending, lastOutcome -> SyncInfo(pairing, skipped, pending, lastOutcome) }
+
     val state: StateFlow<MainUiState> = combine(
         container.consent.consentGiven,
         container.vehicle.drivingRestricted.onStart { emit(true) }.catch { emit(false) },
@@ -76,7 +91,16 @@ class MainViewModel(
             month = month,
             monthSummary = summary
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), MainUiState(month = month))
+    }.combine(syncInfo) { main, sync ->
+        main.copy(pairing = sync.pairing, pairingSkipped = sync.skipped, pendingUploads = sync.pending, lastSync = sync.lastOutcome)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        MainUiState(month = month, pairing = container.pairing.pairing.value, pairingSkipped = container.pairing.skipped.value)
+    )
+
+    /** 서버 주소·키가 들어간 빌드인지 (아니면 연결 화면을 건너뛴다) */
+    val backendConfigured: Boolean get() = container.pairing.isConfigured
 
     val vin: String? get() = container.preferences.vin
 
@@ -85,6 +109,8 @@ class MainViewModel(
     fun agree() = container.consent.agree()
 
     fun classify(purpose: TripPurpose) = container.recorder.classify(purpose)
+
+    fun skipPairing() = container.pairing.skip()
 
     fun withdraw() {
         viewModelScope.launch { container.consent.withdraw() }

@@ -120,6 +120,22 @@ class RoomTripRepository(
 
     override suspend fun deleteAll() = withContext(Dispatchers.IO) { database.clearAllTables() }
 
+    override suspend fun pendingUploads(limit: Int): PendingUploads =
+        PendingUploads(dao.pendingTrips(limit), dao.pendingChanges(limit))
+
+    override suspend fun markUploaded(trips: List<TripEntity>, changes: List<TripChangeEntity>) {
+        database.withTransaction {
+            trips.forEach { dao.markTripSynced(it.id, it.updatedAt) }
+            if (changes.isNotEmpty()) dao.markChangesSynced(changes.map { it.id })
+        }
+    }
+
+    override fun observePendingCount(): Flow<Int> = dao.observePendingCount()
+
+    override suspend fun assignOrg(orgId: String, driverId: String?) = dao.assignOrg(orgId, driverId)
+
+    override suspend fun chainHeads(): List<ChainHeadEntity> = dao.chainHeads()
+
     private suspend fun update(tripId: String, change: (TripEntity) -> TripEntity) {
         database.withTransaction {
             val trip = dao.trip(tripId) ?: return@withTransaction

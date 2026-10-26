@@ -66,4 +66,32 @@ interface TripDao {
 
     @Upsert
     suspend fun upsertChainHead(head: ChainHeadEntity)
+
+    @Query("SELECT * FROM chain_heads")
+    suspend fun chainHeads(): List<ChainHeadEntity>
+
+    @Query(
+        "SELECT * FROM trips WHERE status = 'COMPLETED' AND syncState = 'PENDING' AND chainSeq IS NOT NULL " +
+            "ORDER BY chainSeq LIMIT :limit"
+    )
+    suspend fun pendingTrips(limit: Int): List<TripEntity>
+
+    @Query("SELECT * FROM trip_changes WHERE syncState = 'PENDING' ORDER BY chainSeq LIMIT :limit")
+    suspend fun pendingChanges(limit: Int): List<TripChangeEntity>
+
+    /** 올리는 동안 바뀌지 않았을 때만(updatedAt이 같을 때만) 올린 것으로 표시한다 */
+    @Query("UPDATE trips SET syncState = 'SYNCED' WHERE id = :id AND updatedAt = :updatedAt")
+    suspend fun markTripSynced(id: String, updatedAt: Long)
+
+    @Query("UPDATE trip_changes SET syncState = 'SYNCED' WHERE id IN (:ids)")
+    suspend fun markChangesSynced(ids: List<String>)
+
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM trips WHERE status = 'COMPLETED' AND syncState = 'PENDING') + " +
+            "(SELECT COUNT(*) FROM trip_changes WHERE syncState = 'PENDING')"
+    )
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE trips SET orgId = :orgId, driverId = :driverId WHERE orgId IS NULL")
+    suspend fun assignOrg(orgId: String, driverId: String?)
 }

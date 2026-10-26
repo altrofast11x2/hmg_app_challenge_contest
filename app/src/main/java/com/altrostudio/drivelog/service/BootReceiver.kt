@@ -10,6 +10,6 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val container = (context.applicationContext as DriveLogApp).container
-        if (container.preferences.consentGiven) TripRecorderService.start(context)
+        if (container.consent.consentGiven.value) TripRecorderService.start(context)
     }
 }

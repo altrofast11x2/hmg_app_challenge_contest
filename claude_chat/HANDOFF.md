@@ -11,8 +11,13 @@
 | 3. SDK 연결과 debug 확인 화면 | 완료: 기어·주행 제한·계기판·잔량·주소를 에뮬레이터와 Virtual Console에서 검증. 결과는 `docs/sdk-usage.md` |
 | 4. Room, 운행 감지 상태 머신, 해시 체인, 단위 테스트 | 완료: 단위 테스트 28개 통과, 에뮬레이터에서 분류 완료·미분류 자동 종료·강제 종료 후 복원 검증. 해시 규칙은 `docs/integrity.md` |
 | 5. 동의, 주행 중 화면, 정차 후 분류, 월별 기록부, CSV, 라이선스 화면 | 구조 완료 (디자인 토큰 대기). 단위 테스트 36개, 에뮬레이터에서 전체 흐름 검증 |
-| 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 다음 차례 |
-| 7~9 | 계획 |
+| 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 코드 완료 (단위 테스트 50개). **사용자가 Supabase 프로젝트를 만들고 `backend/.env`·`local.properties`를 채우면** setup·seed 실행과 실제 연결·동기화 시험 |
+| 7. web/ 관리자 최소판 | 계획 |
+| 8~9 | 계획 |
+
+- 6단계 구조: `backend/supabase/migrations/0001_init.sql`(테이블·RLS·`issue_pairing_code`·`pair_vehicle`), `backend/scripts/setup.mjs`(Management API로 SQL 적용·익명 로그인 켜기), `backend/seed/seed.mjs`(데모 조직·`admin@email.com`·재사용 데모 코드). 앱은 `data/remote`(OkHttp), `data/sync`(연결·동기화·WorkManager), `ui/connect`(A02 구조).
+- 동의문 버전 2: 조직 연결 시 서버 제공 내용을 추가해서 기존 동의자에게 다시 동의를 받는다.
+- 연결 화면에 명세에 없는 [나중에 연결]과 제공 고지 한 줄을 넣었고 `design/REQUESTS.md`에 알렸다.
 
 - 5단계 화면은 "구조 먼저"로 만들었다. 색·글자는 Material 테마 이름으로만, 간격·크기는 `ui/theme/Dimens.kt`로만 참조한다. 디자인 토큰이 오면 `Color.kt`·`Type.kt`·`Dimens.kt`·`Theme.kt`만 바꾼다 (`design/REQUESTS.md`에 요청함).
 - 디자인은 기능을 모두 만든 뒤에 입힌다 (2026-10-26 사용자 결정).

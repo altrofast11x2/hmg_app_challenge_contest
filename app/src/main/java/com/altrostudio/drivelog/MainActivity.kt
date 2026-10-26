@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // 동의한 경우에만 운행 기록을 켠다 (앱을 열 때마다 서비스가 살아 있는지 확인)
-        if ((application as DriveLogApp).container.preferences.consentGiven) TripRecorderService.start(this)
+        if ((application as DriveLogApp).container.consent.consentGiven.value) TripRecorderService.start(this)
         enableEdgeToEdge()
         setContent {
             DriveLogTheme {

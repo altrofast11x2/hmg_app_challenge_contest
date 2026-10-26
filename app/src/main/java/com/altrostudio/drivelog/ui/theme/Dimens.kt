@@ -25,4 +25,13 @@ object Dimens {
 
     /** 운행기록부 표의 날짜·사용자 열 폭 */
     val logbookDateColumn = 160.dp
+
+    /** 연결 코드 칸 (design/specs/A02-connect.md 기준) */
+    val codeCellWidth = 112.dp
+    val codeCellHeight = 144.dp
+    val codeGroupGap = 40.dp
+    val keypadKeyHeight = 128.dp
+    val statusLineHeight = 48.dp
+    val cellBorder = 2.dp
+    val cellBorderActive = 4.dp
 }

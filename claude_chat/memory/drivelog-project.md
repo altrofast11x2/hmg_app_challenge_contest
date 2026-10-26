@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T05:46:24.501Z
+  modified: 2026-10-26T08:23:42.327Z
 ---
 
 2026-10-25에 사용자가 아이디어를 '자동 운행기록부'(DriveLog, 패키지 com.altrostudio.drivelog)로 정하고 상세 명세를 줬다. 명세 원문은 저장소의 `claude_chat/SPEC.md`에 있다. 그 전 세션(10/22~24)에서 검토한 아이디어(멀미 제로, 로드 도슨트 등)는 폐기했다.
@@ -29,6 +29,8 @@ metadata:
 - 2026-10-26 5단계 "구조 먼저" 완료: 동의(철회 시 전체 삭제), 주행 중 화면, 정차 후 분류(지난번 목적지 분류 제안), 홈, 월별 운행기록부(미분류 나중 분류, 무결성 표시, CSV), 설정, 개인정보 처리방침, 오픈소스 라이선스. 디자인 토큰이 오면 테마·Dimens만 교체. 다음은 6단계(Supabase). CLAUDE.md 커밋(20a2192)은 디자인 쪽 지시로 push하지 않고 대기 중이었다.
 
 - 2026-10-26 사용자 결정: 디자인은 기능을 모두 만든 뒤에 입힌다. 관리자 계정 이메일은 `admin@email.com`(개인정보 처리방침 문의처로도 사용, 제출 전 실제 연락처 교체 여부 확인). 이 계정은 실제 메일이 가지 않게 관리자 API로 이메일 확인 처리해 만든다.
+
+- 2026-10-26 6단계 코드 완료: Supabase 스키마·RLS·RPC(backend/), 앱 연결(A02 구조, [나중에 연결] 추가)·오프라인 우선 동기화(WorkManager)·단위 테스트 50개. 이 PC에는 Docker가 없어 로컬 Supabase를 못 쓴다 → 사용자가 클라우드 프로젝트를 만들고 backend/.env(URL, secret/service_role 키, access token, 데모 비밀번호·코드)와 local.properties(supabase.url, supabase.anonKey)를 채우면 setup.mjs·seed.mjs를 실행하고 실제 연결·동기화를 시험한다. 새 Supabase 키(sb_publishable/sb_secret)는 JWT가 아니라 Authorization에 넣지 않는다.
 
 **Why:** 사용자가 공모전 규정(정직한 구현 현황, 순수 창작물, 비밀값 미포함)을 기술 취향보다 우선한다고 명시했다.
 

@@ -24,7 +24,10 @@ import com.altrostudio.drivelog.ui.theme.Dimens
 @Composable
 fun SettingsScreen(
     vin: String?,
+    orgName: String?,
+    canConnect: Boolean,
     onBack: () -> Unit,
+    onConnect: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
     onWithdraw: () -> Unit,
@@ -41,6 +44,19 @@ fun SettingsScreen(
                 if (vin != null) stringResource(R.string.settings_vehicle_vin, vin) else stringResource(R.string.settings_vehicle_device),
                 style = MaterialTheme.typography.bodyLarge
             )
+            Text(stringResource(R.string.settings_org), style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (orgName != null) stringResource(R.string.settings_org_connected, orgName) else stringResource(R.string.settings_org_none),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (canConnect) {
+                BigButton(
+                    stringResource(if (orgName != null) R.string.settings_reconnect else R.string.settings_connect),
+                    onConnect,
+                    Modifier.fillMaxWidth(),
+                    emphasized = orgName == null
+                )
+            }
             BigButton(stringResource(R.string.settings_privacy), onOpenPrivacy, Modifier.fillMaxWidth(), emphasized = false)
             BigButton(stringResource(R.string.settings_licenses), onOpenLicenses, Modifier.fillMaxWidth(), emphasized = false)
             BigButton(stringResource(R.string.settings_withdraw), { confirmingWithdraw = true }, Modifier.fillMaxWidth(), emphasized = false)

@@ -27,7 +27,8 @@ private const val APACHE_2 = "Apache License 2.0"
 
 private val LIBRARIES = listOf(
     OpenSourceLibrary("Pleos Connect SDK (Vehicle, NaviHelper)", "Pleos", "Pleos Playground 이용약관"),
-    OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite 외)", "The Android Open Source Project", APACHE_2),
+    OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외)", "The Android Open Source Project", APACHE_2),
+    OpenSourceLibrary("OkHttp, Okio", "Square", APACHE_2),
     OpenSourceLibrary("Jetpack Compose (UI, Foundation, Material 3)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("Kotlin Standard Library, kotlin-reflect", "JetBrains", APACHE_2),
     OpenSourceLibrary("kotlinx.coroutines, kotlinx.serialization", "JetBrains", APACHE_2),

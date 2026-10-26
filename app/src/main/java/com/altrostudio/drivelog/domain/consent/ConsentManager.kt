@@ -2,6 +2,7 @@ package com.altrostudio.drivelog.domain.consent
 
 import android.content.Context
 import com.altrostudio.drivelog.data.settings.AppPreferences
+import com.altrostudio.drivelog.data.sync.PairingRepository
 import com.altrostudio.drivelog.data.trip.TripRepository
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.service.TripRecorderService
@@ -18,9 +19,11 @@ class ConsentManager(
     private val preferences: AppPreferences,
     private val trips: TripRepository,
     private val recorder: TripRecorder,
+    private val pairing: PairingRepository,
     private val now: () -> Long = System::currentTimeMillis
 ) {
-    private val _consentGiven = MutableStateFlow(preferences.consentGiven)
+    // 동의문 내용이 바뀌어 버전이 올라가면 다시 동의를 받는다
+    private val _consentGiven = MutableStateFlow(preferences.consentGiven && preferences.consentVersion == CONSENT_VERSION)
     val consentGiven: StateFlow<Boolean> = _consentGiven.asStateFlow()
 
     fun agree() {
@@ -36,11 +39,12 @@ class ConsentManager(
         recorder.stop()
         trips.deleteAll()
         preferences.clearAll()
+        pairing.reset()
         _consentGiven.value = false
     }
 
     companion object {
-        /** 동의문 내용을 바꾸면 올려서 다시 동의받는다 */
-        const val CONSENT_VERSION = 1
+        /** 동의문 내용을 바꾸면 올려서 다시 동의받는다. 2: 조직 연결 시 서버 제공 내용 추가 */
+        const val CONSENT_VERSION = 2
     }
 }

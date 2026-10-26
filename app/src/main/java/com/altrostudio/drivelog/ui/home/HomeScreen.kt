@@ -26,6 +26,7 @@ import java.time.YearMonth
 fun HomeScreen(
     month: YearMonth,
     summary: LogbookSummary?,
+    syncLine: String,
     onOpenLogbook: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
@@ -42,6 +43,7 @@ fun HomeScreen(
         ) {
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
             Text(stringResource(R.string.home_recording_on), style = MaterialTheme.typography.bodyLarge)
+            Text(syncLine, style = MaterialTheme.typography.bodyMedium)
             Text(stringResource(R.string.home_month_title, month.year, month.monthValue), style = MaterialTheme.typography.titleLarge)
             SummaryCard(summary = summary, compact = compact)
             val logbookText = stringResource(R.string.home_open_logbook)

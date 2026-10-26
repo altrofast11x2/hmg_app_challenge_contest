@@ -80,9 +80,17 @@ object TripLedger {
 
     fun headOf(change: TripChangeEntity) = ChainHeadEntity(change.vehicleId, change.chainSeq, change.hash)
 
-    /** 위치 값의 원문을 지우고 해시값만 남긴다. 체인 검증 결과는 그대로다 */
+    /** 위치 값의 원문을 지우고 해시값만 남긴다. 체인 검증 결과는 그대로이고, 서버 사본도 가리도록 다시 올린다 */
     fun TripChangeEntity.redacted(): TripChangeEntity =
-        if (field.isLocation) copy(oldValue = HashChain.commitment(oldValue), newValue = HashChain.commitment(newValue)) else this
+        if (field.isLocation) {
+            copy(
+                oldValue = HashChain.commitment(oldValue),
+                newValue = HashChain.commitment(newValue),
+                syncState = SyncState.PENDING
+            )
+        } else {
+            this
+        }
 
     /**
      * 체인을 처음부터 다시 계산한다. 값이 바뀌었거나, 중간·끝 기록이 빠졌거나, 순서가 바뀌었거나,

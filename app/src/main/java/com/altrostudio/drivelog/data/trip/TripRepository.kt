@@ -49,4 +49,22 @@ interface TripRepository {
 
     /** 동의를 철회하면 모든 운행 기록을 지운다 */
     suspend fun deleteAll()
+
+    /** 서버에 아직 올리지 않은 완료 운행과 분류·수정 이력 (체인 순서) */
+    suspend fun pendingUploads(limit: Int): PendingUploads
+
+    /** 올린 기록을 표시한다. 올리는 도중 바뀐 운행은 다음에 다시 올라가도록 그대로 둔다 */
+    suspend fun markUploaded(trips: List<TripEntity>, changes: List<TripChangeEntity>)
+
+    /** 올릴 기록 수 */
+    fun observePendingCount(): Flow<Int>
+
+    /** 조직에 연결되기 전에 쌓인 운행에 조직과 기본 운전자를 채운다 (해시 대상이 아니라 체인은 그대로다) */
+    suspend fun assignOrg(orgId: String, driverId: String?)
+
+    suspend fun chainHeads(): List<ChainHeadEntity>
+}
+
+data class PendingUploads(val trips: List<TripEntity>, val changes: List<TripChangeEntity>) {
+    val isEmpty: Boolean get() = trips.isEmpty() && changes.isEmpty()
 }

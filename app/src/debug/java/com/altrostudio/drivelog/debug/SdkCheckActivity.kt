@@ -44,7 +44,7 @@ class SdkCheckActivity : ComponentActivity() {
                         state = state,
                         onReadVin = viewModel::readVin,
                         onReadEfficiency = viewModel::readEfficiency,
-                        onProbeEnergy = viewModel::probeEnergy,
+                        onReadBattery = viewModel::readBattery,
                         onReadCurrentPlace = viewModel::readCurrentPlace,
                         onReadDestination = viewModel::readDestination,
                         modifier = Modifier.padding(innerPadding)
@@ -60,7 +60,7 @@ private fun SdkCheckScreen(
     state: SdkCheckState,
     onReadVin: () -> Unit,
     onReadEfficiency: () -> Unit,
-    onProbeEnergy: () -> Unit,
+    onReadBattery: () -> Unit,
     onReadCurrentPlace: () -> Unit,
     onReadDestination: () -> Unit,
     modifier: Modifier = Modifier
@@ -89,7 +89,7 @@ private fun SdkCheckScreen(
                 ValueRow("주차 브레이크 (AAOS PARKING_BRAKE_ON)", state.parkingBrake)
                 ValueRow("VIN", state.vin, onReadVin, enabled)
                 ValueRow("연비 / 전비", state.efficiency, onReadEfficiency, enabled)
-                ValueRow("에너지 값 실험 (EV · 연료)", state.energyProbe, onProbeEnergy, enabled)
+                ValueRow("배터리 잔량", state.battery, onReadBattery, enabled)
             }
             Section(title = "NaviHelper", modifier = Modifier.weight(1f)) {
                 ValueRow("현재 위치", state.currentPlace, onReadCurrentPlace, enabled)

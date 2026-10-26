@@ -15,8 +15,11 @@ interface VehicleDataSource {
     /** 차량 식별번호(VIN) */
     suspend fun readVin(): String?
 
-    /** 지금까지의 평균 연비 또는 전비 */
+    /** 지금까지의 평균 연비 또는 전비 (차량이 지원할 때만) */
     suspend fun readEfficiency(): EnergyEfficiency?
+
+    /** 전기차 배터리 잔량(%). 운행 전후로 기록해 전비 대신 배터리 사용량을 남긴다. 전기차가 아니면 null */
+    suspend fun readBatterySocPercent(): Int?
 
     /** 계기판 누적 주행거리 변화 (km) */
     val odometerKm: Flow<Float?>

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T03:13:29.793Z
+  modified: 2026-10-26T04:07:05.859Z
 ---
 
 2026-10-22~24에 이전 폴더(C:\dev\hmg_app_challenge_contest)에서 검증하고 10-26에 DriveLog에서 다시 확인한 구성:
@@ -24,6 +24,13 @@ metadata:
 - Vehicle `Gear` API는 deprecated("use the Google GEAR_SELECTION property")다 → AAOS CarPropertyManager GEAR_SELECTION(android.car.permission.CAR_POWERTRAIN, normal)을 쓴다. 계획한 pleos 권한(CAR_DRIVE/INFO/ENERGY/SAFETY/SEATS, NAVI_ROUTE)은 모두 normal이다.
 - Virtual Console에서 바꿀 수 있는 것: 기어 P/R/N/D, Odometer(1km 단위), 좌석 착석, Telltales, EV 배터리 등. 바꿀 수 없는 것: 속도, 시동, GPS 위치, 내비 경로, 좌석 위치.
 - NaviHelper `get*Info()`는 Unit을 반환하고 결과는 `NaviHelperEventListener.on*Info()`로 온다. `CurrentLocationInfo`에 address·lat/lng가 있다.
+
+2026-10-26 3단계 에뮬레이터 검증 (자세한 표는 저장소 docs/sdk-usage.md):
+- 권한 보호 수준은 `pm list permissions`의 접두어 매칭으로 판단하지 말고 `dumpsys package <pkg>`의 granted 값으로 확인한다. AAOS `android.car.permission.CAR_ENERGY`는 granted=false(실행 중 허용)였다.
+- `distractionOptimized` meta-data는 adb로 설치한 앱에도 적용된다 (기어 D에서도 화면이 가려지지 않음). D에서는 계기판에 20km/h가 표시된다.
+- Virtual Console 경고등 카드는 AAOS PARKING_BRAKE_ON을 바꾸지 않는다. 전비·연비 API는 전부 미지원이고 배터리 잔량(%)만 된다. VIN은 "invalid".
+- NaviHelper `getCurrentLocationInfo()`는 경로 안내 없이도 주소를 준다. `getDestinationInfo()`는 경로가 없으면 빈 값(0,0)을 준다.
+- 사용자가 연 브라우저 탭은 Chrome 확장이 제어하지 못한다. Virtual Console을 직접 조작할 때는 새 탭(tabs_context_mcp createIfEmpty)에서 http://127.0.0.1:8088/ → Emulation Controls를 쓴다.
 
 Pleos SDK 함정 (이전 세션 실측, 구현 전에 문서로 다시 확인할 것):
 - Nexus에는 Vehicle 2.3.1이 없다. 2.3.2를 쓴다. Pleos 이미지는 `cmdline-tools\19.0`의 sdkmanager로 설치한다.

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T03:21:35.570Z
+  modified: 2026-10-26T04:07:06.200Z
 ---
 
 2026-10-25에 사용자가 아이디어를 '자동 운행기록부'(DriveLog, 패키지 com.altrostudio.drivelog)로 정하고 상세 명세를 줬다. 명세 원문은 저장소의 `claude_chat/SPEC.md`에 있다. 그 전 세션(10/22~24)에서 검토한 아이디어(멀미 제로, 로드 도슨트 등)는 폐기했다.
@@ -21,6 +21,8 @@ metadata:
   3. 운행 종료: P 상태에서 분류 탭 즉시, 또는 P 5분 지속 시 "미분류"로 종료. 신호 대기·Auto Hold는 종료 아님. 데모용으로 대기 시간 조절 가능
   4. 주차 브레이크를 정차 판단 보조로 사용. 단 Pleos `registerTelltales`는 PRIVATE 권한이라, 3단계에서 `getTelltalesInfo`(CAR_SAFETY)와 AAOS `PARKING_BRAKE_ON`(CAR_POWERTRAIN)을 비교해 정하고 보고한다
   5. 경로 없는 주행의 주소는 NaviHelper만 사용. 안 오면 방문처 빈칸 → 웹에서 수정(이력 남김). 위치 권한 미사용
+
+- 2026-10-26 3단계 결정: 전비 API가 에뮬레이터 미지원이라 운행 전후 배터리 잔량(%)을 기록하고 실차에서 전비가 지원되면 함께 기록한다. VIN이 없으면(에뮬레이터 "invalid") 앱이 처음 연결할 때 만든 기기 ID로 차량을 구분하고 웹에 "VIN 미확인" 표시. 주차 브레이크는 AAOS PARKING_BRAKE_ON(추가 권한 없음)으로 바꾸고 CAR_SAFETY는 쓰지 않는다. 3단계 완료, 다음은 4단계(Room, 상태 머신, 해시 체인, 테스트).
 
 **Why:** 사용자가 공모전 규정(정직한 구현 현황, 순수 창작물, 비밀값 미포함)을 기술 취향보다 우선한다고 명시했다.
 

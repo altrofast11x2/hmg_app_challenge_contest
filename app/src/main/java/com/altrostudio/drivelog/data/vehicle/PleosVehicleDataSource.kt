@@ -75,6 +75,13 @@ class PleosVehicleDataSource(context: Context) : VehicleDataSource, AutoCloseabl
         return null
     }
 
+    // 배터리 에너지(kWh)는 AAOS EV_BATTERY_LEVEL에 있지만 실행 중 허용이 필요한 CAR_ENERGY 권한이라 쓰지 않는다
+    override suspend fun readBatterySocPercent(): Int? {
+        val evBattery = vehicle.getEvBattery()
+        if (!awaitReadable { ok, fail -> evBattery.checkEvBatteryStateOfChargeCapabilities(ok, fail) }) return null
+        return awaitVehicle<Int?> { ok, fail -> evBattery.getEvBatteryStateOfCharge(ok, fail) }
+    }
+
     override val odometerKm: Flow<Float?> = callbackFlow {
         val odometer = vehicle.getOdometer()
         val listener = object : DistanceDrivenListener {

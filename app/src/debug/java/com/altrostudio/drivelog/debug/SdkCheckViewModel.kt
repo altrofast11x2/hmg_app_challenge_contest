@@ -1,6 +1,5 @@
 package com.altrostudio.drivelog.debug
 
-import ai.pleos.playground.vehicle.Vehicle
 import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -21,12 +20,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 data class SdkCheckState(
     val odometer: String = "-",
@@ -35,7 +30,7 @@ data class SdkCheckState(
     val drivingRestricted: Boolean = false,
     val vin: String = "-",
     val efficiency: String = "-",
-    val energyProbe: String = "-",
+    val battery: String = "-",
     val currentPlace: String = "-",
     val destination: String = "-",
     val log: List<String> = emptyList()
@@ -44,8 +39,7 @@ data class SdkCheckState(
 /** 실제 데이터 소스가 에뮬레이터·Virtual Console 값을 제대로 읽는지 확인한다. 모든 변화는 logcat(DriveLog/SdkCheck)에도 남긴다 */
 class SdkCheckViewModel(
     private val vehicle: PleosVehicleDataSource,
-    private val navi: PleosNaviDataSource,
-    private val rawVehicle: Vehicle
+    private val navi: PleosNaviDataSource
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SdkCheckState())
@@ -59,7 +53,7 @@ class SdkCheckViewModel(
         watch("내비 도착", navi.arrivals) { this }
         readVin()
         readEfficiency()
-        probeEnergy()
+        readBattery()
         readCurrentPlace()
         readDestination()
     }
@@ -69,7 +63,7 @@ class SdkCheckViewModel(
     fun readEfficiency() =
         read("연비/전비", { vehicle.readEfficiency()?.let { "${it.value} (${it.type})" } ?: NO_VALUE }) { copy(efficiency = it) }
 
-    fun probeEnergy() = read("에너지 실험", ::probeEnergyValues) { copy(energyProbe = it) }
+    fun readBattery() = read("배터리 잔량", { vehicle.readBatterySocPercent()?.let { "$it%" } ?: NO_VALUE }) { copy(battery = it) }
 
     fun readCurrentPlace() = read("현재 위치", { navi.currentPlace()?.describe() ?: NO_VALUE }) { copy(currentPlace = it) }
 
@@ -78,7 +72,6 @@ class SdkCheckViewModel(
     override fun onCleared() {
         vehicle.close()
         navi.close()
-        rawVehicle.release()
     }
 
     private fun <T> watch(label: String, flow: Flow<T>, apply: SdkCheckState.(T) -> SdkCheckState) {
@@ -104,38 +97,6 @@ class SdkCheckViewModel(
         }
     }
 
-    // 실험: 이 차량(에뮬레이터)에서 읽을 수 있는 연비·전비·잔량 값을 찾는다
-    private suspend fun probeEnergyValues(): String {
-        val ev = rawVehicle.getEvBattery()
-        val fuel = rawVehicle.getFuel()
-        val results = listOf(
-            "EV 순간" to rawCall<Float?> { ok, fail -> ev.getInstantaneousEvEfficiency(ok, fail) },
-            "EV 충전후" to rawCall<Float?> { ok, fail -> ev.getSinceChargeEvEfficiency(ok, fail) },
-            "EV 누적" to rawCall<Float?> { ok, fail -> ev.getCumulativeEvEfficiency(ok, fail) },
-            "EV 잔량%" to rawCall<Int?> { ok, fail -> ev.getEvBatteryStateOfCharge(ok, fail) },
-            "연료 순간" to rawCall<Float?> { ok, fail -> fuel.getInstantaneousFuelEconomy(ok, fail) },
-            "연료 누적" to rawCall<Float?> { ok, fail -> fuel.getCumulativeFuelEconomy(ok, fail) },
-            "연료 잔량%" to rawCall<Int?> { ok, fail -> fuel.getFuelPercent(ok, fail) }
-        )
-        return results.joinToString(" / ") { (name, value) -> "$name=$value" }
-    }
-
-    private suspend fun <T> rawCall(call: (onComplete: (T) -> Unit, onFailed: (Exception) -> Unit) -> Unit): String =
-        try {
-            withTimeoutOrNull(RAW_TIMEOUT_MS) {
-                suspendCancellableCoroutine<T> { continuation ->
-                    call(
-                        { if (continuation.isActive) continuation.resume(it) },
-                        { if (continuation.isActive) continuation.resumeWithException(it) }
-                    )
-                }
-            }.toString()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            "실패(${e.message})"
-        }
-
     private fun log(message: String) {
         val time = LocalTime.now().format(TIME_FORMAT)
         _state.update { it.copy(log = (listOf("$time  $message") + it.log).take(MAX_LOG)) }
@@ -150,17 +111,12 @@ class SdkCheckViewModel(
         private const val TAG = "DriveLog/SdkCheck"
         private const val NO_VALUE = "값 없음 (미지원 또는 응답 없음)"
         private const val MAX_LOG = 50
-        private const val RAW_TIMEOUT_MS = 3_000L
         private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss")
 
         val Factory = viewModelFactory {
             initializer {
                 val app = checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
-                SdkCheckViewModel(
-                    PleosVehicleDataSource(app),
-                    PleosNaviDataSource(app),
-                    Vehicle(app).also { it.initialize() }
-                )
+                SdkCheckViewModel(PleosVehicleDataSource(app), PleosNaviDataSource(app))
             }
         }
     }

@@ -6,7 +6,8 @@
 |---|---|
 | `supabase/migrations/0001_init.sql` | 테이블, RLS 정책, 연결 코드 발급·사용 함수 |
 | `scripts/setup.mjs` | 마이그레이션 적용 + 익명 로그인 켜기 (Management API) |
-| `seed/seed.mjs` | 시연용 데모 조직, 관리자 계정, 연결 코드 |
+| `seed/seed.mjs` | 시연용 데모 조직, 관리자 계정, 연결 코드 (secret 키 사용) |
+| `seed/seed.sql` | `seed.mjs`와 같은 데모 데이터를 SQL로 (관리자 계정은 대시보드에서 먼저 만든다) |
 | `.env.example` | 설정 예시. `backend/.env`로 복사해서 채운다 (**커밋 금지**) |
 
 ## 계정과 권한
@@ -24,6 +25,23 @@
 - `service_role` 키는 `backend/.env`에서 seed 스크립트만 씁니다. 앱과 웹에는 공개(anon) 키만 들어갑니다.
 
 ## 처음 설정하기
+
+방법은 두 가지다. A와 `setup.mjs`는 마이그레이션 적용 기록을 `public.drivelog_migrations`에 남겨서, 둘을 섞어 써도 같은 SQL을 두 번 적용하지 않는다.
+
+### A. Claude Code + Supabase MCP (secret 키 없이)
+
+1. 대시보드에서 프로젝트를 만들고, 프로젝트 ref로 MCP를 등록한다 (`.mcp.json`).
+   ```
+   claude mcp add --scope project --transport http supabase "https://mcp.supabase.com/mcp?project_ref=<project-ref>&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+   ```
+2. Claude Code를 다시 시작하고 `/mcp`에서 supabase를 승인·로그인한다.
+3. 대시보드에서 직접 할 일 (MCP에 해당 기능이 없다)
+   - **Authentication > Sign In / Providers**에서 **Allow anonymous sign-ins** 켜기
+   - **Authentication > Users > Add user > Create new user**로 관리자 계정 만들기 (**Auto Confirm User** 체크)
+4. Claude가 MCP로 `0001_init.sql` 적용 → `drivelog_migrations` 기록 → `seed/seed.sql` 실행 → 보안 점검(advisors)을 한다.
+5. `local.properties`에 `supabase.url`, `supabase.anonKey`(Publishable key)를 넣는다.
+
+### B. 스크립트 (`backend/.env`의 키 사용)
 
 1. https://supabase.com 에서 프로젝트를 만든다 (지역: Northeast Asia (Seoul) 권장).
 2. `backend/.env.example`을 `backend/.env`로 복사하고 값을 채운다.

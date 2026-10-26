@@ -11,7 +11,7 @@
 | 3. SDK 연결과 debug 확인 화면 | 완료: 기어·주행 제한·계기판·잔량·주소를 에뮬레이터와 Virtual Console에서 검증. 결과는 `docs/sdk-usage.md` |
 | 4. Room, 운행 감지 상태 머신, 해시 체인, 단위 테스트 | 완료: 단위 테스트 28개 통과, 에뮬레이터에서 분류 완료·미분류 자동 종료·강제 종료 후 복원 검증. 해시 규칙은 `docs/integrity.md` |
 | 5. 동의, 주행 중 화면, 정차 후 분류, 월별 기록부, CSV, 라이선스 화면 | 구조 완료 (디자인 토큰 대기). 단위 테스트 36개, 에뮬레이터에서 전체 흐름 검증 |
-| 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 코드 완료 (단위 테스트 50개). **사용자가 Supabase 프로젝트를 만들고 `backend/.env`·`local.properties`를 채우면** setup·seed 실행과 실제 연결·동기화 시험 |
+| 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 코드 완료 (단위 테스트 50개). Supabase 프로젝트 생성됨(ref `ggpychjlddrgbakxjyew`), MCP 등록(`.mcp.json`). **다음: MCP로 SQL 적용·seed.sql·보안 점검 → local.properties → 실제 연결·동기화 시험** (`backend/README.md` 방법 A) |
 | 7. web/ 관리자 최소판 | 계획 |
 | 8~9 | 계획 |
 

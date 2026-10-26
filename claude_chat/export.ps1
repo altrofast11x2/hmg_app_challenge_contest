@@ -15,9 +15,19 @@ if ($SessionId -eq "") {
     $SessionId = (Get-ChildItem $projectDir -Filter *.jsonl | Sort-Object LastWriteTime -Descending | Select-Object -First 1).BaseName
 }
 
+# 대화에 찍힌 키(Supabase 공개·비밀 키, 액세스 토큰, JWT)는 저장소에 들어가지 않게 가린다
+function Copy-Redacted([string]$from, [string]$to) {
+    $text = [IO.File]::ReadAllText($from)
+    $text = $text -replace 'sb_(secret|publishable)_[A-Za-z0-9_-]{16,}', 'sb_$1_[REDACTED]'
+    $text = $text -replace 'sbp_[A-Za-z0-9]{20,}', 'sbp_[REDACTED]'
+    $text = $text -replace 'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}', '[REDACTED_JWT]'
+    [IO.File]::WriteAllText($to, $text, (New-Object Text.UTF8Encoding $false))
+}
+
 New-Item -ItemType Directory -Force "$chatDir\transcript", "$chatDir\memory" | Out-Null
-Copy-Item "$projectDir\$SessionId.jsonl" "$chatDir\transcript\" -Force
-if (Test-Path "$projectDir\memory\*.md") { Copy-Item "$projectDir\memory\*.md" "$chatDir\memory\" -Force }
+Copy-Redacted "$projectDir\$SessionId.jsonl" "$chatDir\transcript\$SessionId.jsonl"
+Get-ChildItem "$projectDir\memory" -Filter *.md -ErrorAction SilentlyContinue |
+    ForEach-Object { Copy-Redacted $_.FullName "$chatDir\memory\$($_.Name)" }
 Set-Content "$chatDir\transcript\SESSION_ID.txt" $SessionId -Encoding ascii
 
 Write-Host "내보내기 완료: 세션 $SessionId"

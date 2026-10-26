@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = "com.altrostudio.drivelog"
     compileSdk = 35
+    // AAOS Car API (기어, 주차 브레이크, 주행 제한). 차량 OS에 내장되어 있어 APK에는 포함되지 않는다
+    useLibrary("android.car")
 
     defaultConfig {
         applicationId = "com.altrostudio.drivelog"
@@ -42,8 +44,14 @@ android {
 
 dependencies {
 
+    implementation(libs.pleos.vehicle)
+    implementation(libs.pleos.navihelper)
+
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

@@ -2,6 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 차량 데이터 권한은 실제로 쓰는 기능만 선언한다 (docs/sdk-usage.md) -->
+    <!-- 계기판 누적 거리 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <!-- 차량 식별번호(VIN) -->
+    <uses-permission android:name="pleos.car.permission.CAR_INFO" />
+    <!-- 연비·전비 -->
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
+    <!-- 운행 시작·종료 주소, 목적지·경유지 도착 -->
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <!-- AAOS 기어(GEAR_SELECTION), 주차 브레이크(PARKING_BRAKE_ON) -->
+    <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
+
     <!-- 운행기록(개인정보)은 백업하지 않는다. Android 12+의 기기 간 이전은 data_extraction_rules로 막는다 -->
     <application
         android:allowBackup="false"
@@ -12,6 +24,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DriveLog"
         tools:targetApi="31">
+        <!-- AAOS Car API. 차량 OS가 아닌 기기(테스트용 폰 에뮬레이터)에서도 설치되도록 필수로 두지 않는다 -->
+        <uses-library
+            android:name="android.car"
+            android:required="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -23,6 +23,8 @@ cd web && node --test               # 운행기록부·CSV 단위 테스트
 
 ## 배포 (Vercel)
 
+배포 주소: **https://altrostudio-drivelog.vercel.app** (프로젝트 `altrofast11x2s-projects/altrostudio-drivelog`, 2026-10-26 첫 배포)
+
 빌드 단계가 없는 정적 사이트라, 공개할 파일만 모은 `web/dist`를 그대로 올린다 (`scripts/`·`test/`·README는 올라가지 않는다).
 
 ```bash

@@ -33,7 +33,7 @@ curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Park"
 - [ ] 인터넷 확인. 안 되면 Wi-Fi를 껐다 켠다 (README)
 - [ ] 에뮬레이터 시간대가 Asia/Seoul인지 확인
 - [ ] release APK 새로 설치 (`apk/AltroStudio_DriveLog_release.apk`, 이전 앱은 지우고)
-- [ ] 데모 계정 준비: 관리자 웹 로그인, 시연용 연결 코드 또는 새로 발급한 코드
+- [ ] 데모 계정 준비: 관리자 웹(https://altrostudio-drivelog.vercel.app) 로그인, 시연용 연결 코드 또는 새로 발급한 코드
 - [ ] Supabase 프로젝트가 일시 정지되지 않았는지 대시보드에서 확인
 - [ ] 알림 끄기, 한국어 UI
 - [ ] Virtual Console 기어를 P, 계기판 거리를 보기 좋은 값으로 맞추기

@@ -22,6 +22,8 @@
   3. 연결 중 `SecurityException`이 나자 앱이 죽었다 → 연결·동기화는 어떤 예외든 실패로 알리고 멈추지 않는다 (단위 테스트 2개 추가, 총 52개)
 - release 서명 키: `C:\Users\kazin\.android\drivelog-release.jks` (저장소 밖), 비밀번호는 git 제외 파일 `keystore.properties`. **사용자가 둘 다 따로 백업해야 한다** (잃으면 같은 앱으로 업데이트 불가).
 - 관리자 웹의 연결 코드 발급은 차량 탭 안에 있다 (앱 안내 "관리자 웹 › 차량 › 연결 코드 발급", A02 명세).
+- 관리자 웹 배포: https://altrostudio-drivelog.vercel.app (Vercel 프로젝트 `altrofast11x2s-projects/altrostudio-drivelog`). Vercel MCP는 프로젝트 생성 403이라 CLI로 배포한다: `node web/scripts/build.mjs` → `vercel deploy --cwd web/dist --prod --yes` (CLI는 사용자 계정으로 로그인됨, `web/dist/.vercel`에 연결 정보). 배포된 파일이 원본과 같은지 sha1로 대조했다.
+- 디자인 쪽 공유 채팅(claude.ai/share/f646197e-…)은 Cloudflare 봇 확인에 막혀 읽지 못함 → 사용자에게 붙여 넣기를 부탁함.
 
 - 6단계 구조: `backend/supabase/migrations/0001_init.sql`(테이블·RLS·`issue_pairing_code`·`pair_vehicle`), `backend/scripts/setup.mjs`(Management API로 SQL 적용·익명 로그인 켜기), `backend/seed/seed.mjs`(데모 조직·`admin@email.com`·재사용 데모 코드). 앱은 `data/remote`(OkHttp), `data/sync`(연결·동기화·WorkManager), `ui/connect`(A02 구조).
 - 동의문 버전 2: 조직 연결 시 서버 제공 내용을 추가해서 기존 동의자에게 다시 동의를 받는다.

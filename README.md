@@ -34,7 +34,9 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 
 ### 관리자 웹 (`web/`)
 
-Node.js 18 이상이 필요하고, 설치할 패키지는 없습니다.
+배포 주소: **https://altrostudio-drivelog.vercel.app** (Vercel)
+
+이 PC에서 띄울 때는 Node.js 18 이상이 필요하고, 설치할 패키지는 없습니다.
 
 ```bash
 node web/scripts/write-config.mjs   # local.properties의 서버 주소·공개 키로 web/js/config.js를 만든다
@@ -77,7 +79,7 @@ adb forward tcp:8088 tcp:8088
 
 | 용도 | 값 |
 |---|---|
-| 관리자 웹 로그인 | `admin@email.com` (비밀번호는 저장소에 두지 않습니다. 전달 방법은 제출 전에 정합니다) |
+| 관리자 웹 로그인 | https://altrostudio-drivelog.vercel.app · `admin@email.com` (비밀번호는 저장소에 두지 않습니다. 전달 방법은 제출 전에 정합니다) |
 | 차량 연결 코드 (시연용, 여러 번 사용 가능, 2027-02-28까지) | `422511` |
 
 데모 조직과 계정은 `backend/seed/`에서만 만들고, APK에는 들어가지 않습니다.

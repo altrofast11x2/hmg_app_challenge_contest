@@ -13,7 +13,15 @@
 | 5. 동의, 주행 중 화면, 정차 후 분류, 월별 기록부, CSV, 라이선스 화면 | 구조 완료 (디자인 토큰 대기). 단위 테스트 36개, 에뮬레이터에서 전체 흐름 검증 |
 | 6. 백엔드(Supabase) 스키마·RLS, 연결 코드, 동기화 | 코드 완료 (단위 테스트 50개). Supabase 프로젝트(ref `ggpychjlddrgbakxjyew`)에 MCP로 0001~0003 적용, advisors 점검, seed.sql로 데모 조직·관리자(`admin@email.com`, 비밀번호는 `backend/.env`)·연결 코드 `422511` 생성, 관리자 로그인·RLS를 실제 API로 확인. **남은 것: 사용자가 대시보드에서 익명 로그인 켜기 → 에뮬레이터에서 연결·동기화 시험** |
 | 7. web/ 관리자 최소판 | 구현 완료(로그인, 운행기록부·CSV, 차량·연결 해제, 연결 코드 발급). 웹 단위 테스트 8개, Node로 API 연동 확인, headless Edge로 화면 확인. **남은 것: 실제 운행 데이터로 표 확인, 배포(어디에 올릴지 사용자 확인)** |
-| 8~9 | 계획 |
+| 8. GitHub, release APK, README, docs 4종 | 완료: `apk/AltroStudio_DriveLog_release.apk`(v2 서명, 에뮬레이터 설치·실행 1.3~1.6초), README(심사용 빠른 시작·APK·개발자 메모·라이선스), `docs/status.md`·`demo-script.md`·`business.md`, `sdk-usage.md` 갱신 |
+| 9. 제출 직전 점검 | 계획 |
+
+- 8단계 release 시험에서 찾아 고친 버그 (6단계 코드가 실제 기기에서 서버와 통신한 적이 없었다)
+  1. 서버 주소·키를 `BuildConfig` 상수로 넣었더니 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 채운 뒤에도 증분 빌드에 빈 값이 남았다 → 문자열 리소스(`resValue`)로 바꿔 실행 중에 읽는다
+  2. 매니페스트에 `INTERNET` 권한이 없었다 → 추가
+  3. 연결 중 `SecurityException`이 나자 앱이 죽었다 → 연결·동기화는 어떤 예외든 실패로 알리고 멈추지 않는다 (단위 테스트 2개 추가, 총 52개)
+- release 서명 키: `C:\Users\kazin\.android\drivelog-release.jks` (저장소 밖), 비밀번호는 git 제외 파일 `keystore.properties`. **사용자가 둘 다 따로 백업해야 한다** (잃으면 같은 앱으로 업데이트 불가).
+- 관리자 웹의 연결 코드 발급은 차량 탭 안에 있다 (앱 안내 "관리자 웹 › 차량 › 연결 코드 발급", A02 명세).
 
 - 6단계 구조: `backend/supabase/migrations/0001_init.sql`(테이블·RLS·`issue_pairing_code`·`pair_vehicle`), `backend/scripts/setup.mjs`(Management API로 SQL 적용·익명 로그인 켜기), `backend/seed/seed.mjs`(데모 조직·`admin@email.com`·재사용 데모 코드). 앱은 `data/remote`(OkHttp), `data/sync`(연결·동기화·WorkManager), `ui/connect`(A02 구조).
 - 동의문 버전 2: 조직 연결 시 서버 제공 내용을 추가해서 기존 동의자에게 다시 동의를 받는다.

@@ -2,7 +2,16 @@
 
 AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (Pleos Connect 앱)
 
-> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV), 서버(Supabase) 스키마·권한·연결 코드·동기화 코드, 관리자 웹 최소판을 만들었습니다. 차량 앱과 서버를 실제로 연결해 동기화하는 시험은 아직 진행 중입니다.
+> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV), 서버(Supabase) 스키마·권한·연결 코드·동기화 코드, 관리자 웹 최소판을 만들었습니다. 차량 앱과 서버를 실제로 연결해 동기화하는 시험은 아직 진행 중입니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
+
+## 빠르게 해 보기 (심사용)
+
+1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk)를 설치합니다 (`adb install apk/AltroStudio_DriveLog_release.apk`).
+2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
+3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결되고, [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
+4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜹니다. 용도를 한 번 누르면 월별 운행기록부에 들어갑니다.
+
+시연 흐름은 [docs/demo-script.md](docs/demo-script.md), 사용한 Pleos SDK는 [docs/sdk-usage.md](docs/sdk-usage.md)에 있습니다.
 
 ## 앱 이름과 한 줄 소개
 
@@ -75,8 +84,23 @@ adb forward tcp:8088 tcp:8088
 
 ## APK 위치
 
-- `apk/AltroStudio_DriveLog_release.apk` (release 서명 빌드, 8단계에서 추가 예정)
+- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 24 MB)
+- 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
+- APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
+
+## 개발자 메모
+
+- 에뮬레이터 화면만 녹화하기 (한 번에 최대 3분):
+  ```bash
+  adb shell screenrecord --time-limit 180 /sdcard/drivelog-demo.mp4
+  adb pull /sdcard/drivelog-demo.mp4
+  ```
+- 에뮬레이터 시간대를 한국으로: `adb shell service call alarm 3 s16 Asia/Seoul`
+- 데모 조직·관리자·연결 코드: `backend/seed/` (값은 커밋하지 않는 `backend/.env`)
 
 ## 라이선스
 
-[MIT](LICENSE)
+- 이 저장소의 코드: [MIT](LICENSE)
+- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, Kotlin·kotlinx 등 Apache License 2.0). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
+- 관리자 웹(`web/`)은 외부 라이브러리를 쓰지 않습니다.
+- 현대자동차그룹·Pleos의 로고와 상표는 쓰지 않습니다.

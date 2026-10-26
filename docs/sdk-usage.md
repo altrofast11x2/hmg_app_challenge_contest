@@ -1,6 +1,6 @@
 # Pleos SDK 활용 매핑
 
-> **상태 (2026-10-26)**: SDK 연결 계층(`VehicleDataSource`, `NaviDataSource`)과 debug 전용 확인 화면까지 구현했고, Pleos Connect 에뮬레이터 + Virtual Console에서 검증했습니다. 운행 기록 기능은 아직 구현되지 않았습니다.
+> **상태 (2026-10-26)**: 아래 API로 운행 자동 기록·분류·월별 기록부를 구현했고 Pleos Connect 에뮬레이터 + Virtual Console에서 검증했습니다. 기능별 상태는 `docs/status.md`에 있습니다.
 > 시그니처는 공식 Maven 저장소의 소스 jar(Vehicle 2.3.2, NaviHelper 3.0.5)와 Pleos 공식 문서에서 확인했습니다.
 
 ## 기능별 사용 API
@@ -22,7 +22,7 @@
 | 화면 조작 가능 여부 (주행 중 조작 0) | `CarUxRestrictionsManager` + 액티비티 `distractionOptimized` meta-data | 없음 | ✅ D로 바꾸면 0.15초 뒤 제한, P로 바꾸면 해제. `distractionOptimized`로 선언한 화면은 D에서도 시스템이 가리지 않는다 |
 | 정차 판단 보조 (주차 브레이크) | `CarPropertyManager`의 `PARKING_BRAKE_ON` | `CAR_POWERTRAIN` (기어와 같은 권한) | 읽기는 된다 (`false`). Virtual Console의 경고등 카드로는 값이 바뀌지 않아 에뮬레이터 시연은 기어로만 한다 |
 
-선언한 권한 5개는 모두 설치 시 자동으로 허용된다 (2026-10-26 `dumpsys package`로 확인). 차 안에서 권한 허용 팝업이 뜨지 않는다.
+선언한 차량 권한 5개는 모두 설치 시 자동으로 허용된다 (2026-10-26 `dumpsys package`로 확인). 차 안에서 권한 허용 팝업이 뜨지 않는다. 이 밖에 인터넷(`INTERNET`, 조직에 연결한 차량의 서버 통신), 포그라운드 서비스, 부팅 완료 수신 권한을 쓰며 모두 설치 시 허용되는 일반 권한이다.
 
 ## M2 검토
 

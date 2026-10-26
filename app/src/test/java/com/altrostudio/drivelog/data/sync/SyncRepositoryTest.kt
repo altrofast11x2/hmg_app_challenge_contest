@@ -80,6 +80,16 @@ class SyncRepositoryTest {
     }
 
     @Test
+    fun `네트워크 오류가 아닌 예외에도 멈추지 않고 기록을 남겨 다음에 다시 올린다`() = runTest {
+        completedTrip("t1")
+        pairing.value = demoOrg
+        api.failure = SecurityException("Permission denied (missing INTERNET permission?)")
+
+        assertTrue(sync.sync() is SyncOutcome.Failed)
+        assertEquals(SyncState.PENDING, trips.trip("t1").syncState)
+    }
+
+    @Test
     fun `토큰이 거부되면 새 토큰을 받아 한 번 더 시도한다`() = runTest {
         completedTrip("t1")
         pairing.value = demoOrg

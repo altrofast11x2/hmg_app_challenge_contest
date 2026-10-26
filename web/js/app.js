@@ -5,10 +5,10 @@ import { buildLogbook, csvFileName, km, kstParts, logbookCsv, monthRange, PURPOS
 
 const root = document.getElementById('app');
 
+// 연결 코드 발급은 차량 탭 안에 둔다 (앱 연결 화면 안내 "관리자 웹 › 차량 › 연결 코드 발급", design/specs/A02-connect.md)
 const TABS = [
   { id: 'logbook', label: '운행기록부' },
   { id: 'vehicles', label: '차량' },
-  { id: 'pairing', label: '연결 코드' },
 ];
 
 const state = {
@@ -201,7 +201,7 @@ function renderMain() {
     }, tab.label))),
     el('main', {}, content),
   );
-  ({ logbook: renderLogbook, vehicles: renderVehicles, pairing: renderPairing })[state.tab](content, renderToken);
+  ({ logbook: renderLogbook, vehicles: renderVehicles })[state.tab](content, renderToken);
 }
 
 // ─── 운행기록부 ────────────────────────────────────────────────────────
@@ -293,12 +293,15 @@ function logbookTable(logbook, includeVehicle) {
 // ─── 차량 ─────────────────────────────────────────────────────────────
 
 function renderVehicles(content, token) {
+  content.replaceChildren(pairingSection(token), el('h2', {}, '연결된 차량'), vehicleList(token));
+}
+
+function vehicleList(token) {
   if (state.vehicles.length === 0) {
-    content.replaceChildren(message('아직 연결된 차량이 없어요. "연결 코드" 탭에서 코드를 발급해 차에서 입력하세요.'));
-    return;
+    return message('아직 연결된 차량이 없어요. 위에서 연결 코드를 발급해 차에서 입력하세요.');
   }
   const status = el('div', { class: 'form-status' });
-  content.replaceChildren(status, el('div', { class: 'table-wrap' }, el('table', {},
+  return el('div', {}, status, el('div', { class: 'table-wrap' }, el('table', {},
     el('thead', {}, el('tr', {}, ['차량 이름', 'VIN', '기본 운전자', '연결 상태', ''].map((header) => el('th', { scope: 'col' }, header)))),
     el('tbody', {}, state.vehicles.map((vehicle) => el('tr', {},
       el('td', { title: `차량 ID: ${vehicle.id}` }, vehicleName(vehicle)),
@@ -324,20 +327,20 @@ function renderVehicles(content, token) {
   }
 }
 
-// ─── 연결 코드 ─────────────────────────────────────────────────────────
+// ─── 연결 코드 발급 (차량 탭 위쪽) ────────────────────────────────────────
 
-function renderPairing(content, token) {
+function pairingSection(token) {
   const result = el('div', { class: 'issued' });
   const list = el('div', {}, message('불러오는 중…'));
   const button = el('button', { type: 'submit', class: 'button-primary' }, '코드 발급');
   const form = el('form', { class: 'card pairing-form', onsubmit: onSubmit },
-    el('h2', {}, '차량 연결 코드 발급'),
+    el('h2', {}, '연결 코드 발급'),
     el('p', { class: 'muted' }, '차가 정차한 상태에서 앱의 연결 화면에 입력하는 6자리 코드예요. 10분 동안 한 번만 쓸 수 있어요.'),
     el('label', {}, '차량 이름 (선택)', el('input', { name: 'vehicleName', maxlength: '40', placeholder: '예: 영업 1호차' })),
     button,
   );
-  content.replaceChildren(el('div', { class: 'pairing' }, form, result), el('h2', {}, '사용할 수 있는 코드'), list);
   loadCodes();
+  return el('section', {}, el('div', { class: 'pairing' }, form, result), el('h2', {}, '사용할 수 있는 코드'), list);
 
   async function onSubmit(event) {
     event.preventDefault();

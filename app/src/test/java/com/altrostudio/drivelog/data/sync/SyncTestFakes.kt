@@ -22,7 +22,7 @@ class FakeBackendApi : BackendApi {
     )
 
     /** 다음 호출부터 이 오류를 던진다 */
-    var failure: BackendException? = null
+    var failure: Exception? = null
 
     /** 다음 한 번은 토큰 만료(401)로 거부한다 */
     var rejectTokenOnce = false

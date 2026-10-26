@@ -80,6 +80,9 @@ class PairingRepository(
             BackendException.Kind.NOT_CONFIGURED -> PairingResult.NotConfigured
             else -> PairingResult.Failed(e.message.orEmpty())
         }
+    } catch (e: Exception) {
+        // 권한 오류, 예상 밖의 응답 형식 등 어떤 이유로 실패해도 앱은 멈추지 않고 실패를 알린다
+        PairingResult.Failed(e.message ?: e.javaClass.simpleName)
     }
 
     /** [나중에 연결]: 연결하지 않고 이 차량 안에서만 기록한다. 설정에서 언제든 연결할 수 있다 */

@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- 조직에 연결한 차량만 서버(Supabase)와 통신한다: 연결 코드 확인, 운행 업로드 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- 운행기록(개인정보)은 백업하지 않는다. Android 12+의 기기 간 이전은 data_extraction_rules로 막는다 -->
     <application
         android:name=".DriveLogApp"

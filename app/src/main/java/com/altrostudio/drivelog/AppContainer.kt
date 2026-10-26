@@ -41,7 +41,10 @@ class AppContainer(context: Context) {
 
     val vehicleIdentity by lazy { VehicleIdentity(preferences, vehicle) }
 
-    private val backendConfig = SupabaseConfig(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_ANON_KEY)
+    private val backendConfig = SupabaseConfig(
+        appContext.getString(R.string.supabase_url),
+        appContext.getString(R.string.supabase_anon_key)
+    )
 
     private val backendApi by lazy { OkHttpBackendApi(backendConfig) }
 

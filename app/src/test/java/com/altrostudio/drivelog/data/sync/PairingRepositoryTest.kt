@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PairingRepositoryTest {
@@ -52,5 +53,13 @@ class PairingRepositoryTest {
     fun `인터넷이 없으면 오프라인으로 알린다`() = runTest {
         api.failure = BackendException(BackendException.Kind.NETWORK, "offline")
         assertEquals(PairingResult.Offline, repository.pair("123456"))
+    }
+
+    @Test
+    fun `네트워크 오류가 아닌 예외도 앱을 멈추지 않고 실패로 알린다`() = runTest {
+        // 인터넷 권한이 빠졌을 때 실제로 난 오류 (2026-10-26 release 시험)
+        api.failure = SecurityException("Permission denied (missing INTERNET permission?)")
+        assertTrue(repository.pair("123456") is PairingResult.Failed)
+        assertNull(settings.pairing)
     }
 }

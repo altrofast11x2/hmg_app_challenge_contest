@@ -13,6 +13,11 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
+// release 서명 정보는 keystore.properties에서 읽는다 (커밋 금지, keystore.properties.example 참고). 없으면 서명하지 않은 release가 된다
+val keystoreProperties = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 android {
     namespace = "com.altrostudio.drivelog"
     compileSdk = 35
@@ -29,12 +34,26 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("supabase.url", "")}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties.getProperty("supabase.anonKey", "")}\"")
+        // 서버 주소·공개 키는 문자열 리소스로 넣고 실행할 때 읽는다.
+        // BuildConfig 상수로 넣으면 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 바꾼 뒤 증분 빌드하면 옛 값이 남았다
+        resValue("string", "supabase_url", localProperties.getProperty("supabase.url", ""))
+        resValue("string", "supabase_anon_key", localProperties.getProperty("supabase.anonKey", ""))
+    }
+
+    signingConfigs {
+        if (keystoreProperties.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -51,7 +70,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
     testOptions {
         // 단위 테스트에서 android.util.Log 호출이 실패하지 않도록 기본값을 돌려준다

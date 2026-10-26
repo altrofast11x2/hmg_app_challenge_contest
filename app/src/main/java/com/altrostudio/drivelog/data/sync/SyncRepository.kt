@@ -46,6 +46,9 @@ class SyncRepository(
             throw e
         } catch (e: BackendException) {
             if (e.kind == BackendException.Kind.NETWORK) SyncOutcome.Offline else SyncOutcome.Failed(e.message.orEmpty())
+        } catch (e: Exception) {
+            // 어떤 이유로 실패해도 기록은 이 차량에 그대로 남고 다음에 다시 올린다 (앱은 멈추지 않는다)
+            SyncOutcome.Failed(e.message ?: e.javaClass.simpleName)
         }
         _lastOutcome.value = outcome
         outcome

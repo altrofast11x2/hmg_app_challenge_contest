@@ -36,5 +36,17 @@ interface TripRepository {
 
     fun observeTrips(): Flow<List<TripEntity>>
 
+    /** [from] 이상 [to] 미만에 시작한 완료 운행 (월별 운행기록부) */
+    fun observeCompletedTrips(from: Long, to: Long): Flow<List<TripEntity>>
+
+    /** 진행 중(주행 중 또는 정차)인 운행 */
+    fun observeActiveTrip(): Flow<TripEntity?>
+
+    /** 같은 목적지에서 지난번에 고른 업무 분류. 비업무는 주소를 남기지 않으므로 제안할 수 없다 */
+    suspend fun suggestPurpose(address: String): TripPurpose?
+
     suspend fun verifyChain(vehicleId: String): ChainVerification
+
+    /** 동의를 철회하면 모든 운행 기록을 지운다 */
+    suspend fun deleteAll()
 }

@@ -5,7 +5,9 @@ import com.altrostudio.drivelog.data.DriveLogDatabase
 import com.altrostudio.drivelog.data.navi.NaviArrival
 import com.altrostudio.drivelog.data.trip.TripLedger.redacted
 import com.altrostudio.drivelog.data.vehicle.EnergyEfficiency
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class RoomTripRepository(
@@ -107,8 +109,16 @@ class RoomTripRepository(
 
     override fun observeTrips(): Flow<List<TripEntity>> = dao.observeTrips()
 
+    override fun observeCompletedTrips(from: Long, to: Long): Flow<List<TripEntity>> = dao.observeCompletedTrips(from, to)
+
+    override fun observeActiveTrip(): Flow<TripEntity?> = dao.observeActiveTrip()
+
+    override suspend fun suggestPurpose(address: String): TripPurpose? = dao.lastWorkPurposeAt(address)
+
     override suspend fun verifyChain(vehicleId: String): ChainVerification =
         TripLedger.verify(dao.sealedTrips(vehicleId), dao.changes(vehicleId), dao.chainHead(vehicleId))
+
+    override suspend fun deleteAll() = withContext(Dispatchers.IO) { database.clearAllTables() }
 
     private suspend fun update(tripId: String, change: (TripEntity) -> TripEntity) {
         database.withTransaction {

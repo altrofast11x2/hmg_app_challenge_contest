@@ -25,6 +25,18 @@ interface TripDao {
     @Query("SELECT * FROM trips ORDER BY startedAt DESC")
     fun observeTrips(): Flow<List<TripEntity>>
 
+    @Query("SELECT * FROM trips WHERE status = 'COMPLETED' AND startedAt >= :from AND startedAt < :to ORDER BY startedAt")
+    fun observeCompletedTrips(from: Long, to: Long): Flow<List<TripEntity>>
+
+    @Query("SELECT * FROM trips WHERE status != 'COMPLETED' ORDER BY startedAt DESC LIMIT 1")
+    fun observeActiveTrip(): Flow<TripEntity?>
+
+    @Query(
+        "SELECT purpose FROM trips WHERE status = 'COMPLETED' AND endAddress = :address " +
+            "AND purpose IN ('COMMUTE', 'BUSINESS') ORDER BY startedAt DESC LIMIT 1"
+    )
+    suspend fun lastWorkPurposeAt(address: String): TripPurpose?
+
     @Query("SELECT * FROM trips WHERE vehicleId = :vehicleId AND chainSeq IS NOT NULL ORDER BY chainSeq")
     suspend fun sealedTrips(vehicleId: String): List<TripEntity>
 

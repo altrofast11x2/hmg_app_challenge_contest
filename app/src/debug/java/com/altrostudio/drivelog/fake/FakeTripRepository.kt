@@ -126,6 +126,29 @@ class FakeTripRepository(
 
     override fun observeTrips(): Flow<List<TripEntity>> = trips.map { list -> list.sortedByDescending { it.startedAt } }
 
+    override fun observeCompletedTrips(from: Long, to: Long): Flow<List<TripEntity>> = trips.map { list ->
+        list.filter { it.status == TripStatus.COMPLETED && it.startedAt >= from && it.startedAt < to }.sortedBy { it.startedAt }
+    }
+
+    override fun observeActiveTrip(): Flow<TripEntity?> = trips.map { list ->
+        list.filter { it.status != TripStatus.COMPLETED }.maxByOrNull { it.startedAt }
+    }
+
+    override suspend fun suggestPurpose(address: String): TripPurpose? = mutex.withLock {
+        trips.value
+            .filter { it.status == TripStatus.COMPLETED && it.endAddress == address }
+            .filter { it.purpose == TripPurpose.COMMUTE || it.purpose == TripPurpose.BUSINESS }
+            .maxByOrNull { it.startedAt }
+            ?.purpose
+    }
+
+    override suspend fun deleteAll() = mutex.withLock {
+        trips.value = emptyList()
+        stops.clear()
+        changes.clear()
+        heads.clear()
+    }
+
     override suspend fun verifyChain(vehicleId: String): ChainVerification = mutex.withLock {
         TripLedger.verify(
             trips.value.filter { it.vehicleId == vehicleId },

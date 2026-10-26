@@ -63,5 +63,9 @@ class TripRecorderService : Service() {
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, TripRecorderService::class.java))
         }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, TripRecorderService::class.java))
+        }
     }
 }

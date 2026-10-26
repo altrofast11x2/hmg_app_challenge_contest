@@ -2,6 +2,8 @@ package com.altrostudio.drivelog
 
 import android.content.Context
 import com.altrostudio.drivelog.data.DriveLogDatabase
+import com.altrostudio.drivelog.data.export.CsvFileSaver
+import com.altrostudio.drivelog.domain.consent.ConsentManager
 import com.altrostudio.drivelog.data.navi.NaviDataSource
 import com.altrostudio.drivelog.data.navi.PleosNaviDataSource
 import com.altrostudio.drivelog.data.settings.AppPreferences
@@ -32,6 +34,10 @@ class AppContainer(context: Context) {
     val trips: TripRepository by lazy { RoomTripRepository(database) }
 
     val vehicleIdentity by lazy { VehicleIdentity(preferences, vehicle) }
+
+    val consent by lazy { ConsentManager(appContext, preferences, trips, recorder) }
+
+    val csvSaver by lazy { CsvFileSaver(appContext) }
 
     val recorder by lazy {
         TripRecorder(

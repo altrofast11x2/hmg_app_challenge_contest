@@ -1,6 +1,5 @@
 package com.altrostudio.drivelog.debug
 
-import android.app.Application
 import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -17,7 +16,6 @@ import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.distanceKm
 import com.altrostudio.drivelog.domain.trip.TripState
-import com.altrostudio.drivelog.service.TripRecorderService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,10 +54,7 @@ data class SdkCheckState(
  * 실제 데이터 소스와 운행 기록 엔진이 에뮬레이터·Virtual Console 값으로 제대로 동작하는지 확인한다.
  * 모든 변화는 logcat(DriveLog/SdkCheck)에도 남긴다.
  */
-class SdkCheckViewModel(
-    private val app: Application,
-    private val container: AppContainer
-) : ViewModel() {
+class SdkCheckViewModel(private val container: AppContainer) : ViewModel() {
 
     private val vehicle = container.vehicle
     private val navi = container.navi
@@ -95,10 +90,9 @@ class SdkCheckViewModel(
 
     fun readDestination() = read("목적지", { navi.destination()?.describe() ?: NO_VALUE }) { copy(destination = it) }
 
-    /** 동의 화면(5단계)이 생기기 전까지 debug 빌드에서만 쓰는 시작 버튼 */
+    /** debug 빌드에서 동의 화면을 거치지 않고 기록을 켜는 버튼 */
     fun startRecording() {
-        container.preferences.consentGiven = true
-        TripRecorderService.start(app)
+        container.consent.agree()
         refreshSettings()
         log("디버그: 동의로 처리하고 운행 기록 서비스를 시작했습니다")
     }
@@ -186,7 +180,7 @@ class SdkCheckViewModel(
         val Factory = viewModelFactory {
             initializer {
                 val app = checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as DriveLogApp
-                SdkCheckViewModel(app, app.container)
+                SdkCheckViewModel(app.container)
             }
         }
     }

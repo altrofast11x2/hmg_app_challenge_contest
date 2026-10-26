@@ -35,15 +35,22 @@
             android:name="android.car"
             android:required="false" />
 
+        <!-- 주행 중에도 시스템이 가리지 않도록 주의 분산 최적화로 선언한다.
+             주행 중에는 앱이 스스로 터치 요소가 없는 주행 중 화면만 보여 준다 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.DriveLog">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
         </activity>
 
         <service

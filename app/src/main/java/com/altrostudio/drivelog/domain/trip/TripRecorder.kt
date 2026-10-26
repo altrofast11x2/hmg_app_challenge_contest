@@ -44,6 +44,7 @@ class TripRecorder(
     private val _state = MutableStateFlow<TripState>(TripState.Idle)
     val state: StateFlow<TripState> = _state.asStateFlow()
 
+    private var job: Job? = null
     private var lastOdometerKm: Float? = null
     private var parkedTimer: Job? = null
 
@@ -52,7 +53,7 @@ class TripRecorder(
 
     fun start() {
         if (!started.compareAndSet(false, true)) return
-        scope.launch {
+        job = scope.launch {
             val id = vehicleId()
             restore()
             launch { vehicle.odometerKm.catch { log("계기판 구독 실패", it) }.collect { inputs.send(Input.Odometer(it)) } }
@@ -68,6 +69,19 @@ class TripRecorder(
                 }
             }
         }
+    }
+
+    /** 동의를 철회하면 기록을 멈춘다. 다시 동의하면 [start]로 처음부터 시작한다 */
+    fun stop() {
+        job?.cancel()
+        job = null
+        parkedTimer?.cancel()
+        parkedTimer = null
+        while (inputs.tryReceive().isSuccess) Unit
+        lastOdometerKm = null
+        restoredLastSeenAt = null
+        _state.value = TripState.Idle
+        started.set(false)
     }
 
     /** 정차 중 운전자가 고른 용도로 운행을 마친다. 주행 중에는 무시된다 */

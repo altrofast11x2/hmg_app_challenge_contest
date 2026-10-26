@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: a0acef44-095f-4903-afed-69862aa322b3
-  modified: 2026-10-26T03:13:30.420Z
+  modified: 2026-10-26T03:21:35.570Z
 ---
 
 2026-10-25에 사용자가 아이디어를 '자동 운행기록부'(DriveLog, 패키지 com.altrostudio.drivelog)로 정하고 상세 명세를 줬다. 명세 원문은 저장소의 `claude_chat/SPEC.md`에 있다. 그 전 세션(10/22~24)에서 검토한 아이디어(멀미 제로, 로드 도슨트 등)는 폐기했다.
@@ -14,6 +14,13 @@ metadata:
 - 진행: 명세 11번의 단계별 진행. 단계마다 멈추고 보고하고, 커밋한다. Pleos SDK 클래스·메서드는 추측하지 말고 공식 문서(WebFetch)로 확인한다.
 - 2026-10-26: 1단계(프로젝트 생성, assembleDebug, AVD 설치·실행 확인)를 마치고 push했다. 2단계(GMS 확인, 문서 조사)를 마치고 구현 계획·백엔드 제안을 보고했다. 사용자 결정을 받은 뒤 3단계로 간다.
 - 사용자 정보: 심사위원은 APK를 내려받아 설치해서 동작을 확인한다 → release APK는 키(공개 anon 키)가 들어간 상태로 새 AVD에서 바로 동작해야 하고, 심사위원이 따라 할 데모 연결 코드·계정이 필요하다. Pleos 심사 가이드도 "인증 키 누락"을 설치 오류 사례로 든다.
+
+- 2026-10-26 사용자 결정 (2단계 추천안 전부 수락):
+  1. 백엔드 Supabase (차량은 익명 로그인 + 6자리 연결 코드 RPC로 조직 등록)
+  2. 앱: Room + WorkManager + OkHttp·kotlinx.serialization으로 Supabase REST 직접 호출 (supabase-kt 미사용), DI는 수동
+  3. 운행 종료: P 상태에서 분류 탭 즉시, 또는 P 5분 지속 시 "미분류"로 종료. 신호 대기·Auto Hold는 종료 아님. 데모용으로 대기 시간 조절 가능
+  4. 주차 브레이크를 정차 판단 보조로 사용. 단 Pleos `registerTelltales`는 PRIVATE 권한이라, 3단계에서 `getTelltalesInfo`(CAR_SAFETY)와 AAOS `PARKING_BRAKE_ON`(CAR_POWERTRAIN)을 비교해 정하고 보고한다
+  5. 경로 없는 주행의 주소는 NaviHelper만 사용. 안 오면 방문처 빈칸 → 웹에서 수정(이력 남김). 위치 권한 미사용
 
 **Why:** 사용자가 공모전 규정(정직한 구현 현황, 순수 창작물, 비밀값 미포함)을 기술 취향보다 우선한다고 명시했다.
 

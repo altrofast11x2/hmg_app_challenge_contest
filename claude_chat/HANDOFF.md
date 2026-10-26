@@ -17,6 +17,12 @@
 - 패키지 `com.altrostudio.drivelog`, 앱 이름 "자동 운행기록부", minSdk 28, compileSdk/targetSdk 35, Gradle 8.10.2 / AGP 8.8.2 / Kotlin 2.0.0, Java 17
 - Gradle wrapper는 공식 8.10.2 배포판으로 생성했고, `distributionSha256Sum`으로 배포판 체크섬을 검증한다.
 - 앱 아이콘은 직접 그린 벡터다 (외부 아이콘 미사용).
+- 2단계 결정 (2026-10-26, 추천안 전부 수락)
+  1. 백엔드 Supabase. 차량은 익명 로그인 + 6자리 연결 코드로 조직에 등록
+  2. Room + WorkManager + OkHttp·kotlinx.serialization (supabase-kt 미사용), 수동 DI
+  3. 운행 종료: P에서 분류 탭 즉시, 또는 P 5분 지속 시 미분류로 종료 (신호 대기·Auto Hold 제외, 데모용 시간 조절)
+  4. 주차 브레이크를 정차 판단 보조로 사용 (Pleos 경고등 조회 vs AAOS `PARKING_BRAKE_ON`은 3단계에서 비교)
+  5. 경로 없는 주행의 주소는 NaviHelper만 사용, 없으면 방문처 빈칸 → 웹에서 수정
 
 ## 이 PC에서 빌드할 때
 

@@ -18,7 +18,7 @@
 | 실서버 시험 (2026-10-26) | 에뮬레이터 release 앱: 시연용 코드 연결 → 운행 3건 → 서버 업로드·비업무 주소 삭제·해시 체인 확인, 웹(기업 계정)에 표시. Virtual Console HTTP는 브라우저 heartbeat(`POST /browser/session?client=…`, 1초)가 끊기면 `emulator_inactive` → 직접 heartbeat를 보내며 시험했다 |
 | 9. 제출 직전 점검 | 점검표 보고함 (2026-10-26). 새 AVD(같은 Pleos 이미지로 새로 만듦)에 release APK 설치 → 동의 → 코드 422511 연결 → 주행 1건 → 서버 반영 확인 후, 시험 차량·AVD는 지움. release lint 오류 2건(LocalActivity, CSV BOM 문자) 고치고 APK 다시 빌드. 단위 55개·웹 10개 통과, 전체 이력 비밀값 검사 통과. `docs/plan-summary.md`(기획서 요약) 추가. **남은 것: 사용자 결정 항목(공개 범위, 데모 비밀번호 전달, LICENSE 저작자, 문의처, 옛 브랜치)과 Secrets 등록** |
 | 웹 기간 선택 (2026-10-27) | 사용자 요청: 관리자 웹 운행기록부에 `input type="date"` 두 칸으로 기간(시작~끝, 366일까지) 고르기. 달 고르기·◀ ▶는 그대로, CSV 파일 이름에 기간. 웹 테스트 12개 |
-| 앱 기간 선택 (2026-10-27) | 사용자 요청: 운행기록부 제목 줄 [기간 선택] → Material 3 DateRangePicker 대화상자(날짜 칸이 최소 터치 80dp가 되도록 2배 확대, 색은 토큰). 기간 모델 `LogbookPeriod`(웹 pickPeriod와 같은 규칙), CSV 파일 이름도 웹과 같음. 단위 테스트 59개 |
+| 앱 기간 선택 (2026-10-27) | 사용자 요청: 운행기록부 제목 줄 [기간 선택] → [시작·끝 날짜] 칸 + Material 3 DatePicker(한 달씩, 연도 선택, 사용자가 웹 날짜 입력 모양을 원함) 대화상자. 날짜 칸이 최소 터치 80dp가 되도록 약 2배 확대, 색은 토큰. material3 1.3.0은 바깥에서 displayedMonthMillis를 바꾸면 날짜 칸이 안 움직여서 key()로 달력을 새로 그린다. 기간 모델 `LogbookPeriod`(웹 pickPeriod와 같은 규칙), CSV 파일 이름도 웹과 같음. 단위 테스트 59개 |
 
 - 8단계 release 시험에서 찾아 고친 버그 (6단계 코드가 실제 기기에서 서버와 통신한 적이 없었다)
   1. 서버 주소·키를 `BuildConfig` 상수로 넣었더니 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 채운 뒤에도 증분 빌드에 빈 값이 남았다 → 문자열 리소스(`resValue`)로 바꿔 실행 중에 읽는다
@@ -37,7 +37,7 @@
 - 디자인은 기능을 모두 만든 뒤에 입힌다 (2026-10-26 사용자 결정).
 - 에뮬레이터 시간대를 Asia/Seoul로 바꿨다 (`adb shell service call alarm 3 s16 Asia/Seoul`, 자동 시간대 끔). 새 AVD를 쓰면 다시 해야 한다.
 - 2분할(Portrait) 배치는 `adb shell wm density 320`으로 앱 창을 841dp로 만들어 확인했다 (`wm size`는 Pleos 홈이 앱 창 크기를 바꾸지 않고 잘라 보여서 시험이 안 된다). 확인 후 `wm density reset`.
-- 2026-10-26부터 **main 브랜치에서 작업**한다 (altrofast11x2를 main에 합침). main의 `.github/workflows/supabase-keepalive.yml`이 하루 두 번 서버에 조회를 보낸다. 저장소 Secrets `SUPABASE_URL`·`SUPABASE_PUBLISHABLE_KEY`는 사용자가 직접 등록한다 (`gh secret set`은 Claude Code 권한 판단에서 막힘).
+- 2026-10-26부터 **main 브랜치에서 작업**한다 (altrofast11x2를 main에 합침). main의 `.github/workflows/supabase-keepalive.yml`이 하루 두 번 서버에 조회를 보낸다. 저장소 Secrets `SUPABASE_URL`·`SUPABASE_PUBLISHABLE_KEY`는 2026-10-27 사용자 요청으로 `local.properties` 값을 `gh secret set`으로 넣었고, 수동 실행에서 HTTP 200을 확인했다.
 - 2026-10-27 사용자 결정(9단계 추천안 수락): 저장소는 비공개로 두고 심사용 계정이 공지되면 Collaborator로 초대한다 (공개하면 `claude_chat/transcript/` 대화 기록과 이메일이 이력째 공개됨). 기업 계정 비밀번호만 기획서에 적고, 개발자 계정 비밀번호는 무작위 값으로 바꿨다가, 2026-10-27 사용자 지시로 사용자가 정한 값으로 다시 바꿨다(`backend/.env`, Auth API로 변경). LICENSE 저작자는 AltroStudio. 옛 브랜치 `altrofast11x2`는 main에 포함돼 지워도 되지만 Claude Code 권한 판단에서 막혀 사용자가 지운다. `nrioig`는 팀원 브랜치라 지우지 않는다(내 삭제 제안은 잘못이었음). 개인정보 처리방침 문의처는 2026-10-27 사용자 지시로 `kazinobel9807@gmail.com`.
 - **제출 전 점검: Supabase 무료 프로젝트는 7일 동안 사용이 적으면 일시 정지된다** (정지 1주 전 경고 메일, 정지 후 90일 안에 대시보드에서 재개). 심사 기간(11/15~12/4)에 정지되지 않게 할 방법을 정해야 한다. 정지되면 API가 540을 돌려주고, 앱은 서버 오류로 보고 이 차량에만 기록한다.
 - 계정 (2026-10-26 사용자 지정, 비밀번호는 `backend/.env`): **개발자** `AltroStudio@altro.com`(관리자 웹에서 기업 등록, 운행은 못 봄) · **기업(데모)** `demo@altro.com`(데모 기업 관리자). 웹은 아이디를 소문자로 바꿔 로그인한다. 개인정보 처리방침 문의처는 `kazinobel9807@gmail.com`(2026-10-27 사용자 지시). `altro.com`은 남의 도메인이라 메일 기능(비밀번호 재설정 등)은 쓰지 않는다.

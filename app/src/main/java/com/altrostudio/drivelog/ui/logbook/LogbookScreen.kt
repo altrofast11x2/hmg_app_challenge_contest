@@ -27,16 +27,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -410,17 +412,25 @@ private fun periodTitle(period: LogbookPeriod): String {
 
 private val PERIOD_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
-// Material 달력의 날짜 칸 크기와 대화상자 너비 (material3 DatePickerModalTokens). 차량 화면에서는 너무 작아서
+// Material 달력의 날짜 칸 크기와 너비 (material3 DatePickerModalTokens). 차량 화면에서는 너무 작아서
 // 날짜 칸이 앱의 최소 터치 크기(drivelog_touch_target_minimum)가 되도록 달력 전체를 키운다
 private val MATERIAL_DATE_CELL = 40.dp
 private val MATERIAL_PICKER_WIDTH = 360.dp
-// 기간 달력에서 한 달이 다 보이는 높이 (요일 줄 + 달 제목 + 6주, 에뮬레이터 화면에서 잰 대략값)
-private val MATERIAL_RANGE_MONTH_HEIGHT = 408.dp
+// 머리글 없는 Material 달력의 높이 (달·연도 줄 + 요일 줄 + 6주, 에뮬레이터 화면에서 잰 대략값)
+private val MATERIAL_CALENDAR_HEIGHT = 408.dp
 
 // 달력에서 고를 수 있는 해 (월 칩과 같이 최대 2년 전까지)
 private const val PICKER_YEARS_BACK = 2
 
-/** 달력으로 기간 고르기. 오늘 뒤는 고를 수 없고, 366일을 넘으면 적용할 수 없다 */
+// 날짜 칸 두 개를 한 줄에 둘 수 있는 최소 너비. 더 좁으면 날짜가 두 줄로 깨져서 위아래로 쌓는다
+private val DATE_FIELDS_ROW_MIN_WIDTH = 520.dp
+
+/**
+ * 달력으로 기간 고르기 (사용자 요청 2026-10-27: 웹의 날짜 입력처럼 한 달씩 보고 연도·날짜를 고르게).
+ * 위의 [시작 날짜]·[끝 날짜] 칸을 고르고 달력에서 날짜를 누른다. 시작을 고르면 끝 날짜 칸으로 넘어간다.
+ * 달력은 Material 3 DatePicker: "2026년 10월 ▾"를 누르면 연도, ◀ ▶로 달을 바꾼다.
+ * 오늘 뒤는 고를 수 없고, 366일을 넘으면 적용할 수 없다.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodDialog(period: LogbookPeriod, onApply: (LogbookPeriod) -> Unit, onDismiss: () -> Unit) {
@@ -435,22 +445,49 @@ private fun PeriodDialog(period: LogbookPeriod, onApply: (LogbookPeriod) -> Unit
             override fun isSelectableYear(year: Int) = year <= today.year
         }
     }
+    var startDate by rememberSaveable { mutableStateOf(period.start) }
+    var endDate by rememberSaveable { mutableStateOf(period.end) }
+    var editingEnd by rememberSaveable { mutableStateOf(false) }
     // Material 달력은 날짜를 UTC 0시 밀리초로 주고받는다
-    val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = period.start.toUtcMillis(),
-        initialSelectedEndDateMillis = period.end.toUtcMillis(),
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = period.start.toUtcMillis(),
         yearRange = (today.year - PICKER_YEARS_BACK)..today.year,
         selectableDates = selectableDates
     )
-    val start = pickerState.selectedStartDateMillis?.toUtcDate()
-    val end = pickerState.selectedEndDateMillis?.toUtcDate()
-    val picked = if (start != null && end != null) LogbookPeriod.pick(start, end) else null
-    val tooLong = start != null && end != null && picked == null
+    // Material 달력은 바깥에서 displayedMonthMillis를 바꾸면 달 이름만 바뀌고 날짜 칸은 그대로라서,
+    // 달을 옮길 때는 달력을 새로 그린다 (material3 1.3.0)
+    var calendarKey by remember { mutableIntStateOf(0) }
+    val showMonth: (Long) -> Unit = { millis ->
+        pickerState.displayedMonthMillis = millis
+        calendarKey++
+    }
+    // 고르는 칸을 바꾼다. showItsMonth면 달력도 그 날짜가 든 달로 넘긴다
+    val edit: (Boolean, Boolean) -> Unit = { end, showItsMonth ->
+        editingEnd = end
+        val date = (if (end) endDate else startDate).toUtcMillis()
+        pickerState.selectedDateMillis = date
+        if (showItsMonth) showMonth(date)
+    }
+    // 달력에서 누른 날짜를 지금 고르는 칸에 넣는다. 시작이 끝보다 늦어지면 끝도 같은 날로 맞춘다
+    LaunchedEffect(pickerState.selectedDateMillis) {
+        val picked = pickerState.selectedDateMillis?.toUtcDate() ?: return@LaunchedEffect
+        if (!editingEnd && picked != startDate) {
+            startDate = picked
+            if (endDate < picked) endDate = picked
+            edit(true, false)
+        } else if (editingEnd && picked != endDate) {
+            endDate = picked
+            if (picked < startDate) startDate = picked
+        }
+    }
+    val picked = LogbookPeriod.pick(startDate, endDate)
     val density = LocalDensity.current
-    // 대화상자에서 달력이 아닌 부분의 높이: 제목·고른 기간·안내 세 줄, 버튼, 간격 4개, 안쪽·바깥 여백
+    // 대화상자에서 달력이 아닌 부분의 높이: 제목, 날짜 칸, 안내, 버튼, 간격 4개, 안쪽·바깥 여백
     val chromeHeight = with(density) {
-        typography.title.lineHeight.toDp() + typography.titleSmall.lineHeight.toDp() + typography.label.lineHeight.toDp()
-    } + dimens.buttonHeightMedium + dimens.spacingSmall * 4 + dimens.spacingMedium * 2 + dimens.spacingLarge * 2
+        typography.title.lineHeight.toDp() + typography.labelSmall.lineHeight.toDp() +
+            typography.titleSmall.lineHeight.toDp() + typography.label.lineHeight.toDp()
+    } + dimens.spacingExtraSmall * 2 + dimens.buttonHeightMedium + dimens.spacingSmall * 4 +
+        dimens.spacingMedium * 2 + dimens.spacingLarge * 2
     val chromeWidth = dimens.spacingMedium * 2 + dimens.spacingLarge * 2
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -459,8 +496,26 @@ private fun PeriodDialog(period: LogbookPeriod, onApply: (LogbookPeriod) -> Unit
             val scale = minOf(
                 dimens.touchTargetMinimum / MATERIAL_DATE_CELL,
                 (maxWidth - chromeWidth) / MATERIAL_PICKER_WIDTH,
-                (maxHeight - chromeHeight) / MATERIAL_RANGE_MONTH_HEIGHT
+                (maxHeight - chromeHeight) / MATERIAL_CALENDAR_HEIGHT
             ).coerceAtLeast(1f)
+            val contentWidth = minOf(maxWidth - dimens.spacingLarge * 2, MATERIAL_PICKER_WIDTH * scale + dimens.spacingMedium * 2) -
+                dimens.spacingMedium * 2
+            val dateFields: @Composable (Modifier) -> Unit = { fieldModifier ->
+                DateField(
+                    label = stringResource(R.string.logbook_period_start),
+                    date = startDate,
+                    active = !editingEnd,
+                    onClick = { edit(false, true) },
+                    modifier = fieldModifier
+                )
+                DateField(
+                    label = stringResource(R.string.logbook_period_end),
+                    date = endDate,
+                    active = editingEnd,
+                    onClick = { edit(true, true) },
+                    modifier = fieldModifier
+                )
+            }
             Column(
                 modifier = Modifier
                     .padding(dimens.spacingLarge)
@@ -473,64 +528,89 @@ private fun PeriodDialog(period: LogbookPeriod, onApply: (LogbookPeriod) -> Unit
                 verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)
             ) {
                 Text(stringResource(R.string.logbook_period_title), style = typography.title, color = colors.textPrimary)
-                // 고른 기간은 Material 머리글 대신 앱 글자로 한 줄에 (키운 달력 안에서는 줄이 깨진다)
+                if (contentWidth < DATE_FIELDS_ROW_MIN_WIDTH) {
+                    Column(verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) { dateFields(Modifier.fillMaxWidth()) }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) { dateFields(Modifier.weight(1f)) }
+                }
                 Text(
-                    when {
-                        start == null -> ""
-                        end == null -> stringResource(R.string.logbook_period_range, start.format(PERIOD_DATE_FORMAT), "")
-                        picked != null -> periodTitle(picked)
-                        else -> stringResource(R.string.logbook_period_range, start.format(PERIOD_DATE_FORMAT), end.format(PERIOD_DATE_FORMAT))
-                    },
-                    style = typography.titleSmall.copy(fontFeatureSettings = DriveLogTabularNumbers),
-                    color = colors.textPrimary
-                )
-                Text(
-                    if (tooLong) {
+                    if (picked == null) {
                         stringResource(R.string.logbook_period_too_long, LogbookPeriod.MAX_DAYS)
                     } else {
                         stringResource(R.string.logbook_period_hint)
                     },
                     style = typography.label,
-                    color = if (tooLong) colors.statusError else colors.textSecondary
+                    color = if (picked == null) colors.statusError else colors.textSecondary
                 )
-                Box(modifier = Modifier.height(MATERIAL_RANGE_MONTH_HEIGHT * scale)) {
-                    CompositionLocalProvider(LocalDensity provides Density(density.density * scale, density.fontScale)) {
-                        DateRangePicker(
+                CompositionLocalProvider(LocalDensity provides Density(density.density * scale, density.fontScale)) {
+                    key(calendarKey) {
+                        DatePicker(
                             state = pickerState,
                             title = null,
                             headline = null,
                             showModeToggle = false,
                             colors = DatePickerDefaults.colors(
                                 containerColor = colors.surfaceRaised,
-                                headlineContentColor = colors.textPrimary,
                                 weekdayContentColor = colors.textSecondary,
-                                subheadContentColor = colors.textSecondary,
+                                navigationContentColor = colors.textPrimary,
+                                yearContentColor = colors.textPrimary,
+                                disabledYearContentColor = colors.textDisabled,
+                                currentYearContentColor = colors.accent,
+                                selectedYearContentColor = colors.buttonPrimaryText,
+                                selectedYearContainerColor = colors.buttonPrimaryBackground,
                                 dayContentColor = colors.textPrimary,
                                 disabledDayContentColor = colors.textDisabled,
                                 selectedDayContentColor = colors.buttonPrimaryText,
                                 selectedDayContainerColor = colors.buttonPrimaryBackground,
                                 todayContentColor = colors.accent,
                                 todayDateBorderColor = colors.accent,
-                                dayInSelectionRangeContentColor = colors.textPrimary,
-                                dayInSelectionRangeContainerColor = colors.surfacePressed,
                                 dividerColor = colors.border
                             )
                         )
                     }
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall, Alignment.End),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    // 웹 날짜 입력의 ● 버튼처럼 이번 달로 돌아간다
+                    DriveLogButton(
+                        text = stringResource(R.string.logbook_period_this_month),
+                        onClick = { showMonth(todayMillis) },
+                        kind = ButtonKind.Text
+                    )
+                    Box(modifier = Modifier.weight(1f))
                     DriveLogButton(text = stringResource(R.string.cancel), onClick = onDismiss, kind = ButtonKind.Text)
                     DriveLogButton(
                         text = stringResource(R.string.logbook_period_apply),
                         onClick = { picked?.let(onApply) },
-                        enabled = picked != null
+                        enabled = picked != null,
+                        modifier = Modifier.padding(start = dimens.spacingSmall)
                     )
                 }
             }
         }
+    }
+}
+
+/** 기간 대화상자의 [시작 날짜]·[끝 날짜] 칸. 지금 고르는 칸은 테두리로 표시한다 */
+@Composable
+private fun DateField(label: String, date: LocalDate, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = DriveLogTheme.colors
+    val dimens = DriveLogTheme.dimens
+    val shape = RoundedCornerShape(dimens.radiusMedium)
+    Column(
+        modifier = modifier
+            .heightIn(min = dimens.touchTargetMinimum)
+            .clip(shape)
+            .background(colors.buttonSecondaryBackground)
+            .border(if (active) dimens.borderWidth * 2 else dimens.borderWidth, if (active) colors.selectionRing else colors.border, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = dimens.spacingMedium, vertical = dimens.spacingExtraSmall)
+    ) {
+        Text(label, style = DriveLogTheme.typography.labelSmall, color = if (active) colors.accent else colors.textSecondary)
+        Text(
+            date.format(PERIOD_DATE_FORMAT),
+            style = DriveLogTheme.typography.titleSmall.copy(fontFeatureSettings = DriveLogTabularNumbers),
+            color = colors.textPrimary
+        )
     }
 }
 

@@ -54,7 +54,10 @@
     <string name="logbook_empty_period">이 기간에는 운행 기록이 없습니다</string>
     <string name="logbook_pick_period">기간 선택</string>
     <string name="logbook_period_title">운행기록부 기간</string>
-    <string name="logbook_period_hint">시작 날짜와 끝 날짜를 차례로 누르세요</string>
+    <string name="logbook_period_hint">칸을 고르고 달력에서 날짜를 누르세요. 연도는 달 이름(▾)을 눌러 바꿔요</string>
+    <string name="logbook_period_start">시작 날짜</string>
+    <string name="logbook_period_end">끝 날짜</string>
+    <string name="logbook_period_this_month">이번 달</string>
     <string name="logbook_period_apply">적용</string>
     <string name="logbook_period_too_long">기간은 %1$d일까지 고를 수 있어요</string>
     <string name="logbook_period_range">%1$s – %2$s</string>

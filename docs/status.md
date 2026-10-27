@@ -59,7 +59,7 @@
 
 | 항목 | 상태 | 비고 |
 |---|---|---|
-| release 서명 APK `apk/AltroStudio_DriveLog_release.apk` | 완료 | v2 서명, debuggable 아님. 같은 Pleos 이미지로 새로 만든 AVD에 설치 → 첫 실행 1.3초 → 동의 → 시연 코드 연결 → 주행 1건 분류 → 서버 반영까지 확인 (2026-10-26). release lint 오류 0 |
+| release 서명 APK `apk/AltroStudio_DriveLog_release.apk` | 완료 | v2 서명, debuggable 아님, release lint 오류 0. 같은 Pleos 이미지로 새로 만든 AVD에서 전체 흐름 확인 (2026-10-27): 동의 거절·동의, 틀린 코드 안내, 관리자 웹에서 발급한 코드로 연결, 주행 중 앱 안 터치 요소 0개, 주행 2건(바로 분류·[나중에] 뒤 5분 미분류 → [지금 분류하기]), 운행기록부·휴대폰으로 받기(QR → 휴대폰 화면), 처리방침·라이선스, 동의 철회로 기록 삭제, 연결 없이 다시 시작해 CSV 저장 |
 | README 필수 항목 | 완료 | |
 | `docs/sdk-usage.md`, `status.md`, `demo-script.md`, `business.md` | 완료 | `business.md`의 숫자는 팀이 공식 통계로 채움 |
 | 기획서에 옮길 요약 `docs/plan-summary.md` | 완료 | 접수양식(기획서) 작성과 서명·이메일 제출은 팀이 함 |

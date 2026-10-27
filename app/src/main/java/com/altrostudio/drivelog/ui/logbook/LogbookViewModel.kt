@@ -96,10 +96,10 @@ class LogbookViewModel(
 
     /** 휴대폰으로 받기: 보고 있는 기간의 운행기록부를 휴대폰에서 여는 QR 코드 링크를 만든다 */
     fun createShareLink() {
-        val (from, to) = period.value.range(zone)
+        val selected = period.value
         viewModelScope.launch {
             _state.update { it.copy(share = ShareState.Creating) }
-            val share = when (val result = container.shareLinks.create(from, to)) {
+            val share = when (val result = container.shareLinks.create(selected, zone)) {
                 is ShareLinkResult.Ready -> ShareState.Ready(result.url, result.expiresAtMs)
                 else -> ShareState.Failed(result)
             }

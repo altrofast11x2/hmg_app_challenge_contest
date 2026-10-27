@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   BOM, buildLogbook, csvFileName, formDate, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
-  periodRange, pickPeriod, shareTokenFromHash, statementCsv, statementFileName, taxFormNote, yearPeriod,
+  parseShareHash, periodRange, pickPeriod, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from '../js/logbook.js';
 
 // 2026-10-26(월) 09:00 한국 시간
@@ -134,11 +134,14 @@ test('세무서 제출용: 차량마다 기록부를 만들고, 비고에 비업
   assert.equal(statementFileName(yearPeriod(2026)), 'DriveLog_업무사용비율_2026-01-01_2026-12-31.csv');
 });
 
-test('휴대폰으로 받기: 주소의 # 뒤에서 토큰을 꺼내고, 서버 범위를 한국 날짜 기간으로 바꾼다', () => {
-  assert.equal(shareTokenFromHash('#share=AbC-_123456789012345678901234567'), 'AbC-_123456789012345678901234567');
-  assert.equal(shareTokenFromHash(''), null);
-  assert.equal(shareTokenFromHash('#share=짧음'), null);
-  assert.equal(shareTokenFromHash('#other=AbC-_123456789012345678901234567'), null);
+test('휴대폰으로 받기: 주소의 # 뒤에서 토큰과 차에서 고른 기간을 꺼내고, 서버 범위를 한국 날짜 기간으로 바꾼다', () => {
+  const token = 'AbC-_123456789012345678901234567';
+  assert.deepEqual(parseShareHash(`#share=${token}&from=2026-10-01&to=2026-10-31`), { token, period: { from: '2026-10-01', to: '2026-10-31' } });
+  assert.deepEqual(parseShareHash(`#share=${token}`), { token, period: null });
+  assert.deepEqual(parseShareHash(`#share=${token}&from=2024-01-01&to=2026-10-31`), { token, period: null }, '366일이 넘는 기간은 버린다');
+  assert.equal(parseShareHash(''), null);
+  assert.equal(parseShareHash('#share=짧음'), null);
+  assert.equal(parseShareHash(`#other=${token}`), null);
   assert.deepEqual(periodFromRange(...periodRange(monthPeriod(2026, 10))), { from: '2026-10-01', to: '2026-10-31' });
   assert.deepEqual(periodFromRange(...periodRange({ from: '2026-10-26', to: '2026-10-26' })), { from: '2026-10-26', to: '2026-10-26' });
 });

@@ -53,10 +53,15 @@ export function pickPeriod(from, to) {
   return { period };
 }
 
-/** 휴대폰으로 받기 주소의 # 뒤에서 토큰을 꺼낸다 ('#share=…'). 없거나 모양이 다르면 null */
-export function shareTokenFromHash(hash) {
-  const match = /^#share=([A-Za-z0-9_-]{16,128})$/.exec(hash ?? '');
-  return match ? match[1] : null;
+/**
+ * 휴대폰으로 받기 주소의 # 뒤를 읽는다: '#share=토큰&from=2026-10-01&to=2026-10-31' → { token, period }.
+ * 기간은 차에서 고른 날짜(차의 시간대)라서 화면 제목에 그대로 쓴다. 기간이 없거나 이상하면 period는 null. 토큰이 없으면 null
+ */
+export function parseShareHash(hash) {
+  const match = /^#share=([A-Za-z0-9_-]{16,128})(?:&from=(\d{4}-\d{2}-\d{2})&to=(\d{4}-\d{2}-\d{2}))?$/.exec(hash ?? '');
+  if (!match) return null;
+  const picked = match[2] ? pickPeriod(match[2], match[3]) : {};
+  return { token: match[1], period: picked.period ?? null };
 }
 
 /** 서버 범위 [fromMs, toMs) → 기간 { from, to } (한국 날짜, 끝 날짜 포함) */

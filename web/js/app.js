@@ -3,7 +3,7 @@
 import * as api from './api.js';
 import {
   buildLogbook, csvFileName, formDate, km, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
-  periodRange, pickPeriod, PURPOSE_LABELS, shareTokenFromHash, statementCsv, statementFileName, taxFormNote, yearPeriod,
+  parseShareHash, periodRange, pickPeriod, PURPOSE_LABELS, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from './logbook.js';
 
 const root = document.getElementById('app');
@@ -131,9 +131,9 @@ async function boot() {
   }
   api.configure({ url: config.SUPABASE_URL, key: config.SUPABASE_KEY });
   // 차 화면의 QR 코드로 연 휴대폰은 로그인 없이 그 운행기록부만 보여 준다
-  const shareToken = shareTokenFromHash(location.hash);
-  if (shareToken) {
-    await renderShare(shareToken);
+  const share = parseShareHash(location.hash);
+  if (share) {
+    await renderShare(share);
     return;
   }
   if (api.currentUser()) await enter();
@@ -538,7 +538,7 @@ function taxFormPage({ vehicle, logbook }, period, org) {
 // ─── 휴대폰으로 받기 (차 화면의 QR 코드로 열린다, 로그인 없음) ─────────────────
 // 차에는 메일·메신저 앱이 없어서, 운전자가 휴대폰에서 운행기록부를 열어 저장·보낸다. 링크는 10분 동안만 열린다.
 
-async function renderShare(token) {
+async function renderShare({ token, period: carPeriod }) {
   const content = el('section', { class: 'content share' }, message('운행기록부를 불러오는 중…'));
   setScreen(el('header', { class: 'topbar' }, appMark(), el('strong', { class: 'brand' }, '자동 운행기록부')), el('main', {}, content));
   try {
@@ -550,7 +550,8 @@ async function renderShare(token) {
       );
       return;
     }
-    const period = periodFromRange(shared.from_ms, shared.to_ms);
+    // 기간 이름은 차에서 고른 날짜로 (차와 휴대폰의 시간대가 달라도 같은 이름). 주소에 없으면 서버 범위를 한국 날짜로
+    const period = carPeriod ?? periodFromRange(shared.from_ms, shared.to_ms);
     const vehicle = {
       id: shared.vehicle.id,
       name: shared.vehicle.display_name || shared.vehicle.vin || '차량',
@@ -824,7 +825,7 @@ function renderDeveloper() {
 
 // 열린 페이지에서 다른 QR 주소로 # 뒤만 바뀌면 새로 읽는다
 window.addEventListener('hashchange', () => {
-  if (shareTokenFromHash(location.hash)) location.reload();
+  if (parseShareHash(location.hash)) location.reload();
 });
 
 boot();

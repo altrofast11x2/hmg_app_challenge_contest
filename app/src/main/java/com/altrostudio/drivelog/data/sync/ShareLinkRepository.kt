@@ -4,8 +4,10 @@ import com.altrostudio.drivelog.data.remote.BackendApi
 import com.altrostudio.drivelog.data.remote.BackendException
 import com.altrostudio.drivelog.data.remote.DeviceAuth
 import com.altrostudio.drivelog.data.remote.ShareLinkRequest
+import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import kotlinx.coroutines.CancellationException
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 sealed interface ShareLinkResult {
     /** QR 코드에 담을 주소와 만료 시각 */
@@ -28,12 +30,14 @@ class ShareLinkRepository(
     /** 아직 올라가지 않은 운행도 휴대폰에서 보이도록 링크를 만들기 전에 올린다 */
     private val syncFirst: suspend () -> Unit = {}
 ) {
-    suspend fun create(fromMs: Long, toMs: Long): ShareLinkResult = try {
+    /** 차에서 고른 기간(차의 시간대 기준)의 링크. 휴대폰 화면도 같은 기간 이름을 보이도록 날짜를 주소에 함께 담는다 */
+    suspend fun create(period: LogbookPeriod, zone: ZoneId): ShareLinkResult = try {
         syncFirst()
+        val (fromMs, toMs) = period.range(zone)
         val response = auth.withToken { api.createShareLink(it, ShareLinkRequest(fromMs, toMs)) }
         when (response.status) {
             "OK" -> ShareLinkResult.Ready(
-                url = shareUrl(webUrl, checkNotNull(response.token)),
+                url = shareUrl(webUrl, checkNotNull(response.token), period),
                 // 서버 시각은 "2026-10-27T05:34:12.123+00:00" 꼴이다
                 expiresAtMs = OffsetDateTime.parse(checkNotNull(response.expiresAt)).toInstant().toEpochMilli()
             )
@@ -51,6 +55,7 @@ class ShareLinkRepository(
 
     companion object {
         /** 토큰은 주소의 # 뒤에 둔다. # 뒤는 브라우저가 서버로 보내지 않아 웹 서버 기록에 남지 않는다 */
-        fun shareUrl(webUrl: String, token: String): String = "${webUrl.trimEnd('/')}/#share=$token"
+        fun shareUrl(webUrl: String, token: String, period: LogbookPeriod): String =
+            "${webUrl.trimEnd('/')}/#share=$token&from=${period.start}&to=${period.end}"
     }
 }

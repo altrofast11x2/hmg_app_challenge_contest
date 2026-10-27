@@ -8,61 +8,39 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 |---|---|---|
 | ![첫 실행 동의 화면](docs/images/a01-consent.png) | ![차량 연결 화면](docs/images/a02-connect.png) | ![홈 화면](docs/images/a03-home.png) |
 
-> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 월별 운행기록부, CSV, 디자인 v0.1), 서버(Supabase) 연결 코드·동기화, 관리자 웹(기업 계정·개발자 계정)을 만들었고, 에뮬레이터에서 실서버 연결·동기화까지 확인했습니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
+| 운행기록부 (달·기간 고르기) | 휴대폰으로 받기 (QR 코드) | 휴대폰에서 연 운행기록부 |
+|---|---|---|
+| ![운행기록부 화면](docs/images/a06-logbook.png) | ![휴대폰으로 받기 QR 코드](docs/images/a07-share-qr.png) | ![휴대폰에서 연 운행기록부](docs/images/m01-phone-logbook.png) |
 
-## 바로가기
+> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 운행기록부·기간 고르기, 휴대폰으로 받기, 디자인 v0.1), 서버(Supabase) 연결 코드·동기화, 관리자 웹(운행기록부, 세무서 제출용 서식, 기업 계정·개발자 계정)을 만들었고 에뮬레이터와 실서버로 확인했습니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
 
-| 항목 | 위치 |
-|---|---|
-| release APK | [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) |
-| 관리자 웹 | https://altrostudio-drivelog.vercel.app |
-| 구현 현황 | [docs/status.md](docs/status.md) |
-| 기획 요약 (심사 항목별) | [docs/plan-summary.md](docs/plan-summary.md) |
-| Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
-| 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |
-| 사업성 | [docs/business.md](docs/business.md) |
-| 기록 무결성 (해시 체인) | [docs/integrity.md](docs/integrity.md) |
+공모전 README 필수 항목: [앱 이름 및 한 줄 소개](#앱-이름-및-한-줄-소개) · [APK 파일 위치](#apk-파일-위치) · [실행 방법](#실행-방법) · [테스트 환경 및 필요한 설정](#테스트-환경-및-필요한-설정)
 
-## 핵심 기능
-
-- **자동 기록**: 기어가 P를 벗어나면 운행 시작, P에서 끝. 주행 전·후 계기판 거리를 Pleos Vehicle SDK에서 직접 읽어 넣습니다.
-- **주행 중 조작 0**: 주행 중에는 터치할 요소가 없는 화면만 보입니다. 정차하면 용도를 고르는 화면이 뜹니다.
-- **원탭 분류**: 출퇴근 / 일반업무 / 비업무. 같은 목적지는 지난번 분류를 먼저 제안하고, 비업무 운행은 주소를 지우고 거리만 남깁니다.
-- **국세청 서식 월별 운행기록부와 CSV**: 업무사용비율까지 자동 계산하고, Excel에서 바로 열리는 CSV로 내보냅니다.
-- **휴대폰으로 받기**: 차에는 메일·메신저 앱이 없어서, 정차 중 운행기록부의 [휴대폰으로 받기]를 누르면 QR 코드가 뜹니다. 휴대폰 카메라로 찍으면 로그인 없이 그 기간의 운행기록부가 열리고(10분 동안), 휴대폰에서 CSV·서식 PDF로 저장하거나 카톡·메일로 보냅니다. 조직에 연결한 차량에서 씁니다.
-- **세무서 제출용 서식**: 운행기록부는 보관하다가 세무서가 요구하면 내는 서류입니다. 관리자 웹이 국세청고시 제2025-8호 별지 「업무용승용차 운행기록부」와 같은 칸의 서식을 차량별로 만들어 인쇄·PDF로 저장하고, 법인세 신고 때 명세서에 옮길 차량별 업무사용비율을 보여 줍니다.
-- **고칠 수 없는 기록**: 차량별 해시 체인과 수정 이력으로 기록이 바뀐 흔적을 찾아냅니다.
-- **회사 연결**: 관리자 웹에서 받은 6자리 코드를 정차 중 한 번 입력하면 조직에 등록되고, 기록은 오프라인 우선으로 올라갑니다. 서버 없이도 차량 안에서 모든 기능이 동작합니다.
-- **관리자 웹**: 기업 계정은 차량 연결 코드 발급과 모든 차량의 운행기록부·CSV·세무서 제출용 서식, 개발자 계정은 기업 정보 등록과 기업 관리자 계정 만들기.
-
-## 저장소 구조
-
-| 폴더 | 내용 |
-|---|---|
-| `app/` | 차량 앱 (Kotlin, Jetpack Compose, Room, WorkManager) |
-| `web/` | 관리자 웹 (HTML·CSS·JavaScript, 설치할 패키지 없음) |
-| `backend/` | Supabase 스키마·권한(RLS)·함수, 시연용 데모 데이터 |
-| `docs/` | 구현 현황, SDK 활용, 시연 시나리오, 사업성, 무결성, 라이선스 |
-| `design/` | 디자인 기준 (토큰, 화면 명세, 목업) |
-| `apk/` | release 서명 APK |
-| `claude_chat/` | 개발 과정의 AI 협업 기록과 인수인계 문서 |
-
-## 빠르게 해 보기 (심사용)
-
-1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk)를 설치합니다 (`adb install apk/AltroStudio_DriveLog_release.apk`).
-2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
-3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결되고, [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
-4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜹니다. 용도를 한 번 누르면 월별 운행기록부에 들어갑니다.
-5. 새로 만든 AVD는 시간대가 한국이 아니라서 운행 시각이 다르게 보일 수 있습니다. 한국 시간으로 보려면 `adb shell service call alarm 3 s16 Asia/Seoul`을 실행합니다.
-
-시연 흐름은 [docs/demo-script.md](docs/demo-script.md), 사용한 Pleos SDK는 [docs/sdk-usage.md](docs/sdk-usage.md)에 있습니다.
-
-## 앱 이름과 한 줄 소개
+## 앱 이름 및 한 줄 소개
 
 - **앱 이름**: 자동 운행기록부 (영문명 DriveLog, 임시)
 - **한 줄 소개**: 외근이 잦은 법인·개인사업자를 위해 차가 알아서 운행기록부를 써 주는 앱. 주행 중에는 조작이 없고, 정차 후 한 번 눌러 용도만 고르면 월별 운행기록부가 완성됩니다.
 
+## APK 파일 위치
+
+- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 27 MB)
+- 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
+- APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
+
 ## 실행 방법
+
+### 1. APK로 바로 해 보기 (심사용)
+
+1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 APK를 설치합니다: `adb install apk/AltroStudio_DriveLog_release.apk`
+2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
+3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결됩니다. [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
+4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜹니다. 용도를 한 번 누르면 운행기록부에 들어갑니다.
+5. 홈의 [월별 운행기록부 보기]에서 달 칩이나 [기간 선택](달력)으로 기간을 고르고, [휴대폰으로 받기]의 QR 코드를 휴대폰 카메라로 찍으면 휴대폰에서 운행기록부가 열립니다(조직에 연결한 경우).
+6. 관리자 웹 https://altrostudio-drivelog.vercel.app 에 기업 계정으로 로그인하면 같은 기록과 **세무 제출** 탭(국세청 서식 인쇄·PDF)을 볼 수 있습니다.
+
+새로 만든 AVD는 시간대가 미국(America/Los_Angeles)이고 자동 시간대가 켜져 있어서 운행 시각이 한국과 다르게 보입니다. 한국 시간으로 보려면 자동 시간대를 끄고 바꿉니다: `adb shell settings put global auto_time_zone 0` 다음 `adb shell service call alarm 3 s16 Asia/Seoul` (앱을 다시 열면 반영). 시연 흐름은 [docs/demo-script.md](docs/demo-script.md)에 있습니다.
+
+### 2. 소스에서 빌드하기
 
 1. Android Studio에서 `File > Open`으로 이 저장소 루트를 엽니다.
 2. Gradle 동기화가 끝나면 실행 대상으로 `Pleos_Connect_v2.1` 에뮬레이터를 고르고 **Run** 합니다.
@@ -72,24 +50,24 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 ```bash
 ./gradlew assembleDebug      # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew installDebug       # 실행 중인 에뮬레이터에 설치
+./gradlew testDebugUnitTest  # 단위 테스트
 ```
 
 서버 주소와 공개 키는 `local.properties`에 넣습니다 (`local.properties.example` 참고, 커밋 금지). 비워 두면 앱은 서버 없이 이 차량에만 기록합니다.
 
-### 관리자 웹 (`web/`)
+### 3. 관리자 웹 (`web/`)
 
-배포 주소: **https://altrostudio-drivelog.vercel.app** (Vercel)
-
-이 PC에서 띄울 때는 Node.js 18 이상이 필요하고, 설치할 패키지는 없습니다.
+배포 주소: **https://altrostudio-drivelog.vercel.app** (Vercel). 이 PC에서 띄울 때는 Node.js 18 이상이 필요하고, 설치할 패키지는 없습니다.
 
 ```bash
 node web/scripts/write-config.mjs   # local.properties의 서버 주소·공개 키로 web/js/config.js를 만든다
 node web/scripts/serve.mjs          # http://127.0.0.1:5173
+(cd web && node --test)              # 단위 테스트
 ```
 
-자세한 내용은 [web/README.md](web/README.md)에 있습니다.
+자세한 내용은 [web/README.md](web/README.md), 서버는 [backend/README.md](backend/README.md)에 있습니다.
 
-## 테스트 환경과 필요한 설정
+## 테스트 환경 및 필요한 설정
 
 | 항목 | 버전 / 값 |
 |---|---|
@@ -97,6 +75,7 @@ node web/scripts/serve.mjs          # http://127.0.0.1:5173
 | Gradle / AGP / Kotlin | 8.10.2 / 8.8.2 / 2.0.0 |
 | compileSdk / targetSdk / minSdk | 35 / 35 / 28 |
 | 에뮬레이터 | Pleos Connect v2.1 (Android 14, API 34, x86_64, Automotive) |
+| Pleos Connect SDK | Vehicle 2.3.2, NaviHelper 3.0.5 |
 
 ### Pleos Connect 에뮬레이터
 
@@ -117,24 +96,58 @@ node web/scripts/serve.mjs          # http://127.0.0.1:5173
 adb forward tcp:8088 tcp:8088
 ```
 
-브라우저에서 http://127.0.0.1:8088/ 에 접속합니다.
+브라우저에서 http://127.0.0.1:8088/ 에 접속합니다. 기어(P/R/N/D)와 계기판 거리(Odometer)를 바꿔 운행을 만듭니다. 에뮬레이터를 Cold boot하면 계기판 거리가 0으로 돌아가므로, 이어서 시연할 때는 먼저 이전 값보다 크게 맞춥니다.
 
 ### 데모 계정
 
 | 용도 | 값 |
 |---|---|
-| 관리자 웹 · 기업 계정 | https://altrostudio-drivelog.vercel.app · 아이디 `demo@altro.com` (데모 기업의 운행기록부, 차량 연결 코드) |
+| 관리자 웹 · 기업 계정 | https://altrostudio-drivelog.vercel.app · 아이디 `demo@altro.com` (데모 기업의 운행기록부, 세무 제출, 차량·연결 코드) |
 | 관리자 웹 · 개발자 계정 | 아이디 `AltroStudio@altro.com` (팀 운영용: 기업 등록과 기업 관리자 계정 만들기, 운행 기록은 볼 수 없음. 심사용으로는 제공하지 않습니다) |
 | 비밀번호 | 저장소에 두지 않습니다. 기업 계정 비밀번호는 기획서(접수양식)에 적어 제출합니다 |
 | 차량 연결 코드 (시연용, 여러 번 사용 가능, 2027-02-28까지) | `422511` |
 
 데모 조직과 계정은 `backend/seed/`에서만 만들고, APK에는 들어가지 않습니다.
 
-## APK 위치
+## 핵심 기능
 
-- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 26 MB)
-- 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
-- APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
+- **자동 기록**: 기어가 P를 벗어나면 운행 시작, P에서 끝. 주행 전·후 계기판 거리를 Pleos Vehicle SDK에서 직접 읽어 넣습니다.
+- **주행 중 조작 0**: 주행 중에는 터치할 요소가 없는 화면만 보입니다. 정차하면 용도를 고르는 화면이 뜹니다.
+- **원탭 분류**: 출퇴근 / 일반업무 / 비업무. 같은 목적지는 지난번 분류를 먼저 제안하고, 비업무 운행은 주소를 지우고 거리만 남깁니다.
+- **국세청 서식 운행기록부**: 업무사용비율까지 자동 계산합니다. 달 칩이나 달력으로 기간을 고릅니다.
+- **휴대폰으로 받기**: 차에는 메일·메신저 앱이 없어서, 정차 중 운행기록부의 [휴대폰으로 받기]를 누르면 QR 코드가 뜹니다. 휴대폰 카메라로 찍으면 로그인 없이 그 기간의 운행기록부가 열리고(10분 동안), 휴대폰에서 CSV·서식 PDF로 저장하거나 카톡·메일로 보냅니다. 조직에 연결한 차량에서 쓰고, 연결하지 않은 차량은 CSV로 저장합니다.
+- **세무서 제출용 서식**: 운행기록부는 보관하다가 세무서가 요구하면 내는 서류입니다. 관리자 웹이 국세청고시 제2025-8호 별지 「업무용승용차 운행기록부」와 같은 칸의 서식을 차량별로 만들어 인쇄·PDF로 저장하고, 법인세 신고 때 명세서에 옮길 차량별 업무사용비율을 보여 줍니다.
+- **고칠 수 없는 기록**: 차량별 해시 체인과 수정 이력으로 기록이 바뀐 흔적을 찾아냅니다.
+- **회사 연결**: 관리자 웹에서 받은 6자리 코드를 정차 중 한 번 입력하면 조직에 등록되고, 기록은 오프라인 우선으로 올라갑니다. 서버 없이도 차량 안에서 기록·분류·운행기록부가 동작합니다.
+- **관리자 웹**: 기업 계정은 차량 연결 코드 발급과 모든 차량의 운행기록부·CSV·세무서 제출용 서식, 개발자 계정은 기업 정보 등록과 기업 관리자 계정 만들기.
+
+![세무서 제출용 운행기록부 서식 (관리자 웹)](docs/images/w01-tax-form.png)
+
+## 바로가기
+
+| 항목 | 위치 |
+|---|---|
+| release APK | [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) |
+| 관리자 웹 | https://altrostudio-drivelog.vercel.app |
+| 구현 현황 | [docs/status.md](docs/status.md) |
+| 기획 요약 (심사 항목별) | [docs/plan-summary.md](docs/plan-summary.md) |
+| 공모전 제출 점검표 | [docs/submission.md](docs/submission.md) |
+| Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
+| 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |
+| 사업성 | [docs/business.md](docs/business.md) |
+| 기록 무결성 (해시 체인) | [docs/integrity.md](docs/integrity.md) |
+
+## 저장소 구조
+
+| 폴더 | 내용 |
+|---|---|
+| `app/` | 차량 앱 (Kotlin, Jetpack Compose, Room, WorkManager) |
+| `web/` | 관리자 웹과 휴대폰으로 받기 페이지 (HTML·CSS·JavaScript, 설치할 패키지 없음) |
+| `backend/` | Supabase 스키마·권한(RLS)·함수, 시연용 데모 데이터 |
+| `docs/` | 구현 현황, 기획 요약, 제출 점검표, SDK 활용, 시연 시나리오, 사업성, 무결성, 라이선스 |
+| `design/` | 디자인 기준 (토큰, 화면 명세, 목업) |
+| `apk/` | release 서명 APK |
+| `claude_chat/` | 개발 과정의 AI 협업 기록과 인수인계 문서 |
 
 ## 개발자 메모
 
@@ -143,7 +156,7 @@ adb forward tcp:8088 tcp:8088
   adb shell screenrecord --time-limit 180 /sdcard/drivelog-demo.mp4
   adb pull /sdcard/drivelog-demo.mp4
   ```
-- 에뮬레이터 시간대를 한국으로: `adb shell service call alarm 3 s16 Asia/Seoul`
+- 에뮬레이터 시간대를 한국으로: `adb shell settings put global auto_time_zone 0` 다음 `adb shell service call alarm 3 s16 Asia/Seoul`
 - 데모 조직·관리자·연결 코드: `backend/seed/` (값은 커밋하지 않는 `backend/.env`)
 
 ## 라이선스

@@ -104,4 +104,13 @@ interface TripDao {
 
     @Query("UPDATE trips SET orgId = :orgId, driverId = :driverId WHERE orgId IS NULL")
     suspend fun assignOrg(orgId: String, driverId: String?)
+
+    @Query(
+        "UPDATE trip_changes SET syncState = 'SYNCED' WHERE syncState = 'PENDING' " +
+            "AND tripId IN (SELECT id FROM trips WHERE orgId IS NOT NULL AND orgId != :orgId)"
+    )
+    suspend fun retireChangesOfOtherOrgs(orgId: String)
+
+    @Query("UPDATE trips SET syncState = 'SYNCED' WHERE syncState = 'PENDING' AND orgId IS NOT NULL AND orgId != :orgId")
+    suspend fun retireTripsOfOtherOrgs(orgId: String)
 }

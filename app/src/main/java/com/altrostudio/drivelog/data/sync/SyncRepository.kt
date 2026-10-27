@@ -21,6 +21,9 @@ sealed interface SyncOutcome {
     data object UpToDate : SyncOutcome
     data class Uploaded(val trips: Int, val changes: Int) : SyncOutcome
     data object Offline : SyncOutcome
+
+    /** 서버에서 이 차량의 연결이 끊겼다 (관리자가 웹에서 연결 해제, 기업 삭제). 기록은 남고 다시 연결하면 올라간다 */
+    data object Unpaired : SyncOutcome
     data class Failed(val message: String) : SyncOutcome
 }
 
@@ -33,7 +36,9 @@ class SyncRepository(
     private val api: BackendApi,
     private val auth: DeviceAuth,
     private val pairing: StateFlow<Pairing?>,
-    private val trips: TripRepository
+    private val trips: TripRepository,
+    private val vehicleId: suspend () -> String,
+    private val onUnpaired: () -> Unit
 ) {
     private val mutex = Mutex()
     private val _lastOutcome = MutableStateFlow<SyncOutcome?>(null)
@@ -45,7 +50,16 @@ class SyncRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: BackendException) {
-            if (e.kind == BackendException.Kind.NETWORK) SyncOutcome.Offline else SyncOutcome.Failed(e.message.orEmpty())
+            when {
+                e.kind == BackendException.Kind.NETWORK -> SyncOutcome.Offline
+                // 권한 거부(403)는 서버에서 연결이 끊겼을 때 생긴다. 확인되면 연결을 잊어 운전자가 다시 연결하게 한다
+                // (전에는 "연결됨"으로 보이면서 계속 실패했다, 2026-10-27 점검)
+                e.httpCode == HTTP_FORBIDDEN && !stillPaired() -> {
+                    onUnpaired()
+                    SyncOutcome.Unpaired
+                }
+                else -> SyncOutcome.Failed(e.message.orEmpty())
+            }
         } catch (e: Exception) {
             // 어떤 이유로 실패해도 기록은 이 차량에 그대로 남고 다음에 다시 올린다 (앱은 멈추지 않는다)
             SyncOutcome.Failed(e.message ?: e.javaClass.simpleName)
@@ -68,16 +82,19 @@ class SyncRepository(
         for (round in 1..MAX_BATCHES) {
             val batch = trips.pendingUploads(BATCH_SIZE)
             if (batch.isEmpty) break
+            // 서버의 분류 이력은 운행을 참조한다. 올릴 운행이 한 묶음보다 많이 남았으면 이 묶음에 없는 운행의 이력이 섞여
+            // 서버가 거부하고 같은 묶음에서 계속 멈출 수 있어, 운행을 다 올린 뒤에 이력을 올린다 (2026-10-27 점검)
+            val changes = if (batch.trips.size < BATCH_SIZE) batch.changes else emptyList()
             val remoteTrips = batch.trips.map { it.toRemote(current, chainId(it.vehicleId)) }
-            val remoteChanges = batch.changes.map { it.toRemote(current.orgId, chainId(it.vehicleId)) }
+            val remoteChanges = changes.map { it.toRemote(current.orgId, chainId(it.vehicleId)) }
             auth.withToken { token ->
                 // 분류 이력이 운행을 참조하므로 운행을 먼저 올린다
                 if (remoteTrips.isNotEmpty()) api.upsertTrips(token, remoteTrips)
                 if (remoteChanges.isNotEmpty()) api.upsertChanges(token, remoteChanges)
             }
-            trips.markUploaded(batch.trips, batch.changes)
+            trips.markUploaded(batch.trips, changes)
             tripCount += batch.trips.size
-            changeCount += batch.changes.size
+            changeCount += changes.size
         }
         if (tripCount + changeCount == 0) return SyncOutcome.UpToDate
         // 체인 머리를 마지막에 올려 서버에서 끝부분 누락을 확인할 수 있게 한다
@@ -86,6 +103,15 @@ class SyncRepository(
             auth.withToken { api.upsertChainHead(it, remoteHead) }
         }
         return SyncOutcome.Uploaded(tripCount, changeCount)
+    }
+
+    /** 확인하지 못하면(인터넷 끊김 등) 연결된 것으로 본다 */
+    private suspend fun stillPaired(): Boolean = try {
+        auth.withToken { api.isVehicleDevice(it, vehicleId()) }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        true
     }
 
     private fun TripEntity.toRemote(pairing: Pairing, chainId: String) = RemoteTrip(
@@ -132,5 +158,6 @@ class SyncRepository(
     private companion object {
         const val BATCH_SIZE = 100
         const val MAX_BATCHES = 20
+        const val HTTP_FORBIDDEN = 403
     }
 }

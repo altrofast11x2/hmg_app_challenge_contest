@@ -5,6 +5,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -51,6 +53,10 @@ class OkHttpBackendApi(
         post("/rest/v1/rpc/unpair_own_vehicle", "{}", accessToken)
     }
 
+    override suspend fun isVehicleDevice(accessToken: String, vehicleId: String): Boolean =
+        json.parseToJsonElement(get("/rest/v1/vehicles", mapOf("select" to "id", "id" to "eq.$vehicleId"), accessToken))
+            .jsonArray.isNotEmpty()
+
     override suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse =
         json.decodeFromString(post("/rest/v1/rpc/create_share_link", json.encodeToString(request), accessToken))
 
@@ -58,12 +64,22 @@ class OkHttpBackendApi(
         DeviceSession(accessToken, refreshToken, now() + expiresInSeconds * 1_000, user.id)
 
     private suspend fun post(path: String, body: String, token: String?, prefer: String? = null): String =
+        execute(token, prefer) { url(config.url.trimEnd('/') + path).post(body.toRequestBody(JSON_MEDIA_TYPE)) }
+
+    private suspend fun get(path: String, query: Map<String, String>, token: String): String =
+        execute(token, prefer = null) {
+            val url = (config.url.trimEnd('/') + path).toHttpUrl().newBuilder()
+                .apply { query.forEach { (name, value) -> addQueryParameter(name, value) } }
+                .build()
+            url(url).get()
+        }
+
+    private suspend fun execute(token: String?, prefer: String?, target: Request.Builder.() -> Request.Builder): String =
         withContext(Dispatchers.IO) {
             if (!config.isConfigured) throw BackendException(BackendException.Kind.NOT_CONFIGURED, "서버 설정이 없는 빌드입니다")
             // 공개 키는 apikey 헤더에만 넣는다 (새 publishable 키는 JWT가 아니라 Authorization에 넣으면 거부된다)
             val request = Request.Builder()
-                .url(config.url.trimEnd('/') + path)
-                .post(body.toRequestBody(JSON_MEDIA_TYPE))
+                .target()
                 .header("apikey", config.anonKey)
                 .apply { if (token != null) header("Authorization", "Bearer $token") }
                 .apply { if (prefer != null) header("Prefer", prefer) }
@@ -73,8 +89,8 @@ class OkHttpBackendApi(
                     val text = response.body?.string().orEmpty()
                     when {
                         response.isSuccessful -> text
-                        response.code == 401 -> throw BackendException(BackendException.Kind.UNAUTHORIZED, text)
-                        else -> throw BackendException(BackendException.Kind.SERVER, "HTTP ${response.code}: $text")
+                        response.code == 401 -> throw BackendException(BackendException.Kind.UNAUTHORIZED, text, httpCode = 401)
+                        else -> throw BackendException(BackendException.Kind.SERVER, "HTTP ${response.code}: $text", httpCode = response.code)
                     }
                 }
             } catch (e: IOException) {

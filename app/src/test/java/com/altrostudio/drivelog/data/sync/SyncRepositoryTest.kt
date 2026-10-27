@@ -19,7 +19,15 @@ class SyncRepositoryTest {
     private val api = FakeBackendApi()
     private val pairing = MutableStateFlow<Pairing?>(null)
     private val trips = FakeTripRepository(now = { ++clock })
-    private val sync = SyncRepository(api, DeviceAuth(api, MemorySyncSettings(), now = { 0L }), pairing, trips)
+    private var unpaired = 0
+    private val sync = SyncRepository(
+        api, DeviceAuth(api, MemorySyncSettings(), now = { 0L }), pairing, trips,
+        vehicleId = { VEHICLE_ID },
+        onUnpaired = {
+            unpaired++
+            pairing.value = null
+        }
+    )
 
     private val demoOrg = Pairing(orgId = "org-1", orgName = "데모 조직", driverId = "driver-1", driverName = "기본 운전자")
 
@@ -79,6 +87,50 @@ class SyncRepositoryTest {
         assertEquals(trips.trip("t2").hash, second.chainId)
         assertNotEquals(firstChain, second.chainId)
         assertEquals(second.chainId, api.chainHeads.getValue(VEHICLE_ID).chainId)
+    }
+
+    @Test
+    fun `운행이 한 묶음(100건)보다 많이 쌓인 뒤 최근 운행을 분류해도 운행을 먼저 다 올리고 이력을 올린다`() = runTest {
+        repeat(150) { completedTrip("t$it") }
+        trips.classify("t149", TripPurpose.BUSINESS, "driver:default", at = 5_000)
+        pairing.value = demoOrg
+
+        assertEquals(SyncOutcome.Uploaded(trips = 150, changes = 1), sync.sync())
+
+        assertEquals(150, api.trips.size)
+        assertEquals("BUSINESS", api.trips.getValue("t149").purpose)
+        assertEquals(1, api.changes.size)
+        assertEquals(151L, api.chainHeads.getValue(VEHICLE_ID).seq)
+        assertEquals(SyncOutcome.UpToDate, sync.sync())
+    }
+
+    @Test
+    fun `관리자가 웹에서 연결을 해제하면(403) 연결을 잊고, 기록은 남겨 다시 연결하면 올린다`() = runTest {
+        completedTrip("t1", TripPurpose.BUSINESS)
+        pairing.value = demoOrg
+        api.forbidUploads = true
+        api.isDevice = false
+
+        assertEquals(SyncOutcome.Unpaired, sync.sync())
+        assertEquals(1, unpaired)
+        assertNull(pairing.value)
+        assertEquals(SyncState.PENDING, trips.trip("t1").syncState)
+
+        api.forbidUploads = false
+        api.isDevice = true
+        pairing.value = demoOrg
+        assertEquals(SyncOutcome.Uploaded(trips = 1, changes = 1), sync.sync())
+    }
+
+    @Test
+    fun `권한 거부여도 아직 그 차량의 기기로 확인되면 연결을 잊지 않는다`() = runTest {
+        completedTrip("t1")
+        pairing.value = demoOrg
+        api.forbidUploads = true
+
+        assertTrue(sync.sync() is SyncOutcome.Failed)
+        assertEquals(0, unpaired)
+        assertEquals(demoOrg, pairing.value)
     }
 
     @Test

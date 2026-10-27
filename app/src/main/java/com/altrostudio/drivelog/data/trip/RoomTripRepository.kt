@@ -141,7 +141,13 @@ class RoomTripRepository(
 
     override fun observePendingCount(): Flow<Int> = dao.observePendingCount()
 
-    override suspend fun assignOrg(orgId: String, driverId: String?) = dao.assignOrg(orgId, driverId)
+    override suspend fun assignOrg(orgId: String, driverId: String?) {
+        database.withTransaction {
+            dao.retireChangesOfOtherOrgs(orgId)
+            dao.retireTripsOfOtherOrgs(orgId)
+            dao.assignOrg(orgId, driverId)
+        }
+    }
 
     override suspend fun chainHeads(): List<ChainHeadEntity> = dao.chainHeads()
 

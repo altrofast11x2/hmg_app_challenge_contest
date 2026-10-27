@@ -20,11 +20,20 @@ interface BackendApi {
     /** 이 차량의 조직 연결을 끊는다 (동의 철회). 운행 기록은 서버에 남는다 */
     suspend fun unpairOwnVehicle(accessToken: String)
 
+    /** 이 기기 계정이 지금도 그 차량의 기기인지. 관리자가 웹에서 연결을 해제했거나 기업이 삭제되면 false */
+    suspend fun isVehicleDevice(accessToken: String, vehicleId: String): Boolean
+
     /** 휴대폰으로 받기: 이 차량의 기간 운행기록부를 10분 동안 여는 링크 토큰 */
     suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse
 }
 
-class BackendException(val kind: Kind, message: String, cause: Throwable? = null) : Exception(message, cause) {
+/** [httpCode]: 서버가 답한 HTTP 상태 코드 (응답을 받지 못했으면 null) */
+class BackendException(
+    val kind: Kind,
+    message: String,
+    cause: Throwable? = null,
+    val httpCode: Int? = null
+) : Exception(message, cause) {
     enum class Kind {
         /** 인터넷 연결 없음·시간 초과 */
         NETWORK,

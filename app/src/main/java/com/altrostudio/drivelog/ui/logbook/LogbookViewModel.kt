@@ -17,16 +17,20 @@ import com.altrostudio.drivelog.domain.logbook.LogbookCsv
 import com.altrostudio.drivelog.domain.logbook.LogbookMonths
 import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.MonthChoice
+import com.altrostudio.drivelog.domain.logbook.currentMonthFlow
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -64,7 +68,10 @@ class LogbookViewModel(
     private val now: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
-    private val period = MutableStateFlow(LogbookPeriod.ofMonth(YearMonth.now(zone)))
+    // 앱을 며칠씩 켜 둔 채 쓰는 차에서도 달 목록과 "이번 달"이 달이 바뀌면 따라온다
+    private val currentMonth: StateFlow<YearMonth> =
+        currentMonthFlow(zone).stateIn(viewModelScope, SharingStarted.Eagerly, YearMonth.now(zone))
+    private val period = MutableStateFlow(LogbookPeriod.ofMonth(currentMonth.value))
     private val _state = MutableStateFlow(LogbookUiState(period.value))
     val state: StateFlow<LogbookUiState> = _state.asStateFlow()
 
@@ -77,10 +84,17 @@ class LogbookViewModel(
             verifyIntegrity()
         }.launchIn(viewModelScope)
 
-        container.trips.observeTrips().map { trips ->
+        combine(container.trips.observeTrips(), currentMonth) { trips, month ->
             val started = trips.filter { it.status == TripStatus.COMPLETED }.map { it.startedAt }
-            LogbookMonths.choices(started, YearMonth.now(zone), zone)
+            LogbookMonths.choices(started, month, zone)
         }.onEach { months -> _state.update { it.copy(months = months) } }.launchIn(viewModelScope)
+
+        // 이번 달을 보고 있었으면 새 달로 넘어간다. 직접 고른 다른 기간은 그대로 둔다
+        var shownMonth = currentMonth.value
+        currentMonth.onEach { month ->
+            if (month != shownMonth && period.value == LogbookPeriod.ofMonth(shownMonth)) changePeriod(LogbookPeriod.ofMonth(month))
+            shownMonth = month
+        }.launchIn(viewModelScope)
     }
 
     /** 월 목록에서 고른 달로 바로 이동한다 */

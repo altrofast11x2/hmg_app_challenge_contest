@@ -62,7 +62,12 @@ interface TripRepository {
     /** 올릴 기록 수 */
     fun observePendingCount(): Flow<Int>
 
-    /** 조직에 연결되기 전에 쌓인 운행에 조직과 기본 운전자를 채운다 (해시 대상이 아니라 체인은 그대로다) */
+    /**
+     * 조직에 연결되기 전에 쌓인 운행에 조직과 기본 운전자를 채운다 (해시 대상이 아니라 체인은 그대로다).
+     * 다른 조직에 속했던 운행 중 아직 못 올린 것(연결을 해제한 차를 다른 기업에 연결했거나, 기업이 삭제된 뒤 새 기업에 연결한 경우)은
+     * 새 조직으로 올리지 않는다.
+     * 그 회사의 기록이 다른 회사로 넘어가지 않게 하고, 서버가 거부해 동기화가 멈추지 않게 한다. 차 안에는 그대로 남는다
+     */
     suspend fun assignOrg(orgId: String, driverId: String?)
 
     suspend fun chainHeads(): List<ChainHeadEntity>

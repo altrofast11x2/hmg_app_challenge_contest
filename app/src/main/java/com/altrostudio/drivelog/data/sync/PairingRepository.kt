@@ -103,6 +103,17 @@ class PairingRepository(
         }
     }
 
+    /**
+     * 서버에서 연결이 끊겼다 (관리자가 웹에서 연결 해제, 기업 삭제). 기록은 그대로 두고 연결 화면에서 다시 연결하게 한다.
+     * 기기 계정도 새로 만든다 (기업 삭제로 서버에서 지워졌을 수 있다)
+     */
+    fun forget() {
+        preferences.pairing = null
+        preferences.deviceSession = null
+        _pairing.value = null
+        setSkipped(false)
+    }
+
     /** [나중에 연결]: 연결하지 않고 이 차량 안에서만 기록한다. 설정에서 언제든 연결할 수 있다 */
     fun skip() = setSkipped(true)
 

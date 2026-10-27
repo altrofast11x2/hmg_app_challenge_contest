@@ -5,6 +5,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -93,6 +94,36 @@ class OkHttpBackendApiTest {
         val request = server.takeRequest()
         assertEquals("/rest/v1/chain_heads?on_conflict=vehicle_id,chain_id", request.path)
         assertEquals("""[{"vehicle_id":"v1","org_id":"o1","chain_id":"c1","seq":2,"hash":"h"}]""", request.body.readUtf8())
+    }
+
+    @Test
+    fun `기기 확인은 차량을 조회해 보이면 true, 서버에서 연결이 끊겨 안 보이면 false`() = runTest {
+        server.enqueue(MockResponse().setBody("""[{"id":"KMH 1&2"}]"""))
+        server.enqueue(MockResponse().setBody("[]"))
+
+        assertTrue(api().isVehicleDevice("device-token", "KMH 1&2"))
+        assertFalse(api().isVehicleDevice("device-token", "KMH 1&2"))
+
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/rest/v1/vehicles?select=id&id=eq.KMH%201%262", request.path)
+        assertEquals("Bearer device-token", request.getHeader("Authorization"))
+        assertEquals("anon-key", request.getHeader("apikey"))
+    }
+
+    @Test
+    fun `오류에는 서버가 답한 HTTP 상태 코드가 담긴다`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(403).setBody("""{"code":"42501"}"""))
+
+        val error = try {
+            api().upsertTrips("t", emptyList())
+            null
+        } catch (e: BackendException) {
+            e
+        }
+
+        assertEquals(BackendException.Kind.SERVER, error?.kind)
+        assertEquals(403, error?.httpCode)
     }
 
     @Test

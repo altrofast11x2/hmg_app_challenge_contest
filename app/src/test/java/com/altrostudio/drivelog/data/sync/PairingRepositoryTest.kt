@@ -3,6 +3,7 @@ package com.altrostudio.drivelog.data.sync
 import com.altrostudio.drivelog.data.remote.BackendException
 import com.altrostudio.drivelog.data.remote.DeviceAuth
 import com.altrostudio.drivelog.data.remote.PairResponse
+import com.altrostudio.drivelog.data.trip.SyncState
 import com.altrostudio.drivelog.fake.FakeTripRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,6 +32,37 @@ class PairingRepositoryTest {
 
         api.failure = BackendException(BackendException.Kind.NETWORK, "offline")
         assertFalse(repository.disconnectFromServer())
+    }
+
+    @Test
+    fun `서버에서 연결이 끊기면 연결과 기기 계정을 잊고 연결 화면으로 돌아간다`() = runTest {
+        repository.pair("123456")
+
+        repository.forget()
+
+        assertNull(repository.pairing.value)
+        assertNull(settings.pairing)
+        assertNull(settings.deviceSession)
+        assertFalse(repository.skipped.value)
+    }
+
+    @Test
+    fun `삭제된 기업에서 못 올린 운행은 새 기업에 연결해도 그 기업으로 올리지 않는다`() = runTest {
+        trips.startTrip("old", "device-1234", at = 1_000, odometerKm = 10.0)
+        trips.markParked("old", at = 2_000, odometerKm = 15.0)
+        trips.completeTrip("old", at = 2_000)
+        trips.assignOrg("org-deleted", "driver-old")
+        trips.startTrip("new", "device-1234", at = 3_000, odometerKm = 15.0)
+        trips.markParked("new", at = 4_000, odometerKm = 20.0)
+        trips.completeTrip("new", at = 4_000)
+        api.pairResponse = api.pairResponse.copy(orgId = "org-2", driverId = "driver-2")
+
+        repository.pair("123456")
+
+        assertEquals("org-deleted", trips.trip("old").orgId)
+        assertEquals(SyncState.SYNCED, trips.trip("old").syncState)
+        assertEquals("org-2", trips.trip("new").orgId)
+        assertEquals(SyncState.PENDING, trips.trip("new").syncState)
     }
 
     @Test

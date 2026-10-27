@@ -29,11 +29,37 @@ class FakeBackendApi : BackendApi {
     /** 다음 한 번은 토큰 만료(401)로 거부한다 */
     var rejectTokenOnce = false
 
+    /** 이 기기 계정이 그 차량의 기기인지 (관리자가 웹에서 연결을 해제하면 false) */
+    var isDevice = true
+
+    /** 올리기를 권한 거부(403)로 막는다 (서버에서 연결이 끊긴 뒤의 서버처럼) */
+    var forbidUploads = false
+
+    /** 다음 토큰 갱신을 이 오류로 거부한다 (기기 계정이 서버에서 지워짐) */
+    var refreshFailure: Exception? = null
+
+    var signIns = 0
+        private set
+
     private var sessionCount = 0
 
-    override suspend fun signInAnonymously() = newSession("refresh-1")
+    override suspend fun signInAnonymously(): DeviceSession {
+        signIns++
+        return newSession("refresh-1")
+    }
 
-    override suspend fun refresh(refreshToken: String) = newSession(refreshToken)
+    override suspend fun refresh(refreshToken: String): DeviceSession {
+        refreshFailure?.let {
+            refreshFailure = null
+            throw it
+        }
+        return newSession(refreshToken)
+    }
+
+    override suspend fun isVehicleDevice(accessToken: String, vehicleId: String): Boolean {
+        accept(accessToken)
+        return isDevice
+    }
 
     override suspend fun pairVehicle(accessToken: String, request: PairRequest): PairResponse {
         accept(accessToken)
@@ -43,16 +69,21 @@ class FakeBackendApi : BackendApi {
 
     override suspend fun upsertTrips(accessToken: String, trips: List<RemoteTrip>) {
         accept(accessToken)
+        forbidIfUnpaired()
         trips.forEach { this.trips[it.id] = it }
     }
 
     override suspend fun upsertChanges(accessToken: String, changes: List<RemoteTripChange>) {
         accept(accessToken)
+        forbidIfUnpaired()
+        // 서버처럼 아직 없는 운행을 가리키는 이력은 거부한다 (trip_changes.trip_id 외래 키)
+        if (changes.any { it.tripId !in trips }) throw BackendException(BackendException.Kind.SERVER, "foreign key violation")
         changes.forEach { this.changes[it.id] = it }
     }
 
     override suspend fun upsertChainHead(accessToken: String, head: RemoteChainHead) {
         accept(accessToken)
+        forbidIfUnpaired()
         chainHeads[head.vehicleId] = head
     }
 
@@ -74,6 +105,10 @@ class FakeBackendApi : BackendApi {
 
     private fun newSession(refreshToken: String) =
         DeviceSession("access-${++sessionCount}", refreshToken, expiresAtMs = Long.MAX_VALUE, userId = "device-user")
+
+    private fun forbidIfUnpaired() {
+        if (forbidUploads) throw BackendException(BackendException.Kind.SERVER, "HTTP 403: row-level security", httpCode = 403)
+    }
 
     private fun accept(token: String) {
         failure?.let { throw it }

@@ -15,6 +15,7 @@ import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
 import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
+import com.altrostudio.drivelog.domain.logbook.currentMonthFlow
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
@@ -59,13 +61,17 @@ private data class SyncInfo(val pairing: Pairing?, val skipped: Boolean, val pen
 
 private data class TripLists(val recent: List<TripEntity>, val unclassified: List<TripEntity>)
 
+private data class MonthSummary(val month: YearMonth, val summary: LogbookSummary)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModel(
     private val container: AppContainer,
     zone: ZoneId = ZoneId.systemDefault()
 ) : ViewModel() {
 
-    private val month = YearMonth.now(zone)
+    // 앱을 며칠씩 켜 둔 채 써도 달이 바뀌면 홈의 "이번 달"도 새 달로 바뀐다
+    private val currentMonth: StateFlow<YearMonth> =
+        currentMonthFlow(zone).stateIn(viewModelScope, SharingStarted.Eagerly, YearMonth.now(zone))
 
     private val activeTripWithSuggestion: Flow<Pair<TripEntity?, TripPurpose?>> =
         container.trips.observeActiveTrip().mapLatest { trip ->
@@ -73,10 +79,11 @@ class MainViewModel(
             trip to address?.let { container.trips.suggestPurpose(it) }
         }
 
-    private val monthSummary: Flow<LogbookSummary?> = run {
+    private val monthSummary: Flow<MonthSummary?> = currentMonth.flatMapLatest { month ->
         val period = LogbookPeriod.ofMonth(month)
         val (from, to) = period.range(zone)
-        container.trips.observeCompletedTrips(from, to).map { LogbookBuilder.build(period, it, zone, driverName = "").summary }
+        container.trips.observeCompletedTrips(from, to)
+            .map { MonthSummary(month, LogbookBuilder.build(period, it, zone, driverName = "").summary) }
     }
 
     private val syncInfo: Flow<SyncInfo> = combine(
@@ -100,15 +107,15 @@ class MainViewModel(
         activeTripWithSuggestion,
         container.vehicle.odometerKm.onStart { emit(null) }.catch { emit(null) },
         monthSummary.onStart { emit(null) }
-    ) { consent, restricted, (activeTrip, suggestion), odometer, summary ->
+    ) { consent, restricted, (activeTrip, suggestion), odometer, monthly ->
         MainUiState(
             consentGiven = consent,
             drivingRestricted = restricted,
             activeTrip = activeTrip,
             odometerKm = odometer,
             suggestion = suggestion,
-            month = month,
-            monthSummary = summary
+            month = monthly?.month ?: currentMonth.value,
+            monthSummary = monthly?.summary
         )
     }.combine(syncInfo) { main, sync ->
         main.copy(pairing = sync.pairing, pairingSkipped = sync.skipped, pendingUploads = sync.pending, lastSync = sync.lastOutcome)
@@ -117,7 +124,7 @@ class MainViewModel(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        MainUiState(month = month, pairing = container.pairing.pairing.value, pairingSkipped = container.pairing.skipped.value)
+        MainUiState(month = currentMonth.value, pairing = container.pairing.pairing.value, pairingSkipped = container.pairing.skipped.value)
     )
 
     /** 서버 주소·키가 들어간 빌드인지 (아니면 연결 화면을 건너뛴다) */

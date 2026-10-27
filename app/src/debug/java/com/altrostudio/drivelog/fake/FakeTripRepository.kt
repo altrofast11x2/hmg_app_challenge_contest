@@ -175,7 +175,15 @@ class FakeTripRepository(
     }
 
     override suspend fun assignOrg(orgId: String, driverId: String?) = mutex.withLock {
-        trips.value = trips.value.map { if (it.orgId == null) it.copy(orgId = orgId, driverId = driverId) else it }
+        val otherOrgTrips = trips.value.filter { it.orgId != null && it.orgId != orgId }.map { it.id }.toSet()
+        changes.replaceAll { if (it.tripId in otherOrgTrips && it.syncState == SyncState.PENDING) it.copy(syncState = SyncState.SYNCED) else it }
+        trips.value = trips.value.map {
+            when {
+                it.orgId == null -> it.copy(orgId = orgId, driverId = driverId)
+                it.id in otherOrgTrips && it.syncState == SyncState.PENDING -> it.copy(syncState = SyncState.SYNCED)
+                else -> it
+            }
+        }
     }
 
     override suspend fun chainHeads(): List<ChainHeadEntity> = mutex.withLock { heads.values.toList() }

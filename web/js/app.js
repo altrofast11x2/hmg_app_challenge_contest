@@ -212,6 +212,8 @@ async function enter() {
     if (!tabsFor(state.role).some((tab) => tab.id === state.tab)) state.tab = 'logbook';
     state.org = state.orgs.find((org) => org.id === state.org?.id) ?? state.orgs[0];
     await loadOrgData();
+    // 고른 차량이 목록에 없으면(연결 해제·배정 해제) 전체 차량으로 돌린다. 안 그러면 "전체 차량"으로 보이면서 빈 표가 나온다
+    if (!state.vehicles.some((vehicle) => vehicle.id === state.vehicleId)) state.vehicleId = '';
     renderMain();
   } catch (error) {
     const shown = failure(error);

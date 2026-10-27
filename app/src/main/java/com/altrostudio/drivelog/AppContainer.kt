@@ -55,7 +55,9 @@ class AppContainer(context: Context) {
         PairingRepository(backendApi, deviceAuth, preferences, vehicleIdentity::vehicleId, trips, backendConfig.isConfigured)
     }
 
-    val sync by lazy { SyncRepository(backendApi, deviceAuth, pairing.pairing, trips) }
+    val sync by lazy {
+        SyncRepository(backendApi, deviceAuth, pairing.pairing, trips, vehicleIdentity::vehicleId, onUnpaired = { pairing.forget() })
+    }
 
     val shareLinks by lazy {
         ShareLinkRepository(backendApi, deviceAuth, appContext.getString(R.string.web_url), syncFirst = { sync.sync() })

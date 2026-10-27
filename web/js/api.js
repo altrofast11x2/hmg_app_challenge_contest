@@ -167,13 +167,27 @@ export const vehicles = (orgId) => authed(
 
 export const drivers = (orgId) => authed(`/rest/v1/drivers?select=id,name&org_id=${eq(orgId)}&order=created_at`);
 
+// 서버(Supabase)는 한 번에 최대 1000줄만 준다. 그보다 많으면 나눠 받는다 (2026-10-27 점검: 1년치 세무 서식이 잘릴 수 있었다)
+const PAGE_SIZE = 500;
+
+/** fetchPage(offset, limit)을 줄이 모자랄 때까지 불러 이어 붙인다 */
+export async function fetchAllPages(fetchPage, pageSize = PAGE_SIZE) {
+  const rows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await fetchPage(offset, pageSize);
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
 /** 그 기간 [fromMs, toMs)에 시작한 운행. vehicleId가 없으면 조직의 모든 차량 */
 export function trips(orgId, fromMs, toMs, vehicleId) {
   const vehicleFilter = vehicleId ? `&vehicle_id=${eq(vehicleId)}` : '';
-  return authed(
+  return fetchAllPages((offset, limit) => authed(
     '/rest/v1/trips?select=id,vehicle_id,driver_id,started_at_ms,ended_at_ms,start_odometer_km,end_odometer_km,visit_note,purpose'
-    + `&org_id=${eq(orgId)}&started_at_ms=gte.${fromMs}&started_at_ms=lt.${toMs}${vehicleFilter}&order=started_at_ms`,
-  );
+    + `&org_id=${eq(orgId)}&started_at_ms=gte.${fromMs}&started_at_ms=lt.${toMs}${vehicleFilter}`
+    + `&order=started_at_ms,id&limit=${limit}&offset=${offset}`,
+  ));
 }
 
 /** 아직 쓸 수 있는 연결 코드 (만료 전, 사용 전 또는 여러 번 쓰는 데모 코드) */

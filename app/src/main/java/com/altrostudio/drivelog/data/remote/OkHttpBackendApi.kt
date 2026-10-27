@@ -47,6 +47,10 @@ class OkHttpBackendApi(
         post("/rest/v1/chain_heads?on_conflict=vehicle_id", json.encodeToString(listOf(head)), accessToken, prefer = UPSERT)
     }
 
+    override suspend fun unpairOwnVehicle(accessToken: String) {
+        post("/rest/v1/rpc/unpair_own_vehicle", "{}", accessToken)
+    }
+
     override suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse =
         json.decodeFromString(post("/rest/v1/rpc/create_share_link", json.encodeToString(request), accessToken))
 

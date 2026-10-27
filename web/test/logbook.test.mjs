@@ -145,3 +145,12 @@ test('휴대폰으로 받기: 주소의 # 뒤에서 토큰과 차에서 고른 �
   assert.deepEqual(periodFromRange(...periodRange(monthPeriod(2026, 10))), { from: '2026-10-01', to: '2026-10-31' });
   assert.deepEqual(periodFromRange(...periodRange({ from: '2026-10-26', to: '2026-10-26' })), { from: '2026-10-26', to: '2026-10-26' });
 });
+
+test('운행 중에 계기판이 줄었으면(교체·초기화) 거리를 0으로 보고 합계에서 빼지 않는다 (앱과 같다)', () => {
+  const logbook = buildLogbook([
+    trip({ id: 'a', start_odometer_km: 100, end_odometer_km: 120 }),
+    trip({ id: 'b', started_at_ms: MON_9AM + 1000, start_odometer_km: 208, end_odometer_km: 3 }),
+  ], names);
+  assert.deepEqual(logbook.rows.map((row) => row.distanceKm), [20, 0]);
+  assert.equal(logbook.summary.totalKm, 20);
+});

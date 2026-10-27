@@ -37,6 +37,8 @@ class ConsentManager(
     suspend fun withdraw() {
         TripRecorderService.stop(context)
         recorder.stop()
+        // 설정을 지우기 전에 (기기 계정이 남아 있을 때) 서버의 차량 연결부터 끊는다
+        pairing.disconnectFromServer()
         trips.deleteAll()
         preferences.clearAll()
         pairing.reset()

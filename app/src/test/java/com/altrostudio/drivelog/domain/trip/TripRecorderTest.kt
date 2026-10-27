@@ -114,9 +114,12 @@ class TripRecorderTest {
     @Test
     fun `P가 대기 시간 동안 이어지면 미분류로 운행을 마친다`() = runTest {
         val trips = repository()
+        vehicle.odometer.value = 100f
         startRecorder(trips)
 
         shift(GearPosition.DRIVE)
+        vehicle.odometer.value = 105f
+        runCurrent()
         shift(GearPosition.PARK)
         advanceTimeBy(timeoutMs - 1)
         runCurrent()
@@ -177,6 +180,33 @@ class TripRecorderTest {
         val trip = trips.trip("old")
         assertEquals(TripStatus.COMPLETED, trip.status)
         assertEquals(5_000L, trip.endedAt)
+    }
+
+    @Test
+    fun `기어만 잠깐 바꾸고 움직이지 않으면 운행으로 남기지 않는다`() = runTest {
+        val trips = repository()
+        vehicle.odometer.value = 100f
+        val recorder = startRecorder(trips)
+
+        shift(GearPosition.DRIVE)
+        advanceTimeBy(20_000)
+        shift(GearPosition.PARK)
+
+        assertTrue(trips.trips.value.isEmpty())
+        assertEquals(TripState.Idle, recorder.state.value)
+    }
+
+    @Test
+    fun `거리가 0이어도 1분 넘게 달렸으면 (계기판이 1 km 단위인 차의 짧은 운행) 남긴다`() = runTest {
+        val trips = repository()
+        vehicle.odometer.value = 100f
+        startRecorder(trips)
+
+        shift(GearPosition.DRIVE)
+        advanceTimeBy(90_000)
+        shift(GearPosition.PARK)
+
+        assertEquals(TripStatus.PARKED, trips.trips.value.single().status)
     }
 
     private companion object {

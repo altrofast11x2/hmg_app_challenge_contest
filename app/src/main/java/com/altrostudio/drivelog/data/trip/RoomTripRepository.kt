@@ -88,6 +88,15 @@ class RoomTripRepository(
         }
     }
 
+    override suspend fun discardTrip(tripId: String) {
+        database.withTransaction {
+            val trip = dao.trip(tripId) ?: return@withTransaction
+            if (trip.status == TripStatus.COMPLETED) return@withTransaction
+            dao.deleteStops(tripId)
+            dao.deleteUnfinishedTrip(tripId)
+        }
+    }
+
     override suspend fun classify(tripId: String, purpose: TripPurpose, actor: String, at: Long) {
         require(purpose != TripPurpose.UNCLASSIFIED) { "분류는 출퇴근·일반업무·비업무 중 하나여야 합니다" }
         database.withTransaction {

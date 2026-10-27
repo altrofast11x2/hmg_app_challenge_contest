@@ -107,6 +107,13 @@ class FakeTripRepository(
         heads[trip.vehicleId] = TripLedger.headOf(sealed)
     }
 
+    override suspend fun discardTrip(tripId: String) = mutex.withLock {
+        val trip = trips.value.firstOrNull { it.id == tripId } ?: return@withLock
+        if (trip.status == TripStatus.COMPLETED) return@withLock
+        stops.removeAll { it.tripId == tripId }
+        trips.value = trips.value.filterNot { it.id == tripId }
+    }
+
     override suspend fun classify(tripId: String, purpose: TripPurpose, actor: String, at: Long) {
         require(purpose != TripPurpose.UNCLASSIFIED)
         mutex.withLock {

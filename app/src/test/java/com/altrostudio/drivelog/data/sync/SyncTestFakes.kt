@@ -56,6 +56,13 @@ class FakeBackendApi : BackendApi {
         chainHeads[head.vehicleId] = head
     }
 
+    var unpairCalls = 0
+
+    override suspend fun unpairOwnVehicle(accessToken: String) {
+        accept(accessToken)
+        unpairCalls++
+    }
+
     var lastShareRequest: ShareLinkRequest? = null
     var shareResponse = ShareLinkResponse(status = "OK", token = "token-1", expiresAt = "2026-10-27T05:34:12.123456+00:00")
 

@@ -21,6 +21,19 @@ class PairingRepositoryTest {
     )
 
     @Test
+    fun `동의를 철회하면 서버의 차량 연결도 끊고, 연결한 적이 없거나 인터넷이 없으면 철회를 막지 않는다`() = runTest {
+        assertFalse(repository.disconnectFromServer())
+        assertEquals(0, api.unpairCalls)
+
+        repository.pair("123456")
+        assertTrue(repository.disconnectFromServer())
+        assertEquals(1, api.unpairCalls)
+
+        api.failure = BackendException(BackendException.Kind.NETWORK, "offline")
+        assertFalse(repository.disconnectFromServer())
+    }
+
+    @Test
     fun `코드가 맞으면 조직에 연결되고 연결 전에 쌓인 운행에도 조직이 채워진다`() = runTest {
         trips.startTrip("t1", "device-1234", at = 1_000, odometerKm = 10.0)
 

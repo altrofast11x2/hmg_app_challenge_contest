@@ -58,6 +58,18 @@ class LogbookBuilderTest {
     }
 
     @Test
+    fun `운행 중에 계기판이 줄었으면(교체·초기화) 거리를 0으로 보고 합계에서 빼지 않는다`() {
+        val logbook = LogbookBuilder.build(
+            month,
+            listOf(trip("a", 1, 100.0, 120.0, TripPurpose.BUSINESS), trip("b", 2, 208.0, 3.0, TripPurpose.BUSINESS)),
+            zone,
+            driverName = "기본 운전자"
+        )
+        assertEquals(listOf(20.0, 0.0), logbook.rows.map { it.distanceKm })
+        assertEquals(20.0, logbook.summary.totalKm, 0.001)
+    }
+
+    @Test
     fun `운행이 없으면 업무사용비율은 계산하지 않는다`() {
         val summary = LogbookBuilder.build(month, emptyList(), zone, "기본 운전자").summary
         assertEquals(0.0, summary.totalKm, 0.0)

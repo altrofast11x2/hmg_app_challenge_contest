@@ -11,6 +11,7 @@
 | `supabase/migrations/0003_vehicle_admin_limits.sql` | 관리자는 차량 이름·기본 운전자만 수정, 차량 삭제 대신 `unpair_vehicle`(연결 해제) |
 | `supabase/migrations/0004_developer_orgs.sql` | 개발자 계정(`developers`), 기업 정보 열, 개발자의 기업 등록 함수 `create_organization`(기업 관리자 계정도 만든다) |
 | `supabase/migrations/0007_member_signup.sql` | 직원 회원가입: 기업 가입 코드(`organizations.join_code`), 가입 신청(`member_requests`, `member_sign_up`은 로그인 없이), 관리자 승인과 차량 배정(`decide_member_request`, `set_member_vehicles`, `vehicle_members`), 직원 내보내기, 가입 코드 바꾸기. 직원(driver)은 배정 차량만 보도록 차량·운행 권한을 좁힘. 개발자의 기업 삭제(`delete_organization`, 기업명 확인) |
+| `supabase/migrations/0008_fixes.sql` | 2026-10-27 점검에서 고친 것: 앱에서 동의를 철회하면 차량이 스스로 연결을 해제(`unpair_own_vehicle`), 휴대폰으로 받기 링크는 그 기간 운행의 운전자 이름만, 틀린 가입 코드 시도 제한을 모든 기업 공통에서 접속 주소별(1시간 20번, 주소는 sha256만 하루 보관)로 |
 | `supabase/migrations/0006_share_links.sql` | 휴대폰으로 받기: 차량이 만드는 10분짜리 링크(`create_share_link`, 토큰은 sha256만 저장, 차량당 1시간에 20개)와 로그인 없이 그 링크로 읽는 `shared_logbook`. 보안 점검의 "anon이 SECURITY DEFINER 함수를 부를 수 있다"(shared_logbook)와 "정책 없는 RLS 테이블"(share_links)은 의도한 것이다 |
 | `supabase/migrations/0005_vehicle_registration.sql` | 차량의 차종·자동차등록번호 (세무서 제출용 서식의 ①②). 관리자는 이 두 열도 고칠 수 있다 |
 | `seed/seed.sql` | 개발자 계정, 데모 기업과 기업 관리자 계정, 시연용 연결 코드 (실제 값은 `backend/.env`) |

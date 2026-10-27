@@ -99,10 +99,11 @@ data class ChainHeadEntity(
     val hash: String
 )
 
+/** 주행 거리. 계기판 값이 없거나, 운행 중에 계기판이 줄었으면(교체·초기화) 알 수 없음(null) */
 fun TripEntity.distanceKm(): Double? {
     val start = startOdometerKm ?: return null
     val end = endOdometerKm ?: return null
-    return end - start
+    return (end - start).takeIf { it >= 0 }
 }
 
 /** 운행을 마친다. 비고(방문처)는 내비 목적지 이름, 없으면 종료 주소 */

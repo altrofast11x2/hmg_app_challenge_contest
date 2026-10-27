@@ -24,7 +24,10 @@ class CsvFileSaver(private val context: Context) {
             val resolver = context.contentResolver
             val uri = checkNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)) { "파일을 만들 수 없습니다" }
             checkNotNull(resolver.openOutputStream(uri)) { "파일을 열 수 없습니다" }.use { it.write(bytes) }
-            "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER/$fileName"
+            // 같은 이름의 파일이 있으면 안드로이드가 "DriveLog_2026-10 (1).csv"처럼 바꿔 저장한다 → 실제 이름으로 안내
+            val savedName = resolver.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null } ?: fileName
+            "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER/$savedName"
         } else {
             // Android 9는 앱 전용 폴더에 저장한다 (권한 불필요)
             val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), FOLDER).apply { mkdirs() }

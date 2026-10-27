@@ -114,7 +114,8 @@ function download(text, fileName) {
   document.body.append(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // 바로 지우면 일부 휴대폰 브라우저(iOS Safari 등)가 저장을 끝내기 전에 파일을 잃는다
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 function setScreen(...children) {
@@ -146,7 +147,16 @@ async function boot() {
   else renderLogin();
 }
 
+/** 로그아웃·세션 만료로 로그인 화면에 오면 이전 계정의 화면 상태를 지운다 (다른 계정이 이어서 로그인해도 필터가 남지 않게) */
+function resetState() {
+  Object.assign(state, {
+    orgs: [], org: null, tab: 'logbook', role: 'admin', vehicleId: '', vehicles: [], drivers: [],
+    period: monthPeriod(currentMonth().year, currentMonth().month), taxPeriod: yearPeriod(currentMonth().year),
+  });
+}
+
 function renderLogin(notice) {
+  resetState();
   const status = el('div', { class: 'form-status' }, notice ? message(notice, 'error') : null);
   const button = el('button', { type: 'submit', class: 'button-primary' }, '로그인');
   const form = el('form', { class: 'card login', onsubmit: onSubmit },
@@ -235,7 +245,7 @@ function renderSignUp() {
     field('비밀번호 확인 *', 'passwordConfirm', { required: true, type: 'password', minlength: '8', autocomplete: 'new-password' }),
     el('label', { class: 'consent' },
       el('input', { name: 'consent', type: 'checkbox', required: true }),
-      el('span', {}, '[필수] 개인정보 수집·이용 동의 — 수집 항목: 이름, 부서, 사번, 휴대폰, 이메일 · 목적: 소속 확인과 가입 승인, 운행기록부 열람 · 제공: 가입을 신청한 회사의 관리자 · 보관: 회사가 직원 계정을 지울 때까지'),
+      el('span', {}, '[필수] 개인정보 수집·이용 동의 — 수집 항목: 이름, 부서, 사번, 휴대폰, 이메일 · 목적: 소속 확인과 가입 승인, 운행기록부 열람 · 제공: 가입을 신청한 회사의 관리자 · 보관: 회사가 직원 계정을 지울 때까지 · 가입 코드를 틀리면 반복 시도를 막으려고 접속 주소(IP)를 해시로 바꿔 하루 동안 보관'),
     ),
     status,
     button,
@@ -432,7 +442,7 @@ function logbookSummary(summary) {
 
 function logbookTable(logbook, includeVehicle, wholeMonth) {
   if (logbook.rows.length === 0) return message(wholeMonth ? '이 달에 기록된 운행이 없어요.' : '이 기간에 기록된 운행이 없어요.');
-  const headers = ['사용일자', includeVehicle && '차량', '사용자', '시간', '주행 전(km)', '주행 후(km)', '주행거리(km)',
+  const headers = ['사용일자', includeVehicle && '차량', '사용자', '시간(한국)', '주행 전(km)', '주행 후(km)', '주행거리(km)',
     '출퇴근용(km)', '일반업무용(km)', '비고(방문처)', '구분'].filter(Boolean);
   return el('div', { class: 'table-wrap' }, el('table', {},
     el('thead', {}, el('tr', {}, headers.map((header) => el('th', { scope: 'col', class: header.endsWith('(km)') ? 'num' : null }, header)))),
@@ -682,8 +692,9 @@ function renderMembers(content, token) {
   const codeBox = el('div', { class: 'card join-code-card' }, message('불러오는 중…'));
   const requestsBox = el('div', {}, message('불러오는 중…'));
   const membersBox = el('div', {});
+  const rejectedBox = el('div', {});
   const status = el('div', { class: 'form-status' });
-  content.replaceChildren(codeBox, status, el('h2', {}, '가입 신청'), requestsBox, el('h2', {}, '직원'), membersBox);
+  content.replaceChildren(codeBox, status, el('h2', {}, '가입 신청'), requestsBox, el('h2', {}, '직원'), membersBox, rejectedBox);
   load();
 
   async function load() {
@@ -695,6 +706,8 @@ function renderMembers(content, token) {
       showCode(code);
       const pending = requests.filter((request) => request.status === 'PENDING');
       const approved = requests.filter((request) => request.status === 'APPROVED');
+      // 거절했거나 내보낸 신청도 다시 승인할 수 있다 (같은 이메일로는 다시 가입할 수 없어서)
+      const rejected = requests.filter((request) => request.status === 'REJECTED');
       requestsBox.replaceChildren(pending.length === 0
         ? message('새 가입 신청이 없어요.')
         : el('div', { class: 'table-wrap' }, el('table', {},
@@ -707,6 +720,14 @@ function renderMembers(content, token) {
           el('thead', {}, el('tr', {}, ['이름', '부서', '사번', '휴대폰', '쓰는 차량', ''].map((header) => el('th', { scope: 'col' }, header)))),
           el('tbody', {}, approved.map((member) => memberRow(member, assignments))),
         )));
+      rejectedBox.replaceChildren(...(rejected.length === 0 ? [] : [
+        el('h2', {}, '거절·내보낸 신청'),
+        el('p', { class: 'muted' }, '잘못 거절했거나 다시 일하게 된 직원은 여기서 다시 승인하세요.'),
+        el('div', { class: 'table-wrap' }, el('table', {},
+          el('thead', {}, el('tr', {}, ['신청일', '이름', '부서', '사번', '휴대폰', '쓰는 차량', ''].map((header) => el('th', { scope: 'col' }, header)))),
+          el('tbody', {}, rejected.map((request) => requestRow(request, { again: true }))),
+        )),
+      ]));
     } catch (error) {
       if (token === renderToken) requestsBox.replaceChildren(failure(error) ?? '');
     }
@@ -740,7 +761,7 @@ function renderMembers(content, token) {
     return { node, value: () => boxes.filter((box) => box.checked).map((box) => box.value) };
   }
 
-  function requestRow(request) {
+  function requestRow(request, { again = false } = {}) {
     const picker = vehiclePicker(state.vehicles.length === 1 ? [state.vehicles[0].id] : []);
     const decide = async (approve) => {
       try {
@@ -758,8 +779,8 @@ function renderMembers(content, token) {
       el('td', {}, request.phone),
       el('td', {}, picker.node),
       el('td', { class: 'actions' },
-        el('button', { class: 'button-primary', onclick: () => decide(true) }, '승인'),
-        el('button', { class: 'button-text danger', onclick: () => decide(false) }, '거절'),
+        el('button', { class: again ? 'button-secondary' : 'button-primary', onclick: () => decide(true) }, again ? '다시 승인' : '승인'),
+        !again && el('button', { class: 'button-text danger', onclick: () => decide(false) }, '거절'),
       ),
     );
   }

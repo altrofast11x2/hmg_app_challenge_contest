@@ -104,7 +104,8 @@ export function buildLogbook(trips, names = {}) {
     .map((trip) => {
       const start = trip.start_odometer_km;
       const end = trip.end_odometer_km;
-      const distanceKm = start != null && end != null ? end - start : 0;
+      // 계기판 값이 없거나 운행 중에 계기판이 줄었으면(교체·초기화) 거리를 알 수 없어 0으로 본다 (앱과 같다)
+      const distanceKm = start != null && end != null && end >= start ? end - start : 0;
       const started = kstParts(trip.started_at_ms);
       return {
         tripId: trip.id,

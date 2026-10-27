@@ -134,6 +134,7 @@ class TripRecorder(
             }
             is TripEffect.MarkParked -> {
                 trips.markParked(effect.tripId, effect.at, currentOdometerKm())
+                if (discardIfAccidental(effect.tripId)) return
                 trips.updateEnd(
                     effect.tripId,
                     readOrNull { vehicle.readBatterySocPercent() },
@@ -147,6 +148,21 @@ class TripRecorder(
                 effect.purpose?.let { trips.classify(effect.tripId, it, DRIVER_ACTOR, effect.at) }
             }
         }
+    }
+
+    /**
+     * 주차장에서 기어만 잠깐 바꾼 경우(거리 0, 1분 미만)는 운행이 아니므로 분류를 묻지 않고 버린다 (2026-10-27 점검).
+     * 계기판이 1 km 단위인 차에서도 짧은 실제 운행을 잃지 않도록 시간 조건을 함께 본다. 계기판 값을 모르면 남긴다
+     */
+    private suspend fun discardIfAccidental(tripId: String): Boolean {
+        val trip = trips.activeTrip()?.takeIf { it.id == tripId } ?: return false
+        val start = trip.startOdometerKm ?: return false
+        val end = trip.endOdometerKm ?: return false
+        val parkedAt = trip.endedAt ?: return false
+        if (kotlin.math.abs(end - start) >= ACCIDENTAL_MAX_KM || parkedAt - trip.startedAt >= ACCIDENTAL_MAX_MS) return false
+        trips.discardTrip(tripId)
+        _state.value = TripState.Idle
+        return true
     }
 
     private fun adjustForRestore(event: TripEvent): TripEvent {
@@ -207,5 +223,9 @@ class TripRecorder(
 
         /** M1은 차량마다 기본 운전자 1명 (M2에서 운전자 선택) */
         const val DRIVER_ACTOR = "driver:default"
+
+        /** 이보다 짧게 움직이고 짧게 달린 운행은 기어만 바꾼 것으로 본다 */
+        private const val ACCIDENTAL_MAX_KM = 0.05
+        private const val ACCIDENTAL_MAX_MS = 60_000L
     }
 }

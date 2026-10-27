@@ -6,6 +6,8 @@ import com.altrostudio.drivelog.data.remote.DeviceAuth
 import com.altrostudio.drivelog.data.remote.PairRequest
 import com.altrostudio.drivelog.data.trip.TripRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -85,6 +87,22 @@ class PairingRepository(
         PairingResult.Failed(e.message ?: e.javaClass.simpleName)
     }
 
+    /**
+     * 동의 철회: 서버의 차량 연결도 끊는다 (전에는 차 안 기록만 지워지고 관리자 웹에는 계속 "연결됨"이었다).
+     * 인터넷이 없거나 실패해도 철회는 막지 않는다 (관리자가 웹에서 [연결 해제]할 수 있다). 끊었으면 true
+     */
+    suspend fun disconnectFromServer(): Boolean {
+        if (preferences.pairing == null) return false
+        return try {
+            withTimeout(DISCONNECT_TIMEOUT_MS) { auth.withToken { api.unpairOwnVehicle(it) } }
+            true
+        } catch (e: CancellationException) {
+            if (e is TimeoutCancellationException) false else throw e
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     /** [나중에 연결]: 연결하지 않고 이 차량 안에서만 기록한다. 설정에서 언제든 연결할 수 있다 */
     fun skip() = setSkipped(true)
 
@@ -97,5 +115,9 @@ class PairingRepository(
     private fun setSkipped(value: Boolean) {
         preferences.pairingSkipped = value
         _skipped.value = value
+    }
+
+    private companion object {
+        const val DISCONNECT_TIMEOUT_MS = 5_000L
     }
 }

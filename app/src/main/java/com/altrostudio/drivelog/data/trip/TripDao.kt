@@ -49,6 +49,9 @@ interface TripDao {
     @Query("DELETE FROM trip_stops WHERE tripId = :tripId")
     suspend fun deleteStops(tripId: String)
 
+    @Query("DELETE FROM trips WHERE id = :tripId AND status != 'COMPLETED'")
+    suspend fun deleteUnfinishedTrip(tripId: String)
+
     @Insert
     suspend fun insertChange(change: TripChangeEntity)
 

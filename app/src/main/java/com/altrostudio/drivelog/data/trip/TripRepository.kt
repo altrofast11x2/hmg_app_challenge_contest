@@ -31,6 +31,9 @@ interface TripRepository {
     /** 운행을 마치고 해시 체인에 붙인다 */
     suspend fun completeTrip(tripId: String, at: Long)
 
+    /** 아직 마치지 않은 운행을 지운다 (기어만 잠깐 바꾼 0 km 운행). 마친 운행은 해시 체인에 있어 지우지 않는다 */
+    suspend fun discardTrip(tripId: String)
+
     /** 완료된 운행을 분류한다. 분류 이력은 해시 체인에 남고, 비업무면 주소·위치를 지운다 */
     suspend fun classify(tripId: String, purpose: TripPurpose, actor: String, at: Long)
 

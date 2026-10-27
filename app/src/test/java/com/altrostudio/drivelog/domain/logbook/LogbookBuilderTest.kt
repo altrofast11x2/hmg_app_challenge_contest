@@ -13,7 +13,7 @@ import java.time.ZoneId
 class LogbookBuilderTest {
 
     private val zone = ZoneId.of("Asia/Seoul")
-    private val month = YearMonth.of(2026, 10)
+    private val month = LogbookPeriod.ofMonth(YearMonth.of(2026, 10))
 
     private fun trip(id: String, day: Int, startKm: Double, endKm: Double, purpose: TripPurpose, note: String? = null) = TripEntity(
         id = id,
@@ -66,7 +66,7 @@ class LogbookBuilderTest {
 
     @Test
     fun `월 범위는 그 달 1일 0시부터 다음 달 1일 0시 전까지다`() {
-        val (from, to) = LogbookBuilder.monthRange(month, zone)
+        val (from, to) = month.range(zone)
         assertEquals(LocalDate.of(2026, 10, 1).atStartOfDay(zone).toInstant().toEpochMilli(), from)
         assertEquals(LocalDate.of(2026, 11, 1).atStartOfDay(zone).toInstant().toEpochMilli(), to)
     }

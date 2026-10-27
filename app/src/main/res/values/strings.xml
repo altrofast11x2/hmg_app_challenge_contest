@@ -51,6 +51,13 @@
     <!-- 운행기록부 -->
     <string name="logbook_title">월별 운행기록부</string>
     <string name="logbook_empty">이 달에는 운행 기록이 없습니다</string>
+    <string name="logbook_empty_period">이 기간에는 운행 기록이 없습니다</string>
+    <string name="logbook_pick_period">기간 선택</string>
+    <string name="logbook_period_title">운행기록부 기간</string>
+    <string name="logbook_period_hint">시작 날짜와 끝 날짜를 차례로 누르세요</string>
+    <string name="logbook_period_apply">적용</string>
+    <string name="logbook_period_too_long">기간은 %1$d일까지 고를 수 있어요</string>
+    <string name="logbook_period_range">%1$s – %2$s</string>
     <string name="logbook_col_date">사용일자</string>
     <string name="logbook_col_driver">사용자</string>
     <string name="logbook_col_start">주행 전(km)</string>
@@ -114,7 +121,7 @@
 
     <!-- 개인정보 처리방침 -->
     <string name="privacy_title">개인정보 처리방침</string>
-    <string name="privacy_body">AltroStudio(이하 개발사)는 자동 운행기록부 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 비업무로 분류한 운행은 분류하는 즉시 주소와 도착 정보를 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)이 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람하고 CSV로 내보낼 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 문의\nAltroStudio · admin@email.com</string>
+    <string name="privacy_body">AltroStudio(이하 개발사)는 자동 운행기록부 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 비업무로 분류한 운행은 분류하는 즉시 주소와 도착 정보를 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)이 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람하고 CSV로 내보낼 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 문의\nAltroStudio · kazinobel9807@gmail.com</string>
 
     <!-- 오픈소스 라이선스 -->
     <string name="licenses_title">오픈소스 라이선스</string>

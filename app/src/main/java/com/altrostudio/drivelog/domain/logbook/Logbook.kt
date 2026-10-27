@@ -5,7 +5,6 @@ import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.distanceKm
 import java.time.Instant
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 
 /** 국세청 업무용승용차 운행기록부의 한 줄 */
@@ -42,17 +41,12 @@ data class LogbookSummary(
     val workRatioPercent: Double? get() = if (totalKm > 0) workKm / totalKm * 100 else null
 }
 
-data class Logbook(val month: YearMonth, val rows: List<LogbookRow>, val summary: LogbookSummary)
+data class Logbook(val period: LogbookPeriod, val rows: List<LogbookRow>, val summary: LogbookSummary)
 
-/** 완료된 운행을 월별 운행기록부로 바꾼다 */
+/** 완료된 운행을 운행기록부(한 달 또는 고른 기간)로 바꾼다 */
 object LogbookBuilder {
 
-    /** 그 달에 시작한 운행을 고르는 범위 [from, to) (epoch 밀리초) */
-    fun monthRange(month: YearMonth, zone: ZoneId): Pair<Long, Long> =
-        month.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli() to
-            month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-
-    fun build(month: YearMonth, trips: List<TripEntity>, zone: ZoneId, driverName: String): Logbook {
+    fun build(period: LogbookPeriod, trips: List<TripEntity>, zone: ZoneId, driverName: String): Logbook {
         val rows = trips.sortedBy { it.startedAt }.map { trip ->
             val distance = trip.distanceKm() ?: 0.0
             LogbookRow(
@@ -77,6 +71,6 @@ object LogbookBuilder {
             personalKm = rows.filter { it.purpose == TripPurpose.PERSONAL }.sumOf { it.distanceKm },
             unclassifiedKm = rows.filter { it.purpose == TripPurpose.UNCLASSIFIED }.sumOf { it.distanceKm }
         )
-        return Logbook(month, rows, summary)
+        return Logbook(period, rows, summary)
     }
 }

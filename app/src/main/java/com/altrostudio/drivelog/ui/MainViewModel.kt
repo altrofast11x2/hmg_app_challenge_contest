@@ -13,6 +13,7 @@ import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
+import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -73,8 +74,9 @@ class MainViewModel(
         }
 
     private val monthSummary: Flow<LogbookSummary?> = run {
-        val (from, to) = LogbookBuilder.monthRange(month, zone)
-        container.trips.observeCompletedTrips(from, to).map { LogbookBuilder.build(month, it, zone, driverName = "").summary }
+        val period = LogbookPeriod.ofMonth(month)
+        val (from, to) = period.range(zone)
+        container.trips.observeCompletedTrips(from, to).map { LogbookBuilder.build(period, it, zone, driverName = "").summary }
     }
 
     private val syncInfo: Flow<SyncInfo> = combine(

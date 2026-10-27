@@ -154,6 +154,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     state = logbookState,
                     onBack = { destination = Destination.HOME },
                     onSelectMonth = logbookViewModel::selectMonth,
+                    onSelectPeriod = logbookViewModel::selectPeriod,
                     onClassify = logbookViewModel::classify,
                     onExport = logbookViewModel::exportCsv,
                     modifier = modifier

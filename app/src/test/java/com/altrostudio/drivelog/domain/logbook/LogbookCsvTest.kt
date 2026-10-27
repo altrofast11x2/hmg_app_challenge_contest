@@ -23,7 +23,7 @@ class LogbookCsvTest {
     )
 
     private fun logbook(vararg rows: LogbookRow) = Logbook(
-        month = YearMonth.of(2026, 10),
+        period = LogbookPeriod.ofMonth(YearMonth.of(2026, 10)),
         rows = rows.toList(),
         summary = LogbookSummary(totalKm = 12.3, commuteKm = 0.0, businessKm = 12.3, tripCount = rows.size, unclassifiedCount = 0)
     )

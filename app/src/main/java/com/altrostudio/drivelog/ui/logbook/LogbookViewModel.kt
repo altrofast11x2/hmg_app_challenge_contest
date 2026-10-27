@@ -14,6 +14,7 @@ import com.altrostudio.drivelog.domain.logbook.Logbook
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
 import com.altrostudio.drivelog.domain.logbook.LogbookCsv
 import com.altrostudio.drivelog.domain.logbook.LogbookMonths
+import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.MonthChoice
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import kotlinx.coroutines.CancellationException
@@ -42,7 +43,8 @@ sealed interface ExportResult {
 }
 
 data class LogbookUiState(
-    val month: YearMonth,
+    /** 보고 있는 기간. 달 칩을 고르면 그 달 전체, 달력에서 고르면 고른 날짜들 */
+    val period: LogbookPeriod,
     val logbook: Logbook? = null,
     val integrity: Integrity = Integrity.Checking,
     val exporting: Boolean = false,
@@ -59,16 +61,16 @@ class LogbookViewModel(
     private val now: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
-    private val month = MutableStateFlow(YearMonth.now(zone))
-    private val _state = MutableStateFlow(LogbookUiState(month.value))
+    private val period = MutableStateFlow(LogbookPeriod.ofMonth(YearMonth.now(zone)))
+    private val _state = MutableStateFlow(LogbookUiState(period.value))
     val state: StateFlow<LogbookUiState> = _state.asStateFlow()
 
     init {
-        month.flatMapLatest { selected ->
-            val (from, to) = LogbookBuilder.monthRange(selected, zone)
+        period.flatMapLatest { selected ->
+            val (from, to) = selected.range(zone)
             container.trips.observeCompletedTrips(from, to).map { LogbookBuilder.build(selected, it, zone, driverName) }
         }.onEach { logbook ->
-            _state.update { it.copy(month = logbook.month, logbook = logbook) }
+            _state.update { it.copy(period = logbook.period, logbook = logbook) }
             verifyIntegrity()
         }.launchIn(viewModelScope)
 
@@ -79,7 +81,10 @@ class LogbookViewModel(
     }
 
     /** 월 목록에서 고른 달로 바로 이동한다 */
-    fun selectMonth(selected: YearMonth) = changeMonth(selected)
+    fun selectMonth(selected: YearMonth) = changePeriod(LogbookPeriod.ofMonth(selected))
+
+    /** 달력에서 고른 기간으로 바꾼다 (사용자 피드백 2026-10-27) */
+    fun selectPeriod(selected: LogbookPeriod) = changePeriod(selected)
 
     /** 미분류였던 지난 운행을 분류한다 (정차 중에만 보이는 화면) */
     fun classify(tripId: String, purpose: TripPurpose) {
@@ -101,9 +106,9 @@ class LogbookViewModel(
         }
     }
 
-    private fun changeMonth(selected: YearMonth) {
-        month.value = selected
-        _state.update { it.copy(month = selected, exportResult = null) }
+    private fun changePeriod(selected: LogbookPeriod) {
+        period.value = selected
+        _state.update { it.copy(period = selected, exportResult = null) }
     }
 
     private fun verifyIntegrity() {

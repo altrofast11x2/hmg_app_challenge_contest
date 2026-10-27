@@ -24,7 +24,10 @@ object LogbookCsv {
         TripPurpose.PERSONAL to "비업무"
     )
 
-    fun fileName(logbook: Logbook): String = "DriveLog_${logbook.month}.csv"
+    /** 한 달 전체면 DriveLog_2026-10.csv, 아니면 DriveLog_2026-10-03_2026-10-17.csv (관리자 웹과 같다) */
+    fun fileName(logbook: Logbook): String = logbook.period.let { period ->
+        period.wholeMonth?.let { "DriveLog_$it.csv" } ?: "DriveLog_${period.start}_${period.end}.csv"
+    }
 
     fun build(logbook: Logbook): String {
         val rows = logbook.rows.map { row ->

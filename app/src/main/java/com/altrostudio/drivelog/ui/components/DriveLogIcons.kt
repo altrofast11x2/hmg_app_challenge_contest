@@ -73,6 +73,10 @@ object DriveLogIcons {
     val Help by lazy { lineIcon("help", circle(12f, 12f, 8.5f), "M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6M12 16.6h.01") }
     val Chevron by lazy { lineIcon("chevron", "M9.5 6l6 6-6 6") }
     val Odometer by lazy { lineIcon("odometer", "M4 16a8 8 0 1 1 16 0", "M12 16l4-5", "M7.5 19.5h9") }
+    // 목업에 없는 아이콘: 운행기록부 기간 선택 (같은 24 격자·획으로 직접 그림, design/REQUESTS.md에 알림)
+    val Calendar by lazy {
+        lineIcon("calendar", "M6.5 5.5h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z", "M4.5 10h15", "M8.5 3.5v4", "M15.5 3.5v4")
+    }
 
     /** 원(cx, cy, r)을 path 문자열로 */
     private fun circle(cx: Float, cy: Float, r: Float) = "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0z"

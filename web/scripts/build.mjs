@@ -5,7 +5,7 @@ import { configSource } from './config.mjs';
 
 const WEB = new URL('../', import.meta.url);
 const DIST = new URL('dist/', WEB);
-const PUBLIC_FILES = ['index.html', 'vercel.json', 'css/tokens.css', 'css/app.css', 'js/app.js', 'js/api.js', 'js/logbook.js'];
+const PUBLIC_FILES = ['index.html', 'vercel.json', 'css/tokens.css', 'css/app.css', 'js/app.js', 'js/api.js', 'js/logbook.js', 'js/signup.js'];
 
 const source = configSource();
 // 이전 결과를 지우되, vercel CLI가 프로젝트 연결 정보를 두는 .vercel 폴더는 남긴다

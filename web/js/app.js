@@ -5,6 +5,7 @@ import {
   buildLogbook, csvFileName, formDate, km, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
   parseShareHash, periodRange, pickPeriod, PURPOSE_LABELS, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from './logbook.js';
+import { normalizeJoinCode, SIGN_UP_MESSAGES, signUpProblem } from './signup.js';
 
 const root = document.getElementById('app');
 
@@ -12,13 +13,18 @@ const root = document.getElementById('app');
 const TABS = [
   { id: 'logbook', label: '운행기록부' },
   { id: 'tax', label: '세무 제출' },
-  { id: 'vehicles', label: '차량' },
+  { id: 'members', label: '직원', adminOnly: true },
+  { id: 'vehicles', label: '차량', adminOnly: true },
 ];
+
+// 직원(가입 승인을 받은 운전자)은 배정받은 차량의 운행기록부와 세무 제출만 본다
+const tabsFor = (role) => TABS.filter((tab) => role === 'admin' || !tab.adminOnly);
 
 const state = {
   orgs: [],
   org: null,
   tab: 'logbook',
+  role: 'admin', // 'admin' = 기업 관리자, 'member' = 직원
   period: monthPeriod(currentMonth().year, currentMonth().month), // 운행기록부 기간 (한국 날짜, 끝 날짜 포함)
   taxPeriod: yearPeriod(currentMonth().year), // 세무 제출 탭의 사업연도 (기본값: 올해 1월 1일 ~ 12월 31일)
   vehicleId: '', // 빈칸 = 전체 차량
@@ -144,7 +150,7 @@ function renderLogin(notice) {
   const status = el('div', { class: 'form-status' }, notice ? message(notice, 'error') : null);
   const button = el('button', { type: 'submit', class: 'button-primary' }, '로그인');
   const form = el('form', { class: 'card login', onsubmit: onSubmit },
-    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '자동 운행기록부 관리자')),
+    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '자동 운행기록부')),
     el('label', {}, '아이디 또는 이메일', el('input', {
       name: 'id', type: 'text', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false', required: true,
     })),
@@ -152,6 +158,8 @@ function renderLogin(notice) {
       el('input', { name: 'password', type: 'password', autocomplete: 'current-password', required: true })),
     status,
     button,
+    el('p', { class: 'login-signup muted' }, '회사 차를 쓰는 직원인가요? ',
+      el('button', { type: 'button', class: 'button-text', onclick: () => renderSignUp() }, '직원 회원가입')),
   );
   setScreen(el('main', { class: 'center' }, form));
 
@@ -181,14 +189,17 @@ async function enter() {
       return;
     }
     state.orgs = await api.adminOrgs();
+    state.role = 'admin';
     if (state.orgs.length === 0) {
-      setScreen(el('main', { class: 'center' },
-        el('h1', {}, '관리자 권한이 없어요'),
-        el('p', {}, `${api.displayName(api.currentUser())} 계정은 관리자로 등록된 조직이 없어요.`),
-        el('button', { class: 'button-secondary', onclick: logout }, '로그아웃'),
-      ));
+      // 관리자가 아니면 승인된 직원인지, 가입 신청 중인지 본다
+      state.orgs = await api.memberOrgs();
+      state.role = 'member';
+    }
+    if (state.orgs.length === 0) {
+      renderNoAccess(await api.myMemberRequest());
       return;
     }
+    if (!tabsFor(state.role).some((tab) => tab.id === state.tab)) state.tab = 'logbook';
     state.org = state.orgs.find((org) => org.id === state.org?.id) ?? state.orgs[0];
     await loadOrgData();
     renderMain();
@@ -200,6 +211,78 @@ async function enter() {
 
 async function loadOrgData() {
   [state.vehicles, state.drivers] = await Promise.all([api.vehicles(state.org.id), api.drivers(state.org.id)]);
+}
+
+// ─── 직원 회원가입 (로그인 없이) ───────────────────────────────────────────
+// 아무나 가입하지 못하도록 기업 가입 코드(관리자가 직원에게 알려 준다)와 소속 확인 정보를 받고, 관리자가 승인해야 기록이 보인다.
+
+function renderSignUp() {
+  const status = el('div', { class: 'form-status' });
+  const button = el('button', { type: 'submit', class: 'button-primary' }, '가입 신청');
+  const field = (label, name, props = {}) => el('label', {}, label, el('input', { name, ...props }));
+  const form = el('form', { class: 'card login signup', onsubmit: onSubmit },
+    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '직원 회원가입')),
+    el('p', { class: 'muted' }, '회사 차를 쓰는 직원이 자기가 쓰는 차량의 운행기록부와 세무서 제출용 서식을 직접 받는 계정이에요. 회사 관리자가 승인하면 쓸 수 있어요.'),
+    field('기업 가입 코드 (8자리, 회사 관리자에게 받으세요) *', 'joinCode', { required: true, autocomplete: 'off', autocapitalize: 'characters', maxlength: '12' }),
+    el('p', { class: 'section-label' }, '소속 확인 (관리자에게 보여요)'),
+    field('이름 *', 'name', { required: true, maxlength: '40', autocomplete: 'name' }),
+    field('부서 *', 'department', { required: true, maxlength: '40', placeholder: '예: 영업팀' }),
+    field('사번', 'employeeNo', { maxlength: '20' }),
+    field('휴대폰 *', 'phone', { required: true, type: 'tel', maxlength: '20', placeholder: '010-1234-5678', autocomplete: 'tel' }),
+    el('p', { class: 'section-label' }, '로그인 정보'),
+    field('아이디 (이메일) *', 'email', { required: true, type: 'email', maxlength: '120', autocomplete: 'username' }),
+    field('비밀번호 (8자 이상) *', 'password', { required: true, type: 'password', minlength: '8', autocomplete: 'new-password' }),
+    field('비밀번호 확인 *', 'passwordConfirm', { required: true, type: 'password', minlength: '8', autocomplete: 'new-password' }),
+    el('label', { class: 'consent' },
+      el('input', { name: 'consent', type: 'checkbox', required: true }),
+      el('span', {}, '[필수] 개인정보 수집·이용 동의 — 수집 항목: 이름, 부서, 사번, 휴대폰, 이메일 · 목적: 소속 확인과 가입 승인, 운행기록부 열람 · 제공: 가입을 신청한 회사의 관리자 · 보관: 회사가 직원 계정을 지울 때까지'),
+    ),
+    status,
+    button,
+    el('p', { class: 'login-signup muted' }, el('button', { type: 'button', class: 'button-text', onclick: () => renderLogin() }, '로그인으로 돌아가기')),
+  );
+  setScreen(el('main', { class: 'center' }, form));
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const values = { ...data, joinCode: normalizeJoinCode(data.joinCode), consent: data.consent === 'on' };
+    const problem = signUpProblem(values);
+    if (problem) {
+      status.replaceChildren(message(problem, 'error'));
+      return;
+    }
+    button.disabled = true;
+    try {
+      const result = await api.memberSignUp(values);
+      if (result.status !== 'OK') {
+        status.replaceChildren(message(SIGN_UP_MESSAGES[result.status] ?? result.status, 'error'));
+        button.disabled = false;
+        return;
+      }
+      setScreen(el('main', { class: 'center' }, el('section', { class: 'card login' },
+        el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '가입 신청을 보냈어요')),
+        el('p', {}, `${result.org_name} 관리자가 승인하면 로그인해서 내가 쓰는 차량의 운행기록부를 받을 수 있어요.`),
+        el('button', { class: 'button-primary', onclick: () => renderLogin() }, '로그인으로'),
+      )));
+    } catch (error) {
+      status.replaceChildren(message(error.message, 'error'));
+      button.disabled = false;
+    }
+  }
+}
+
+/** 관리자도 승인된 직원도 아닌 계정: 가입 신청 상태를 알려 준다 */
+function renderNoAccess(request) {
+  const [title, text] = {
+    PENDING: ['승인을 기다리고 있어요', '회사 관리자가 가입 신청을 승인하면 내가 쓰는 차량의 운행기록부가 보여요.'],
+    REJECTED: ['가입이 승인되지 않았어요', '회사 관리자에게 문의하세요.'],
+  }[request?.status] ?? ['볼 수 있는 기업이 없어요', `${api.displayName(api.currentUser())} 계정은 관리자나 직원으로 등록된 기업이 없어요.`];
+  setScreen(el('main', { class: 'center' }, el('section', { class: 'card login' },
+    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, title)),
+    el('p', {}, text),
+    el('button', { class: 'button-secondary', onclick: logout }, '로그아웃'),
+  )));
 }
 
 async function logout() {
@@ -231,7 +314,7 @@ function renderMain() {
       el('span', { class: 'user' }, api.displayName(api.currentUser())),
       el('button', { class: 'button-text', onclick: logout }, '로그아웃'),
     ),
-    el('nav', { class: 'tabs', role: 'tablist' }, TABS.map((tab) => el('button', {
+    el('nav', { class: 'tabs', role: 'tablist' }, tabsFor(state.role).map((tab) => el('button', {
       role: 'tab',
       'aria-selected': String(tab.id === state.tab),
       class: tab.id === state.tab ? 'tab tab-active' : 'tab',
@@ -242,12 +325,16 @@ function renderMain() {
     }, tab.label))),
     el('main', {}, content),
   );
-  ({ logbook: renderLogbook, tax: renderTax, vehicles: renderVehicles })[state.tab](content, renderToken);
+  ({ logbook: renderLogbook, tax: renderTax, members: renderMembers, vehicles: renderVehicles })[state.tab](content, renderToken);
 }
 
 // ─── 운행기록부 ────────────────────────────────────────────────────────
 
 async function renderLogbook(content, token) {
+  if (state.role === 'member' && state.vehicles.length === 0) {
+    content.replaceChildren(message('아직 배정된 차량이 없어요. 회사 관리자에게 내가 쓰는 차량을 배정해 달라고 하세요.'));
+    return;
+  }
   const { period } = state;
   // ◀ ▶와 달 칸은 기간 시작 날짜가 든 달을 기준으로 움직인다
   const [year, month] = period.from.split('-').map(Number);
@@ -411,7 +498,7 @@ async function renderTax(content, token) {
     if (token !== renderToken) return;
     const byVehicle = logbooksByVehicle(state.vehicles.map(taxVehicle), rows, names());
     if (byVehicle.length === 0) {
-      body.replaceChildren(message('아직 연결된 차량이 없어요.'));
+      body.replaceChildren(message(state.role === 'member' ? '아직 배정된 차량이 없어요. 회사 관리자에게 요청하세요.' : '아직 연결된 차량이 없어요.'));
       return;
     }
     csvButton.disabled = false;
@@ -586,6 +673,128 @@ function shareFileButton(csv, fileName, title) {
   return el('button', {
     class: 'button-secondary', onclick: () => navigator.share({ files: [file], title }).catch(() => {}),
   }, '보내기 (카톡·메일)');
+}
+
+// ─── 직원 (관리자) ──────────────────────────────────────────────────────
+// 직원이 웹에 직접 가입해 자기 차량의 기록을 받는다. 관리자는 가입 코드를 알려 주고, 신청을 한 번 승인하면서 쓰는 차량을 고른다.
+
+function renderMembers(content, token) {
+  const codeBox = el('div', { class: 'card join-code-card' }, message('불러오는 중…'));
+  const requestsBox = el('div', {}, message('불러오는 중…'));
+  const membersBox = el('div', {});
+  const status = el('div', { class: 'form-status' });
+  content.replaceChildren(codeBox, status, el('h2', {}, '가입 신청'), requestsBox, el('h2', {}, '직원'), membersBox);
+  load();
+
+  async function load() {
+    try {
+      const [code, requests, assignments] = await Promise.all([
+        api.joinCode(state.org.id), api.memberRequests(state.org.id), api.vehicleMembers(state.org.id),
+      ]);
+      if (token !== renderToken) return;
+      showCode(code);
+      const pending = requests.filter((request) => request.status === 'PENDING');
+      const approved = requests.filter((request) => request.status === 'APPROVED');
+      requestsBox.replaceChildren(pending.length === 0
+        ? message('새 가입 신청이 없어요.')
+        : el('div', { class: 'table-wrap' }, el('table', {},
+          el('thead', {}, el('tr', {}, ['신청일', '이름', '부서', '사번', '휴대폰', '쓰는 차량', ''].map((header) => el('th', { scope: 'col' }, header)))),
+          el('tbody', {}, pending.map((request) => requestRow(request))),
+        )));
+      membersBox.replaceChildren(approved.length === 0
+        ? message('아직 승인한 직원이 없어요.')
+        : el('div', { class: 'table-wrap' }, el('table', {},
+          el('thead', {}, el('tr', {}, ['이름', '부서', '사번', '휴대폰', '쓰는 차량', ''].map((header) => el('th', { scope: 'col' }, header)))),
+          el('tbody', {}, approved.map((member) => memberRow(member, assignments))),
+        )));
+    } catch (error) {
+      if (token === renderToken) requestsBox.replaceChildren(failure(error) ?? '');
+    }
+  }
+
+  function showCode(code) {
+    codeBox.replaceChildren(
+      el('div', {},
+        el('span', { class: 'muted' }, '기업 가입 코드 '),
+        el('strong', { class: 'code', 'aria-label': code.split('').join(' ') }, `${code.slice(0, 4)} ${code.slice(4)}`),
+      ),
+      el('p', { class: 'muted' }, '직원에게 이 코드를 알려 주세요. 직원은 로그인 화면의 [직원 회원가입]에서 이 코드와 소속 정보를 적어 신청하고, 여기서 승인하면 고른 차량의 운행기록부를 직접 받아요. 코드가 밖으로 새면 새로 만드세요 (이미 가입한 직원은 그대로).'),
+      el('button', { class: 'button-secondary', onclick: regenerate }, '새 코드 만들기'),
+    );
+  }
+
+  async function regenerate() {
+    try {
+      showCode(await api.regenerateJoinCode(state.org.id));
+    } catch (error) {
+      status.replaceChildren(failure(error) ?? '');
+    }
+  }
+
+  /** 차량 고르기 (체크 상자) */
+  function vehiclePicker(selected) {
+    if (state.vehicles.length === 0) return { node: el('span', { class: 'muted' }, '연결된 차량 없음'), value: () => [] };
+    const boxes = state.vehicles.map((vehicle) => el('input', { type: 'checkbox', value: vehicle.id, checked: selected.includes(vehicle.id) }));
+    const node = el('div', { class: 'vehicle-picker' },
+      state.vehicles.map((vehicle, index) => el('label', { class: 'check' }, boxes[index], vehicleName(vehicle))));
+    return { node, value: () => boxes.filter((box) => box.checked).map((box) => box.value) };
+  }
+
+  function requestRow(request) {
+    const picker = vehiclePicker(state.vehicles.length === 1 ? [state.vehicles[0].id] : []);
+    const decide = async (approve) => {
+      try {
+        await api.decideMemberRequest(request.id, approve, approve ? picker.value() : []);
+        if (token === renderToken) load();
+      } catch (error) {
+        status.replaceChildren(failure(error) ?? '');
+      }
+    };
+    return el('tr', {},
+      el('td', {}, formatDateTime(request.created_at)),
+      el('td', {}, request.name),
+      el('td', {}, request.department),
+      el('td', {}, request.employee_no ?? '-'),
+      el('td', {}, request.phone),
+      el('td', {}, picker.node),
+      el('td', { class: 'actions' },
+        el('button', { class: 'button-primary', onclick: () => decide(true) }, '승인'),
+        el('button', { class: 'button-text danger', onclick: () => decide(false) }, '거절'),
+      ),
+    );
+  }
+
+  function memberRow(member, assignments) {
+    const picker = vehiclePicker(assignments.filter((row) => row.user_id === member.user_id).map((row) => row.vehicle_id));
+    const save = async () => {
+      try {
+        await api.setMemberVehicles(member.user_id, state.org.id, picker.value());
+        status.replaceChildren(message(`${member.name} 직원의 차량을 저장했어요.`, 'success'));
+      } catch (error) {
+        status.replaceChildren(failure(error) ?? '');
+      }
+    };
+    const remove = async () => {
+      if (!window.confirm(`${member.name} 직원을 내보낼까요? 그 뒤로는 운행기록부를 볼 수 없어요.`)) return;
+      try {
+        await api.removeMember(member.user_id, state.org.id);
+        if (token === renderToken) load();
+      } catch (error) {
+        status.replaceChildren(failure(error) ?? '');
+      }
+    };
+    return el('tr', {},
+      el('td', {}, member.name),
+      el('td', {}, member.department),
+      el('td', {}, member.employee_no ?? '-'),
+      el('td', {}, member.phone),
+      el('td', {}, picker.node),
+      el('td', { class: 'actions' },
+        el('button', { class: 'button-secondary', onclick: save }, '차량 저장'),
+        el('button', { class: 'button-text danger', onclick: remove }, '내보내기'),
+      ),
+    );
+  }
 }
 
 // ─── 차량 ─────────────────────────────────────────────────────────────
@@ -775,7 +984,8 @@ function renderDeveloper() {
     status,
     el('div', { class: 'form-wide' }, button),
   );
-  content.replaceChildren(form, el('h2', {}, '등록된 기업'), list);
+  const listStatus = el('div', { class: 'form-status' });
+  content.replaceChildren(form, el('h2', {}, '등록된 기업'), listStatus, list);
   loadOrganizations();
 
   async function onSubmit(event) {
@@ -805,21 +1015,58 @@ function renderDeveloper() {
       const organizations = await api.allOrganizations();
       if (token !== renderToken) return;
       list.replaceChildren(organizations.length === 0 ? message('아직 등록된 기업이 없어요.') : el('div', { class: 'table-wrap' }, el('table', {},
-        el('thead', {}, el('tr', {}, ['기업명', '사업자등록번호', '대표자', '담당자', '관리자 아이디', '차량', '등록일']
+        el('thead', {}, el('tr', {}, ['기업명', '사업자등록번호', '대표자', '담당자', '관리자 아이디', '차량', '등록일', '']
           .map((header) => el('th', { scope: 'col', class: header === '차량' ? 'num' : null }, header)))),
-        el('tbody', {}, organizations.map((org) => el('tr', {},
-          el('td', {}, org.name),
-          el('td', {}, org.business_number ?? '-'),
-          el('td', {}, org.representative ?? '-'),
-          el('td', {}, [org.contact_name, org.contact_phone].filter(Boolean).join(' · ') || '-'),
-          el('td', {}, org.admin_email ?? '-'),
-          el('td', { class: 'num' }, String(org.vehicles?.[0]?.count ?? 0)),
-          el('td', {}, formatDateTime(org.created_at).slice(0, 10)),
-        ))),
+        el('tbody', {}, organizations.map(orgRow)),
       )));
     } catch (error) {
       if (token === renderToken) list.replaceChildren(failure(error) ?? '');
     }
+  }
+
+  function orgRow(org) {
+    const actions = el('td', { class: 'actions' });
+    const showDelete = () => actions.replaceChildren(el('button', { class: 'button-text danger', onclick: askDelete }, '삭제'));
+    // 되돌릴 수 없어서 기업명을 한 번 더 입력받는다
+    function askDelete() {
+      const input = el('input', { 'aria-label': `${org.name} 삭제 확인`, placeholder: '기업명을 그대로 입력' });
+      const confirmButton = el('button', { class: 'button-primary', onclick: () => remove(input.value, confirmButton) }, '영구 삭제');
+      actions.replaceChildren(
+        el('div', { class: 'delete-confirm' },
+          el('span', { class: 'muted' }, '차량·운행 기록·직원 계정까지 모두 지워져요.'),
+          input, confirmButton,
+          el('button', { class: 'button-text', onclick: showDelete }, '취소'),
+        ),
+      );
+      input.focus();
+    }
+    async function remove(name, confirmButton) {
+      confirmButton.disabled = true;
+      try {
+        const result = await api.deleteOrganization(org.id, name.trim());
+        if (result.status === 'NAME_MISMATCH') {
+          listStatus.replaceChildren(message('기업명이 같지 않아요. 목록의 기업명을 그대로 입력하세요.', 'error'));
+          confirmButton.disabled = false;
+          return;
+        }
+        listStatus.replaceChildren(message(`‘${org.name}’ 기업을 삭제했어요 (차량 ${result.vehicles ?? 0}대, 계정 ${result.accounts ?? 0}개).`, 'success'));
+        loadOrganizations();
+      } catch (error) {
+        listStatus.replaceChildren(failure(error) ?? '');
+        confirmButton.disabled = false;
+      }
+    }
+    showDelete();
+    return el('tr', {},
+      el('td', {}, org.name),
+      el('td', {}, org.business_number ?? '-'),
+      el('td', {}, org.representative ?? '-'),
+      el('td', {}, [org.contact_name, org.contact_phone].filter(Boolean).join(' · ') || '-'),
+      el('td', {}, org.admin_email ?? '-'),
+      el('td', { class: 'num' }, String(org.vehicles?.[0]?.count ?? 0)),
+      el('td', {}, formatDateTime(org.created_at).slice(0, 10)),
+      actions,
+    );
   }
 }
 

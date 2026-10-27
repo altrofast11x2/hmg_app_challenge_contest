@@ -144,6 +144,22 @@ export async function adminOrgs() {
   }));
 }
 
+/** 내가 직원(driver)으로 승인된 조직들 [{ id, name, businessNumber }] */
+export async function memberOrgs() {
+  const rows = await authed(
+    `/rest/v1/memberships?select=org_id,organizations(name,business_number)&role=eq.driver&user_id=${eq(currentUser().id)}`,
+  );
+  return rows.map((row) => ({
+    id: row.org_id, name: row.organizations?.name ?? '조직', businessNumber: row.organizations?.business_number ?? null,
+  }));
+}
+
+/** 내 직원 가입 신청 (없으면 null) → { status: 'PENDING' | 'APPROVED' | 'REJECTED', created_at } */
+export async function myMemberRequest() {
+  const [row] = await authed(`/rest/v1/member_requests?select=status,created_at&user_id=${eq(currentUser().id)}`);
+  return row ?? null;
+}
+
 export const vehicles = (orgId) => authed(
   `/rest/v1/vehicles?select=id,vin,display_name,model,plate_number,default_driver_id,device_user_id,paired_at,created_at`
   + `&org_id=${eq(orgId)}&order=created_at`,
@@ -202,6 +218,34 @@ export const createOrganization = (form) => authed('/rest/v1/rpc/create_organiza
  */
 export const sharedLogbook = (token) => send('/rest/v1/rpc/shared_logbook', { method: 'POST', body: { p_token: token } });
 
+// ─── 직원 가입 (관리자) ─────────────────────────────────────────────────
+
+/** 기업 가입 코드 (관리자가 직원에게 알려 준다) */
+export async function joinCode(orgId) {
+  const [row] = await authed(`/rest/v1/organizations?select=join_code&id=${eq(orgId)}`);
+  return row?.join_code ?? null;
+}
+
+/** 직원 가입 신청 목록 (최근 것부터) */
+export const memberRequests = (orgId) => authed(
+  `/rest/v1/member_requests?select=id,user_id,name,department,employee_no,phone,status,created_at&org_id=${eq(orgId)}&order=created_at.desc`,
+);
+
+/** 직원별 배정 차량 [{ vehicle_id, user_id }] */
+export const vehicleMembers = (orgId) => authed(`/rest/v1/vehicle_members?select=vehicle_id,user_id&org_id=${eq(orgId)}`);
+
+/**
+ * 직원 가입 신청 (로그인 없이). 기업 가입 코드와 소속 확인 정보를 낸다. 관리자가 승인해야 기록을 볼 수 있다.
+ * → { status: 'OK' | 'INVALID_CODE' | 'INVALID_NAME' | 'INVALID_DEPARTMENT' | 'INVALID_PHONE' | 'INVALID_EMAIL' | 'WEAK_PASSWORD' | 'EMAIL_TAKEN' | 'TOO_MANY', org_name }
+ */
+export const memberSignUp = (form) => send('/rest/v1/rpc/member_sign_up', {
+  method: 'POST',
+  body: {
+    p_join_code: form.joinCode, p_email: loginEmail(form.email), p_password: form.password, p_name: form.name,
+    p_department: form.department, p_employee_no: form.employeeNo || null, p_phone: form.phone,
+  },
+});
+
 // ─── 변경 ────────────────────────────────────────────────────────────
 
 /** 6자리 연결 코드를 발급한다 (10분 유효, 한 번만 사용) → { code, expires_at } */
@@ -219,6 +263,31 @@ export async function updateVehicleRegistration(vehicleId, { model, plateNumber 
   });
   if (rows.length === 0) throw new ApiError(403, '이 차량을 고칠 권한이 없어요.');
 }
+
+/** 직원 가입 신청을 승인(쓰는 차량과 함께)하거나 거절한다 */
+export const decideMemberRequest = (requestId, approve, vehicleIds = []) => authed('/rest/v1/rpc/decide_member_request', {
+  method: 'POST', body: { p_request: requestId, p_approve: approve, p_vehicle_ids: vehicleIds },
+});
+
+/** 직원이 쓰는 차량을 바꾼다 */
+export const setMemberVehicles = (userId, orgId, vehicleIds) => authed('/rest/v1/rpc/set_member_vehicles', {
+  method: 'POST', body: { p_user: userId, p_org: orgId, p_vehicle_ids: vehicleIds },
+});
+
+/** 직원을 내보낸다 (퇴사 등). 그 뒤로는 기록을 볼 수 없다 */
+export const removeMember = (userId, orgId) => authed('/rest/v1/rpc/remove_member', {
+  method: 'POST', body: { p_user: userId, p_org: orgId },
+});
+
+/** 기업 가입 코드를 새로 만든다 (이미 가입한 직원은 그대로) */
+export const regenerateJoinCode = (orgId) => authed('/rest/v1/rpc/regenerate_join_code', {
+  method: 'POST', body: { p_org: orgId },
+});
+
+/** 개발자: 기업과 그 차량·운행·계정을 지운다. 기업명을 한 번 더 받아 실수를 막는다 → { status: 'OK' | 'NAME_MISMATCH' | 'NOT_FOUND' } */
+export const deleteOrganization = (orgId, confirmName) => authed('/rest/v1/rpc/delete_organization', {
+  method: 'POST', body: { p_org: orgId, p_confirm_name: confirmName },
+});
 
 /** 차량 연결을 해제한다. 운행 기록은 그대로 남는다 */
 export const unpairVehicle = (vehicleId) => authed('/rest/v1/rpc/unpair_vehicle', {

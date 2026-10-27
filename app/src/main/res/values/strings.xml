@@ -67,7 +67,7 @@
     <string name="logbook_share_failed_not_paired">이 차량이 조직에 연결되어 있지 않아요. 설정에서 다시 연결하세요</string>
     <string name="logbook_share_failed_too_many">링크를 너무 많이 만들었어요. 잠시 뒤 다시 시도하세요</string>
     <string name="logbook_share_failed">링크를 만들지 못했어요. 잠시 뒤 다시 시도하세요</string>
-    <string name="logbook_export_on_web">%1$s 관리자 웹에서 운행기록부 CSV와 세무서 제출용 서식을 받을 수 있어요</string>
+    <string name="logbook_export_on_web">%1$s 직원은 %2$s 에서 [직원 회원가입]을 하면 운행기록부와 세무서 제출용 서식을 직접 받을 수 있어요</string>
     <string name="logbook_period_hint">칸을 고르고 달력에서 날짜를 누르세요. 연도는 달 이름(▾)을 눌러 바꿔요</string>
     <string name="logbook_period_start">시작 날짜</string>
     <string name="logbook_period_end">끝 날짜</string>

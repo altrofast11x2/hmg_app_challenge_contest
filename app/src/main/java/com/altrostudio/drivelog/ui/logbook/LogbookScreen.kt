@@ -403,7 +403,7 @@ private fun ClassifyDialog(row: LogbookRow, onSelect: (TripPurpose) -> Unit, onD
     )
 }
 
-/** 조직에 연결한 차: 운행기록부와 세무서 제출용 서식은 관리자 웹에서 받는다 */
+/** 조직에 연결한 차: 운행기록부와 세무서 제출용 서식은 관리자 웹에서 받는다 (직원은 직접 가입) */
 @Composable
 private fun ExportOnWebNote(orgName: String) {
     val colors = DriveLogTheme.colors
@@ -417,7 +417,9 @@ private fun ExportOnWebNote(orgName: String) {
             .padding(horizontal = dimens.spacingMedium, vertical = dimens.spacingSmall)
     ) {
         Icon(DriveLogIcons.Cloud, contentDescription = null, tint = colors.accent, modifier = Modifier.size(dimens.iconSizeSmall))
-        Text(stringResource(R.string.logbook_export_on_web, orgName), style = DriveLogTheme.typography.label, color = colors.textSecondary)
+        // 직원은 관리자 웹에 직접 가입해 받는다 (사용자 요청 2026-10-27: 관리자가 직원마다 파일을 건넬 수 없다)
+        val webHost = stringResource(R.string.web_url).substringAfter("://").trimEnd('/')
+        Text(stringResource(R.string.logbook_export_on_web, orgName, webHost), style = DriveLogTheme.typography.label, color = colors.textSecondary)
     }
 }
 

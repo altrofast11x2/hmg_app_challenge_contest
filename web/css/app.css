@@ -179,3 +179,17 @@ td.actions { text-align: right; }
   .tax-form thead { display: table-header-group; }
   .tax-form tr { break-inside: avoid; }
 }
+
+/* 직원 회원가입·직원 관리 */
+.login-signup { text-align: center; margin: var(--drivelog-spacing-small) 0 0; }
+.login-signup .button-text, .login .login-signup button { width: auto; }
+.signup .section-label { font: var(--drivelog-web-label); color: var(--drivelog-accent); margin: var(--drivelog-spacing-small) 0 0; }
+.signup .consent { display: flex; flex-direction: row; gap: var(--drivelog-spacing-small); align-items: flex-start; font: var(--drivelog-web-label); color: var(--drivelog-text-secondary); }
+.signup .consent input { width: auto; margin-top: var(--drivelog-spacing-extra-small); }
+.join-code-card { display: flex; flex-wrap: wrap; align-items: center; gap: var(--drivelog-spacing-medium); margin-bottom: var(--drivelog-spacing-medium); }
+.join-code-card p { flex: 1 1 320px; margin: 0; }
+.vehicle-picker { display: flex; flex-wrap: wrap; gap: var(--drivelog-spacing-small); }
+.vehicle-picker .check { display: inline-flex; flex-direction: row; align-items: center; gap: var(--drivelog-spacing-extra-small); white-space: nowrap; }
+.vehicle-picker input { width: auto; }
+.delete-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--drivelog-spacing-extra-small); white-space: normal; }
+.delete-confirm input { width: 12em; }

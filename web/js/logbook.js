@@ -53,6 +53,11 @@ export function pickPeriod(from, to) {
   return { period };
 }
 
+/** 그해 1월 1일부터 12월 31일까지 (사업연도 기본값) */
+export function yearPeriod(year) {
+  return { from: `${year}-01-01`, to: `${year}-12-31` };
+}
+
 /** 화면 제목: 한 달 전체면 '2026년 10월', 아니면 '2026.10.03 – 2026.10.17' */
 export function periodLabel(period) {
   const month = periodMonth(period);
@@ -172,6 +177,49 @@ export function csvFileName(period, vehicleName) {
   const base = month ? `DriveLog_${month.year}-${pad(month.month)}` : `DriveLog_${period.from}_${period.to}`;
   return vehicleName ? `${base}_${vehicleName.replace(/[\\/:*?"<>|\s]+/g, '_')}.csv` : `${base}.csv`;
 }
+
+// ─── 세무서 제출용 ─────────────────────────────────────────────────────
+// 운행기록부는 작성해 보관하다가 세무서가 요구하면 제출한다. 서식은 국세청고시 제2025-8호 별지
+// 「업무용승용차 운행기록부」: 사업연도·법인명·사업자등록번호, ①차종 ②자동차등록번호, ③~⑩ 운행 줄, ⑪~⑬ 합계
+
+/** 서식의 ⑩비고: 방문처에 비업무·미분류 표시를 붙인다 (서식에 용도 칸이 없어서) */
+export function taxFormNote(row) {
+  const kind = { PERSONAL: '비업무', UNCLASSIFIED: '미분류' }[row.purpose];
+  return [row.note, kind].filter(Boolean).join(' · ');
+}
+
+/** 서식의 사업연도 날짜: '2026-01-01' → '2026. 1. 1.' */
+export function formDate(date) {
+  const [year, month, day] = date.split('-').map(Number);
+  return `${year}. ${month}. ${day}.`;
+}
+
+/**
+ * 차량마다 운행기록부를 만든다 (서식은 차량별로 한 장). 운행이 없는 차량도 빈 기록부로 넣는다.
+ * vehicles: [{ id, name, model, plateNumber }]
+ */
+export function logbooksByVehicle(vehicles, trips, names = {}) {
+  return vehicles.map((vehicle) => ({
+    vehicle,
+    logbook: buildLogbook(trips.filter((trip) => trip.vehicle_id === vehicle.id), names),
+  }));
+}
+
+const STATEMENT_HEADER = [
+  '차량', '차종', '자동차등록번호', '운행(건)', '사업연도 총주행 거리(km)', '사업연도 업무용 사용거리(km)', '업무사용비율(%)',
+];
+
+/** 업무용승용차 관련비용 명세서를 쓸 때 옮겨 적을 차량별 운행기록 값 (서식 ⑪~⑬) */
+export function statementCsv(byVehicle, period) {
+  const rows = byVehicle.map(({ vehicle, logbook: { summary } }) => [
+    vehicle.name, vehicle.model ?? '', vehicle.plateNumber ?? '', String(summary.tripCount),
+    km(summary.totalKm), km(summary.workKm), km(summary.workRatioPercent),
+  ]);
+  const title = [`사업연도 ${period.from} ~ ${period.to}`];
+  return BOM + [title, STATEMENT_HEADER, ...rows].map((line) => line.map(escapeCsv).join(',')).join('\r\n') + '\r\n';
+}
+
+export const statementFileName = (period) => `DriveLog_업무사용비율_${period.from}_${period.to}.csv`;
 
 const FORMULA_PREFIX = /^[=+\-@]/;
 

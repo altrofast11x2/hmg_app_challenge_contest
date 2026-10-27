@@ -54,6 +54,7 @@
     <string name="logbook_empty_period">이 기간에는 운행 기록이 없습니다</string>
     <string name="logbook_pick_period">기간 선택</string>
     <string name="logbook_period_title">운행기록부 기간</string>
+    <string name="logbook_export_on_web">%1$s 관리자 웹에서 운행기록부 CSV와 세무서 제출용 서식을 받을 수 있어요</string>
     <string name="logbook_period_hint">칸을 고르고 달력에서 날짜를 누르세요. 연도는 달 이름(▾)을 눌러 바꿔요</string>
     <string name="logbook_period_start">시작 날짜</string>
     <string name="logbook_period_end">끝 날짜</string>

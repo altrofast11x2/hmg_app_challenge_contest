@@ -134,16 +134,18 @@ export async function signOut() {
 
 // ─── 조회 ────────────────────────────────────────────────────────────
 
-/** 내가 관리자인 조직들 [{ id, name }] */
+/** 내가 관리자인 조직들 [{ id, name, businessNumber }] (사업자등록번호는 세무서 제출용 서식에 쓴다) */
 export async function adminOrgs() {
   const rows = await authed(
-    `/rest/v1/memberships?select=org_id,organizations(name)&role=eq.admin&user_id=${eq(currentUser().id)}`,
+    `/rest/v1/memberships?select=org_id,organizations(name,business_number)&role=eq.admin&user_id=${eq(currentUser().id)}`,
   );
-  return rows.map((row) => ({ id: row.org_id, name: row.organizations?.name ?? '조직' }));
+  return rows.map((row) => ({
+    id: row.org_id, name: row.organizations?.name ?? '조직', businessNumber: row.organizations?.business_number ?? null,
+  }));
 }
 
 export const vehicles = (orgId) => authed(
-  `/rest/v1/vehicles?select=id,vin,display_name,default_driver_id,device_user_id,paired_at,created_at`
+  `/rest/v1/vehicles?select=id,vin,display_name,model,plate_number,default_driver_id,device_user_id,paired_at,created_at`
   + `&org_id=${eq(orgId)}&order=created_at`,
 );
 
@@ -202,6 +204,14 @@ export async function issuePairingCode(orgId, vehicleName) {
     method: 'POST', body: { p_org: orgId, p_vehicle_name: vehicleName || null },
   });
   return issued;
+}
+
+/** 차량의 차종·자동차등록번호를 적는다 (세무서 제출용 서식의 ①②). 바뀐 줄이 없으면 권한이 없는 것이다 */
+export async function updateVehicleRegistration(vehicleId, { model, plateNumber }) {
+  const rows = await authed(`/rest/v1/vehicles?id=${eq(vehicleId)}&select=id`, {
+    method: 'PATCH', body: { model: model || null, plate_number: plateNumber || null }, prefer: 'return=representation',
+  });
+  if (rows.length === 0) throw new ApiError(403, '이 차량을 고칠 권한이 없어요.');
 }
 
 /** 차량 연결을 해제한다. 운행 기록은 그대로 남는다 */

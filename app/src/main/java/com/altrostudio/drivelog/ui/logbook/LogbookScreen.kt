@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -30,6 +31,7 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
@@ -87,6 +89,8 @@ fun LogbookScreen(
     onBack: () -> Unit,
     onSelectMonth: (YearMonth) -> Unit,
     onSelectPeriod: (LogbookPeriod) -> Unit,
+    /** 연결한 조직 이름. 있으면 차에서 CSV를 저장하는 대신 관리자 웹에서 받으라고 안내한다 */
+    connectedOrgName: String?,
     onClassify: (tripId: String, purpose: TripPurpose) -> Unit,
     onExport: () -> Unit,
     modifier: Modifier = Modifier
@@ -126,13 +130,19 @@ fun LogbookScreen(
                         }
                         SummaryCard(summary = state.logbook?.summary, compact = compact)
                         IntegrityLine(state.integrity)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
-                            BigButton(
-                                text = stringResource(if (state.exporting) R.string.logbook_exporting else R.string.logbook_export),
-                                onClick = onExport,
-                                enabled = !state.exporting && rows.isNotEmpty()
-                            )
-                            state.exportResult?.let { Text(exportText(it), style = DriveLogTheme.typography.label, color = DriveLogTheme.colors.textSecondary) }
+                        // 조직에 연결한 차는 기록이 관리자 웹에 모이므로, 차 안에 CSV 파일을 남기지 않고 웹에서 받게 한다
+                        // (사용자 피드백 2026-10-27: 차에서 파일로 저장해도 쓸 데가 없다). 연결하지 않은 차는 CSV로 저장한다
+                        if (connectedOrgName != null) {
+                            ExportOnWebNote(connectedOrgName)
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
+                                BigButton(
+                                    text = stringResource(if (state.exporting) R.string.logbook_exporting else R.string.logbook_export),
+                                    onClick = onExport,
+                                    enabled = !state.exporting && rows.isNotEmpty()
+                                )
+                                state.exportResult?.let { Text(exportText(it), style = DriveLogTheme.typography.label, color = DriveLogTheme.colors.textSecondary) }
+                            }
                         }
                     }
                 }
@@ -366,6 +376,24 @@ private fun ClassifyDialog(row: LogbookRow, onSelect: (TripPurpose) -> Unit, onD
         confirmButton = {},
         dismissButton = { DriveLogButton(text = stringResource(R.string.cancel), onClick = onDismiss, kind = ButtonKind.Text) }
     )
+}
+
+/** 조직에 연결한 차: 운행기록부와 세무서 제출용 서식은 관리자 웹에서 받는다 */
+@Composable
+private fun ExportOnWebNote(orgName: String) {
+    val colors = DriveLogTheme.colors
+    val dimens = DriveLogTheme.dimens
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall),
+        modifier = Modifier
+            .clip(RoundedCornerShape(dimens.radiusMedium))
+            .background(colors.surfaceRaised)
+            .padding(horizontal = dimens.spacingMedium, vertical = dimens.spacingSmall)
+    ) {
+        Icon(DriveLogIcons.Cloud, contentDescription = null, tint = colors.accent, modifier = Modifier.size(dimens.iconSizeSmall))
+        Text(stringResource(R.string.logbook_export_on_web, orgName), style = DriveLogTheme.typography.label, color = colors.textSecondary)
+    }
 }
 
 /** 해시 체인 확인 결과 한 줄 */

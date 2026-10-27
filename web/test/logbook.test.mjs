@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  BOM, buildLogbook, csvFileName, kstParts, logbookCsv, monthPeriod, periodLabel, periodMonth, periodRange, pickPeriod,
+  BOM, buildLogbook, csvFileName, formDate, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodLabel, periodMonth, periodRange,
+  pickPeriod, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from '../js/logbook.js';
 
 // 2026-10-26(월) 09:00 한국 시간
@@ -108,4 +109,27 @@ test('CSV 파일 이름에 쓸 수 없는 글자는 바꾼다', () => {
   assert.equal(csvFileName(monthPeriod(2026, 10)), 'DriveLog_2026-10.csv');
   assert.equal(csvFileName(monthPeriod(2026, 3), '영업 1호/차'), 'DriveLog_2026-03_영업_1호_차.csv');
   assert.equal(csvFileName({ from: '2026-10-03', to: '2026-10-17' }), 'DriveLog_2026-10-03_2026-10-17.csv');
+});
+
+test('세무서 제출용: 차량마다 기록부를 만들고, 비고에 비업무·미분류를 붙이며, 명세서용 값을 CSV로 쓴다', () => {
+  const vehicles = [
+    { id: 'v1', name: '데모 차량', model: '아이오닉 5', plateNumber: '12가3456' },
+    { id: 'v2', name: '영업 2호차', model: null, plateNumber: null },
+  ];
+  const trips = [
+    trip({ id: 'a', vehicle_id: 'v1', purpose: 'BUSINESS', start_odometer_km: 100, end_odometer_km: 130, visit_note: '고객사 A' }),
+    trip({ id: 'b', vehicle_id: 'v1', purpose: 'PERSONAL', start_odometer_km: 130, end_odometer_km: 140, visit_note: null }),
+  ];
+  const byVehicle = logbooksByVehicle(vehicles, trips, names);
+  assert.deepEqual(byVehicle.map(({ logbook }) => logbook.rows.length), [2, 0]);
+  assert.equal(taxFormNote(byVehicle[0].logbook.rows[0]), '고객사 A');
+  assert.equal(taxFormNote(byVehicle[0].logbook.rows[1]), '비업무');
+  assert.equal(formDate('2026-01-01'), '2026. 1. 1.');
+  assert.deepEqual(yearPeriod(2026), { from: '2026-01-01', to: '2026-12-31' });
+
+  const csv = lines(statementCsv(byVehicle, yearPeriod(2026)));
+  assert.equal(csv[0], '사업연도 2026-01-01 ~ 2026-12-31');
+  assert.equal(csv[2], '데모 차량,아이오닉 5,12가3456,2,40.0,30.0,75.0');
+  assert.equal(csv[3], '영업 2호차,,,0,0.0,0.0,');
+  assert.equal(statementFileName(yearPeriod(2026)), 'DriveLog_업무사용비율_2026-01-01_2026-12-31.csv');
 });

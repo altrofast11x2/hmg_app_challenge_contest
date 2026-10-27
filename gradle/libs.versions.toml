@@ -20,6 +20,7 @@ zxing = "3.5.3"
 # Pleos Connect SDK (Nexus에는 Vehicle 2.3.1이 없고 2.3.2가 있다)
 pleosVehicle = "2.3.2"
 pleosNaviHelper = "3.0.5"
+pleosTextToSpeech = "3.3.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,7 @@ okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver",
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 pleos-vehicle = { group = "ai.pleos.playground", name = "Vehicle", version.ref = "pleosVehicle" }
 pleos-navihelper = { group = "ai.pleos.playground", name = "NaviHelper", version.ref = "pleosNaviHelper" }
+pleos-texttospeech = { group = "ai.pleos.playground", name = "TextToSpeech", version.ref = "pleosTextToSpeech" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }

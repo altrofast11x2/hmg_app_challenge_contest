@@ -93,6 +93,7 @@ dependencies {
 
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
+    implementation(libs.pleos.texttospeech)
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.room.runtime)

@@ -18,8 +18,10 @@ import com.altrostudio.drivelog.data.trip.RoomTripRepository
 import com.altrostudio.drivelog.data.trip.TripRepository
 import com.altrostudio.drivelog.data.vehicle.PleosVehicleDataSource
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
+import com.altrostudio.drivelog.data.voice.PleosSpeaker
 import com.altrostudio.drivelog.domain.consent.ConsentManager
 import com.altrostudio.drivelog.domain.trip.TripRecorder
+import com.altrostudio.drivelog.domain.voice.VoiceGuide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -69,6 +71,8 @@ class AppContainer(context: Context) {
 
     val csvSaver by lazy { CsvFileSaver(appContext) }
 
+    val voiceGuide by lazy { VoiceGuide(PleosSpeaker(appContext), preferences) }
+
     val recorder by lazy {
         TripRecorder(
             vehicle = vehicle,
@@ -76,7 +80,8 @@ class AppContainer(context: Context) {
             trips = trips,
             vehicleId = vehicleIdentity::vehicleId,
             parkedTimeoutMs = { preferences.parkedTimeoutMs },
-            scope = appScope
+            scope = appScope,
+            announce = voiceGuide::announce
         )
     }
 }

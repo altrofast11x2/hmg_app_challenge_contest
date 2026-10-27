@@ -134,6 +134,10 @@ class MainViewModel(
 
     val parkedTimeoutMs: Long get() = container.preferences.parkedTimeoutMs
 
+    val voiceGuidance: Boolean get() = container.voiceGuide.enabled
+
+    fun setVoiceGuidance(on: Boolean) = container.voiceGuide.setEnabled(on)
+
     fun agree() = container.consent.agree()
 
     fun classify(purpose: TripPurpose) = container.recorder.classify(purpose)

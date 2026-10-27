@@ -1,6 +1,6 @@
 # 작업 인수인계
 
-> 마지막 갱신: 2026-10-27 · 세션 ID는 `transcript/SESSION_ID.txt`
+> 마지막 갱신: 2026-10-28 · 세션 ID는 `transcript/SESSION_ID.txt`
 
 ## 지금 상태
 
@@ -26,6 +26,7 @@
 | 버그 점검·수정 (2026-10-27) | 사용자 요청으로 코드 점검 → 12건 목록 → 모두 고침. 서버 0008(동의 철회 시 `unpair_own_vehicle`, `shared_logbook` 운전자 이름 제한, 가입 코드 시도 제한을 `private.request_client_hash()` 접속 주소별로). 앱: 음수 거리 → null, 0 km·1분 미만 운행은 P에서 버림(`discardIfAccidental`), 동의 철회 때 서버 연결 해제(5초 제한), CSV 실제 파일 이름. 웹: `fetchAllPages` 500줄씩, 음수 거리 0, `resetState()`, 거절·내보낸 신청 [다시 승인], 다운로드 주소 60초 뒤 해제, "시간(한국)". 홈의 "업무사용비율 · 미분류 제외" 문구는 A03 명세대로 두고 `design/REQUESTS.md`에 요청. 개인정보 안내(앱 처리방침·철회 확인, 웹 가입 동의)에 바뀐 처리를 적음. 시험 계정은 지움. 이때 서버에 사용자의 "TEST" 기업·`tester@gmail.com`이 이미 없었다(자동 시험은 "(자동 시험)" 이름만 지운다) |
 | 체인 ID (2026-10-27) | 점검 중 찾음: 실제 차는 VIN이 차량 ID라서 동의 철회·재설치 뒤 다시 연결하면 차 안 체인이 seq 1부터 새로 시작 → 서버 unique(vehicle_id, chain_seq)에 걸려 409로 업로드가 계속 실패(실서버에서 재현). 0009: trips·trip_changes·chain_heads에 `chain_id`(체인 첫 기록의 해시), unique (vehicle_id, chain_id, chain_seq), chain_heads PK (vehicle_id, chain_id), 기존 기록 채움. 앱: `TripRepository.chainId()`, SyncRepository가 chain_id를 붙여 올림, 체인 머리 on_conflict=vehicle_id,chain_id. 해시 규칙은 그대로. 사용자 피드백: 핵심 기능 버그는 묻지 말고 고친다 |
 | 추가 점검 (2026-10-27 밤) | 사용자 "버그 더 남았는지 확인하고 없으면 push". 찾아서 고친 것: ① 운행 100건 넘게 쌓인 뒤 최근 운행 분류 → 이력이 아직 안 올라간 운행을 가리켜 FK 거부, 같은 묶음에서 영원히 멈춤 → 운행을 다 올린 뒤 이력. ② 관리자 웹 [연결 해제]·기업 삭제 뒤 차가 모름(계속 "연결됨"+실패), 기업 삭제 뒤엔 토큰 갱신 400으로 다시 연결도 불가 → `DeviceAuth`가 400/401이면 새 익명 계정, `SyncRepository`가 403이면 `isVehicleDevice`(GET vehicles)로 확인해 `PairingRepository.forget()`(연결·기기 세션 지움 → A02), `assignOrg`가 다른 조직의 못 올린 기록은 올리지 않음(SYNCED 처리). ③ 홈·운행기록부의 "이번 달"이 화면을 만들 때 고정 → `currentMonthFlow` 1분마다. ④ 웹: 목록에 없는 차량 필터가 남으면 전체로. Supabase advisors는 새 경고 없음. 에뮬레이터 E2E 후 옛 기기 익명 계정(8f8023f7…) 하나가 남음(데이터 없음, 자동 모드가 삭제를 막음) |
+| 음성 안내 (2026-10-28) | 사용자 요청: 심사 기준 "기술 활용성"(Pleos Playground SDK·API를 핵심 기능과 사용 경험에 활용) 확인 + TTS 사용. 명세는 TTS를 "준비 중이라 쓰지 마"로 막았지만 지금은 `TextToSpeech:3.3.1`이 Nexus에 있고 에뮬레이터에 CAAS 4.2.10이 있어 사용자 요청대로 넣음. 문서의 API 참조 페이지는 JS로만 그려져 AAR을 받아 `javap`으로 시그니처 확인. `Mode.ON_DEVICE`만 씀(서버 모드는 Client Secret을 APK에 넣어야 함). `domain/voice/VoiceGuide.kt`(안내 종류·문장·켜고 끄기), `data/voice/PleosSpeaker.kt`(SDK, 메인 스레드), `TripRecorder`의 `announce`(시작, 정차 때 거리·시간·`suggestPurpose`, 분류), 설정 "음성 안내" 카드(카드 전체가 스위치). 에뮬레이터에서 세 안내 재생·중간 끊고 새 안내·끄고 켜기 확인. release APK 27→45 MB(SDK 의존성 universal-access·JNA·Material, 라이선스 목록에 추가). 단위 테스트 85개 |
 
 - 8단계 release 시험에서 찾아 고친 버그 (6단계 코드가 실제 기기에서 서버와 통신한 적이 없었다)
   1. 서버 주소·키를 `BuildConfig` 상수로 넣었더니 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 채운 뒤에도 증분 빌드에 빈 값이 남았다 → 문자열 리소스(`resValue`)로 바꿔 실행 중에 읽는다

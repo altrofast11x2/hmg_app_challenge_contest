@@ -164,20 +164,28 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     modifier = modifier
                 )
             }
-            Destination.SETTINGS -> SettingsScreen(
-                vin = viewModel.vin,
-                orgName = state.pairing?.orgName,
-                canConnect = viewModel.backendConfigured,
-                onBack = { destination = Destination.HOME },
-                onConnect = { destination = Destination.CONNECT },
-                onOpenPrivacy = { destination = Destination.PRIVACY },
-                onOpenLicenses = { destination = Destination.LICENSES },
-                onWithdraw = {
-                    viewModel.withdraw()
-                    destination = Destination.HOME
-                },
-                modifier = modifier
-            )
+            Destination.SETTINGS -> {
+                var voiceGuidance by rememberSaveable { mutableStateOf(viewModel.voiceGuidance) }
+                SettingsScreen(
+                    vin = viewModel.vin,
+                    orgName = state.pairing?.orgName,
+                    canConnect = viewModel.backendConfigured,
+                    voiceGuidance = voiceGuidance,
+                    onVoiceGuidanceChange = {
+                        voiceGuidance = it
+                        viewModel.setVoiceGuidance(it)
+                    },
+                    onBack = { destination = Destination.HOME },
+                    onConnect = { destination = Destination.CONNECT },
+                    onOpenPrivacy = { destination = Destination.PRIVACY },
+                    onOpenLicenses = { destination = Destination.LICENSES },
+                    onWithdraw = {
+                        viewModel.withdraw()
+                        destination = Destination.HOME
+                    },
+                    modifier = modifier
+                )
+            }
             Destination.CONNECT -> Unit // 위에서 처리
             Destination.PRIVACY -> PrivacyPolicyScreen(onBack = { destination = Destination.SETTINGS }, modifier = modifier)
             Destination.LICENSES -> LicensesScreen(onBack = { destination = Destination.SETTINGS }, modifier = modifier)

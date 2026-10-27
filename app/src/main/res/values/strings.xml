@@ -129,6 +129,8 @@
     <string name="settings_vehicle">차량</string>
     <string name="settings_vehicle_vin">VIN %1$s</string>
     <string name="settings_vehicle_device">VIN을 확인할 수 없어 기기 ID로 차량을 구분합니다</string>
+    <string name="settings_voice">음성 안내</string>
+    <string name="settings_voice_description">운행 시작, 정차, 분류 결과를 차량 스피커로 알려 줍니다. 차 안의 음성 엔진으로 읽어 문장이 밖으로 나가지 않아요</string>
     <string name="settings_privacy">개인정보 처리방침</string>
     <string name="settings_licenses">오픈소스 라이선스</string>
     <string name="settings_withdraw">동의 철회 및 데이터 삭제</string>

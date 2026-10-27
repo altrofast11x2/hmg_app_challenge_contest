@@ -29,7 +29,7 @@ private const val APACHE_2 = "Apache License 2.0"
 private const val OFL_1_1 = "SIL Open Font License 1.1"
 
 private val LIBRARIES = listOf(
-    OpenSourceLibrary("Pleos Connect SDK (Vehicle, NaviHelper)", "Pleos", "Pleos Playground 이용약관"),
+    OpenSourceLibrary("Pleos Connect SDK (Vehicle, NaviHelper, TextToSpeech)", "Pleos", "Pleos Playground 이용약관"),
     OpenSourceLibrary("Asta Sans (글꼴)", "The Asta Sans Project Authors", OFL_1_1),
     OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("OkHttp, Okio", "Square", APACHE_2),
@@ -39,6 +39,8 @@ private val LIBRARIES = listOf(
     OpenSourceLibrary("kotlinx.coroutines, kotlinx.serialization", "JetBrains", APACHE_2),
     OpenSourceLibrary("Dagger, Hilt", "Google", APACHE_2),
     OpenSourceLibrary("Gson", "Google", APACHE_2),
+    OpenSourceLibrary("Material Components for Android, Tink, Error Prone Annotations", "Google", APACHE_2),
+    OpenSourceLibrary("JNA (Java Native Access)", "JNA authors", "$APACHE_2 (LGPL 2.1과의 이중 라이선스)"),
     OpenSourceLibrary("Guava ListenableFuture", "Google", APACHE_2),
     OpenSourceLibrary("JSR 305 Annotations", "FindBugs", APACHE_2),
     OpenSourceLibrary("javax.inject", "JSR-330", APACHE_2),

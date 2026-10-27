@@ -21,7 +21,7 @@
 |---|---|---|
 | 차량특화성 | 스마트폰 앱은 사람이 적어야 하지만, 이 앱은 **차가 직접 쓴다.** 주행 전·후 계기판 거리를 차량에서 읽고, 기어가 P를 벗어나면 운행을 시작해 P에서 끝내며, 주행 중에는 터치할 것이 없는 화면만 보여 준다 | Vehicle SDK Odometer, AAOS 기어·UX 제한 API. 에뮬레이터 + Virtual Console에서 확인 |
 | 창의성 | 운전자(작성), 관리자(취합), 세무 담당(신뢰) 세 사람의 불편을 **"고칠 수 없는 기록"** 하나로 함께 푼다. 실시간 위치는 모으지 않고, 비업무 운행은 주소를 지우고 거리만 남겨 감시 논란을 피한다 | 차량별 해시 체인·수정 이력([integrity.md](integrity.md)), 비업무 주소 삭제. 단위 테스트와 서버 반영 확인 |
-| 기술 활용성 | Pleos SDK 없이는 앱이 성립하지 않는다. 거리(Odometer), 차량 식별(VIN), 배터리 잔량(EvBattery), 출발·도착 주소(NaviHelper)를 핵심 기능에 쓴다 | 아래 SDK 활용표, [sdk-usage.md](sdk-usage.md) |
+| 기술 활용성 | Pleos SDK 없이는 앱이 성립하지 않는다. 거리(Odometer), 차량 식별(VIN), 배터리 잔량(EvBattery), 출발·도착 주소(NaviHelper)를 핵심 기능에 쓰고, 화면을 보지 않아도 되게 운행 시작·정차·분류를 음성(TextToSpeech, 차량 안 엔진)으로 알린다 | 아래 SDK 활용표, [sdk-usage.md](sdk-usage.md) |
 | 사업성 | 기업 하나를 들이면 **차량 수만큼 사용자**가 생기고, 월말 정산 때문에 매달 다시 쓴다. 법인 → 렌터카·리스 → 공유차·보험으로 넓힌다 | [business.md](business.md) (시장 규모·MAU·Retention 숫자는 팀이 공식 통계로 채움) |
 | 가산점 | 시연 영상, GitHub(소스·APK) | GitHub 저장소, `apk/AltroStudio_DriveLog_release.apk`, 시연 시나리오 [demo-script.md](demo-script.md) (영상은 팀이 녹화) |
 
@@ -35,6 +35,7 @@
 | 연비·전비 (지원 차량만) | Vehicle · EvBattery / Fuel | `CAR_ENERGY` | 에뮬레이터 미지원 |
 | 출발·도착 주소 | NaviHelper `getCurrentLocationInfo` | `pleos.car.permission.NAVI_ROUTE` | 확인 |
 | 방문처 (목적지·경유지 도착) | NaviHelper `onDestinationArrived`, `onWayPointArrived` | `NAVI_ROUTE` | 코드 완료. 에뮬레이터가 경로 도착을 흉내 내지 못해 확인 못 함 |
+| 음성 안내 (운행 시작, 정차 때 거리·시간·추천 용도, 분류 결과) | TextToSpeech `speak`, `stop` (`Mode.ON_DEVICE`) | `pleos.car.permission.TTS_SERVICE` | 확인 |
 | 운행 시작·정차 판단 | AAOS `CarPropertyManager` `GEAR_SELECTION` (Vehicle `Gear`는 deprecated) | `android.car.permission.CAR_POWERTRAIN` | 확인 |
 | 주행 중 조작 0 | AAOS `CarUxRestrictionsManager`, `distractionOptimized` | 없음 | 확인 |
 

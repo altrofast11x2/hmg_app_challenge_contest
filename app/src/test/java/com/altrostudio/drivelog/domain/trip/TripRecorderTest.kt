@@ -6,6 +6,8 @@ import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.data.vehicle.GearPosition
+import com.altrostudio.drivelog.domain.voice.TripAnnouncement
+import com.altrostudio.drivelog.domain.voice.VoicePhrases
 import com.altrostudio.drivelog.fake.FakeNaviDataSource
 import com.altrostudio.drivelog.fake.FakeTripRepository
 import com.altrostudio.drivelog.fake.FakeVehicleDataSource
@@ -25,6 +27,7 @@ class TripRecorderTest {
     private val vehicle = FakeVehicleDataSource()
     private val navi = FakeNaviDataSource()
     private val timeoutMs = 300_000L
+    private val announcements = mutableListOf<TripAnnouncement>()
 
     private fun TestScope.startRecorder(trips: FakeTripRepository): TripRecorder {
         var nextId = 0
@@ -35,6 +38,7 @@ class TripRecorderTest {
             vehicleId = { VEHICLE_ID },
             parkedTimeoutMs = { timeoutMs },
             scope = backgroundScope,
+            announce = { announcements += it },
             now = { testScheduler.currentTime },
             newTripId = { "trip-${++nextId}" }
         ).also {
@@ -94,6 +98,54 @@ class TripRecorderTest {
         assertEquals("경기 성남시 분당구", completed.visitNote)
         assertEquals(TripState.Idle, recorder.state.value)
         assertEquals(ChainVerification.Valid(2), trips.verifyChain(VEHICLE_ID))
+    }
+
+    @Test
+    fun `운행 시작, 정차(거리·시간·지난번 이곳의 용도), 분류 결과를 음성으로 알린다`() = runTest {
+        val trips = repository()
+        vehicle.odometer.value = 100f
+        val recorder = startRecorder(trips)
+
+        shift(GearPosition.DRIVE)
+        vehicle.odometer.value = 112.3f
+        advanceTimeBy(25 * 60_000L)
+        shift(GearPosition.PARK)
+        recorder.classify(TripPurpose.BUSINESS)
+        runCurrent()
+        // 같은 곳으로 다시 운행
+        shift(GearPosition.DRIVE)
+        vehicle.odometer.value = 120f
+        advanceTimeBy(10 * 60_000L)
+        shift(GearPosition.PARK)
+
+        assertEquals(
+            listOf(
+                "운행 기록을 시작합니다.",
+                "운행을 마쳤습니다. 12.3킬로미터, 25분 운행했습니다. 화면에서 용도를 골라 주세요.",
+                "일반업무로 기록했습니다.",
+                "운행 기록을 시작합니다.",
+                "운행을 마쳤습니다. 7.7킬로미터, 10분 운행했습니다. 이곳은 지난번에 일반업무로 기록했습니다. 화면에서 용도를 골라 주세요."
+            ),
+            announcements.map(VoicePhrases::of)
+        )
+    }
+
+    @Test
+    fun `대기 시간이 지나 미분류로 끝나면 분류 결과는 알리지 않는다`() = runTest {
+        val trips = repository()
+        vehicle.odometer.value = 100f
+        startRecorder(trips)
+
+        shift(GearPosition.DRIVE)
+        vehicle.odometer.value = 105f
+        advanceTimeBy(5 * 60_000L)
+        shift(GearPosition.PARK)
+        advanceTimeBy(timeoutMs + 1)
+        runCurrent()
+
+        assertEquals(TripStatus.COMPLETED, trips.trips.value.single().status)
+        assertEquals(2, announcements.size)
+        assertTrue(announcements.last() is TripAnnouncement.Parked)
     }
 
     @Test
@@ -194,6 +246,8 @@ class TripRecorderTest {
 
         assertTrue(trips.trips.value.isEmpty())
         assertEquals(TripState.Idle, recorder.state.value)
+        // 시작은 알렸지만, 운행이 아니므로 정차 후 분류를 묻지 않는다
+        assertEquals(listOf<TripAnnouncement>(TripAnnouncement.Started), announcements)
     }
 
     @Test

@@ -75,7 +75,7 @@ node web/scripts/serve.mjs          # http://127.0.0.1:5173
 | Gradle / AGP / Kotlin | 8.10.2 / 8.8.2 / 2.0.0 |
 | compileSdk / targetSdk / minSdk | 35 / 35 / 28 |
 | 에뮬레이터 | Pleos Connect v2.1 (Android 14, API 34, x86_64, Automotive) |
-| Pleos Connect SDK | Vehicle 2.3.2, NaviHelper 3.0.5 |
+| Pleos Connect SDK | Vehicle 2.3.2, NaviHelper 3.0.5, TextToSpeech 3.3.1 |
 
 ### Pleos Connect 에뮬레이터
 
@@ -113,6 +113,7 @@ adb forward tcp:8088 tcp:8088
 ## 핵심 기능
 
 - **자동 기록**: 기어가 P를 벗어나면 운행 시작, P에서 끝. 주행 전·후 계기판 거리를 Pleos Vehicle SDK에서 직접 읽어 넣습니다.
+- **음성 안내**: 운행 시작, 정차(거리·시간과 지난번 이곳에서 고른 용도), 분류 결과를 Pleos TextToSpeech로 읽어 줍니다. 차 안의 음성 엔진(ON_DEVICE)만 써서 문장이 밖으로 나가지 않고, 설정에서 끌 수 있습니다.
 - **주행 중 조작 0**: 주행 중에는 터치할 요소가 없는 화면만 보입니다. 정차하면 용도를 고르는 화면이 뜹니다.
 - **원탭 분류**: 출퇴근 / 일반업무 / 비업무. 같은 목적지는 지난번 분류를 먼저 제안하고, 비업무 운행은 주소를 지우고 거리만 남깁니다.
 - **국세청 서식 운행기록부**: 업무사용비율까지 자동 계산합니다. 달 칩이나 달력으로 기간을 고릅니다.

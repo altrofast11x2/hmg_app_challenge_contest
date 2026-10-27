@@ -8,6 +8,7 @@ import com.altrostudio.drivelog.data.trip.TripRepository
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.data.vehicle.GearPosition
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
+import com.altrostudio.drivelog.domain.voice.TripAnnouncement
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -34,6 +35,7 @@ class TripRecorder(
     private val vehicleId: suspend () -> String,
     private val parkedTimeoutMs: () -> Long,
     private val scope: CoroutineScope,
+    private val announce: (TripAnnouncement) -> Unit = {},
     private val now: () -> Long = System::currentTimeMillis,
     newTripId: () -> String = { UUID.randomUUID().toString() }
 ) {
@@ -126,6 +128,7 @@ class TripRecorder(
             is TripEffect.StartTrip -> {
                 // 먼저 저장하고(앱이 곧바로 죽어도 운행이 남도록) 느린 값은 이어서 채운다
                 trips.startTrip(effect.tripId, vehicleId, effect.at, currentOdometerKm())
+                announce(TripAnnouncement.Started)
                 trips.updateStart(
                     effect.tripId,
                     readOrNull { vehicle.readBatterySocPercent() },
@@ -141,11 +144,15 @@ class TripRecorder(
                     readOrNull { navi.currentPlace() }?.address,
                     readOrNull { vehicle.readEfficiency() }
                 )
+                announceParked(effect.tripId)
             }
             is TripEffect.ResumeDriving -> trips.resumeDriving(effect.tripId, now())
             is TripEffect.CompleteTrip -> {
                 trips.completeTrip(effect.tripId, effect.at)
-                effect.purpose?.let { trips.classify(effect.tripId, it, DRIVER_ACTOR, effect.at) }
+                effect.purpose?.let {
+                    trips.classify(effect.tripId, it, DRIVER_ACTOR, effect.at)
+                    announce(TripAnnouncement.Classified(it))
+                }
             }
         }
     }
@@ -163,6 +170,14 @@ class TripRecorder(
         trips.discardTrip(tripId)
         _state.value = TripState.Idle
         return true
+    }
+
+    /** 화면을 보지 않아도 알 수 있게 거리·시간과 지난번에 이곳에서 고른 용도를 알린다 */
+    private suspend fun announceParked(tripId: String) {
+        val trip = trips.activeTrip()?.takeIf { it.id == tripId } ?: return
+        val distanceKm = trip.startOdometerKm?.let { start -> trip.endOdometerKm?.let { (it - start).coerceAtLeast(0.0) } }
+        val suggestion = trip.endAddress?.let { address -> readOrNull { trips.suggestPurpose(address) } }
+        announce(TripAnnouncement.Parked(distanceKm, (trip.endedAt ?: now()) - trip.startedAt, suggestion))
     }
 
     private fun adjustForRestore(event: TripEvent): TripEvent {

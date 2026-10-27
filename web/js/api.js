@@ -196,6 +196,12 @@ export const createOrganization = (form) => authed('/rest/v1/rpc/create_organiza
   },
 });
 
+/**
+ * 휴대폰으로 받기: 차 화면의 QR 코드 링크로 운행기록부를 읽는다 (로그인 없이, 10분 동안).
+ * → { status: 'OK' | 'EXPIRED', org, vehicle, drivers, trips, from_ms, to_ms, expires_at }
+ */
+export const sharedLogbook = (token) => send('/rest/v1/rpc/shared_logbook', { method: 'POST', body: { p_token: token } });
+
 // ─── 변경 ────────────────────────────────────────────────────────────
 
 /** 6자리 연결 코드를 발급한다 (10분 유효, 한 번만 사용) → { code, expires_at } */

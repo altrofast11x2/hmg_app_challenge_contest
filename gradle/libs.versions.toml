@@ -15,12 +15,15 @@ ksp = "2.0.0-1.0.24"
 okhttp = "4.12.0"
 kotlinxSerialization = "1.6.3"
 work = "2.9.1"
+# 휴대폰으로 받기 QR 코드 (Apache License 2.0)
+zxing = "3.5.3"
 # Pleos Connect SDK (Nexus에는 Vehicle 2.3.1이 없고 2.3.2가 있다)
 pleosVehicle = "2.3.2"
 pleosNaviHelper = "3.0.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

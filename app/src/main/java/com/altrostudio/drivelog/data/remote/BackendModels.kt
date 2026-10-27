@@ -38,6 +38,21 @@ data class PairRequest(
     @SerialName("p_vin") val vin: String?
 )
 
+/** create_share_link 함수 인자: 휴대폰으로 받을 기간 [from, to) */
+@Serializable
+data class ShareLinkRequest(
+    @SerialName("p_from_ms") val fromMs: Long,
+    @SerialName("p_to_ms") val toMs: Long
+)
+
+/** create_share_link 함수의 결과. status: OK, NOT_PAIRED, INVALID_PERIOD, TOO_MANY */
+@Serializable
+data class ShareLinkResponse(
+    val status: String,
+    val token: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null
+)
+
 /** pair_vehicle 함수의 결과. status: OK, INVALID_CODE, EXPIRED_CODE, TOO_MANY_ATTEMPTS, VEHICLE_IN_OTHER_ORG, UNAUTHENTICATED */
 @Serializable
 data class PairResponse(

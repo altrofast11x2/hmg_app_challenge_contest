@@ -29,6 +29,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 - **주행 중 조작 0**: 주행 중에는 터치할 요소가 없는 화면만 보입니다. 정차하면 용도를 고르는 화면이 뜹니다.
 - **원탭 분류**: 출퇴근 / 일반업무 / 비업무. 같은 목적지는 지난번 분류를 먼저 제안하고, 비업무 운행은 주소를 지우고 거리만 남깁니다.
 - **국세청 서식 월별 운행기록부와 CSV**: 업무사용비율까지 자동 계산하고, Excel에서 바로 열리는 CSV로 내보냅니다.
+- **휴대폰으로 받기**: 차에는 메일·메신저 앱이 없어서, 정차 중 운행기록부의 [휴대폰으로 받기]를 누르면 QR 코드가 뜹니다. 휴대폰 카메라로 찍으면 로그인 없이 그 기간의 운행기록부가 열리고(10분 동안), 휴대폰에서 CSV·서식 PDF로 저장하거나 카톡·메일로 보냅니다. 조직에 연결한 차량에서 씁니다.
 - **세무서 제출용 서식**: 운행기록부는 보관하다가 세무서가 요구하면 내는 서류입니다. 관리자 웹이 국세청고시 제2025-8호 별지 「업무용승용차 운행기록부」와 같은 칸의 서식을 차량별로 만들어 인쇄·PDF로 저장하고, 법인세 신고 때 명세서에 옮길 차량별 업무사용비율을 보여 줍니다.
 - **고칠 수 없는 기록**: 차량별 해시 체인과 수정 이력으로 기록이 바뀐 흔적을 찾아냅니다.
 - **회사 연결**: 관리자 웹에서 받은 6자리 코드를 정차 중 한 번 입력하면 조직에 등록되고, 기록은 오프라인 우선으로 올라갑니다. 서버 없이도 차량 안에서 모든 기능이 동작합니다.
@@ -148,6 +149,6 @@ adb forward tcp:8088 tcp:8088
 ## 라이선스
 
 - 이 저장소의 코드: [MIT](LICENSE)
-- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, Kotlin·kotlinx 등 Apache License 2.0, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
+- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, ZXing(QR 코드), Kotlin·kotlinx 등 Apache License 2.0, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
 - 관리자 웹(`web/`)은 외부 JavaScript 라이브러리를 쓰지 않고, 글꼴 Asta Sans만 Google Fonts에서 불러옵니다.
 - 현대자동차그룹·Pleos의 로고와 상표는 쓰지 않습니다.

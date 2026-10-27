@@ -11,6 +11,7 @@ import com.altrostudio.drivelog.data.remote.SupabaseConfig
 import com.altrostudio.drivelog.data.settings.AppPreferences
 import com.altrostudio.drivelog.data.settings.VehicleIdentity
 import com.altrostudio.drivelog.data.sync.PairingRepository
+import com.altrostudio.drivelog.data.sync.ShareLinkRepository
 import com.altrostudio.drivelog.data.sync.SyncRepository
 import com.altrostudio.drivelog.data.sync.SyncScheduler
 import com.altrostudio.drivelog.data.trip.RoomTripRepository
@@ -55,6 +56,10 @@ class AppContainer(context: Context) {
     }
 
     val sync by lazy { SyncRepository(backendApi, deviceAuth, pairing.pairing, trips) }
+
+    val shareLinks by lazy {
+        ShareLinkRepository(backendApi, deviceAuth, appContext.getString(R.string.web_url), syncFirst = { sync.sync() })
+    }
 
     val syncScheduler by lazy { SyncScheduler(appContext, trips, pairing.pairing, appScope) }
 

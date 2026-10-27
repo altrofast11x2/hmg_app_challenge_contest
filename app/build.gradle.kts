@@ -38,6 +38,8 @@ android {
         // BuildConfig 상수로 넣으면 Kotlin이 값을 코드에 복사(인라인)해서, local.properties를 바꾼 뒤 증분 빌드하면 옛 값이 남았다
         resValue("string", "supabase_url", localProperties.getProperty("supabase.url", ""))
         resValue("string", "supabase_anon_key", localProperties.getProperty("supabase.anonKey", ""))
+        // 휴대폰으로 받기 QR 코드가 여는 관리자 웹 주소 (공개 주소라 기본값을 둔다)
+        resValue("string", "web_url", localProperties.getProperty("drivelog.webUrl", "https://altrostudio-drivelog.vercel.app"))
     }
 
     signingConfigs {
@@ -99,6 +101,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.zxing.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

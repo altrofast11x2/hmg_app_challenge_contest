@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  BOM, buildLogbook, csvFileName, formDate, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodLabel, periodMonth, periodRange,
-  pickPeriod, statementCsv, statementFileName, taxFormNote, yearPeriod,
+  BOM, buildLogbook, csvFileName, formDate, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
+  periodRange, pickPeriod, shareTokenFromHash, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from '../js/logbook.js';
 
 // 2026-10-26(월) 09:00 한국 시간
@@ -132,4 +132,13 @@ test('세무서 제출용: 차량마다 기록부를 만들고, 비고에 비업
   assert.equal(csv[2], '데모 차량,아이오닉 5,12가3456,2,40.0,30.0,75.0');
   assert.equal(csv[3], '영업 2호차,,,0,0.0,0.0,');
   assert.equal(statementFileName(yearPeriod(2026)), 'DriveLog_업무사용비율_2026-01-01_2026-12-31.csv');
+});
+
+test('휴대폰으로 받기: 주소의 # 뒤에서 토큰을 꺼내고, 서버 범위를 한국 날짜 기간으로 바꾼다', () => {
+  assert.equal(shareTokenFromHash('#share=AbC-_123456789012345678901234567'), 'AbC-_123456789012345678901234567');
+  assert.equal(shareTokenFromHash(''), null);
+  assert.equal(shareTokenFromHash('#share=짧음'), null);
+  assert.equal(shareTokenFromHash('#other=AbC-_123456789012345678901234567'), null);
+  assert.deepEqual(periodFromRange(...periodRange(monthPeriod(2026, 10))), { from: '2026-10-01', to: '2026-10-31' });
+  assert.deepEqual(periodFromRange(...periodRange({ from: '2026-10-26', to: '2026-10-26' })), { from: '2026-10-26', to: '2026-10-26' });
 });

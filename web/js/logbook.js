@@ -53,6 +53,17 @@ export function pickPeriod(from, to) {
   return { period };
 }
 
+/** 휴대폰으로 받기 주소의 # 뒤에서 토큰을 꺼낸다 ('#share=…'). 없거나 모양이 다르면 null */
+export function shareTokenFromHash(hash) {
+  const match = /^#share=([A-Za-z0-9_-]{16,128})$/.exec(hash ?? '');
+  return match ? match[1] : null;
+}
+
+/** 서버 범위 [fromMs, toMs) → 기간 { from, to } (한국 날짜, 끝 날짜 포함) */
+export function periodFromRange(fromMs, toMs) {
+  return { from: kstParts(fromMs).date, to: kstParts(toMs - 1).date };
+}
+
 /** 그해 1월 1일부터 12월 31일까지 (사업연도 기본값) */
 export function yearPeriod(year) {
   return { from: `${year}-01-01`, to: `${year}-12-31` };

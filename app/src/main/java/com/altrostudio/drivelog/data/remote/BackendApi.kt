@@ -16,6 +16,9 @@ interface BackendApi {
     suspend fun upsertChanges(accessToken: String, changes: List<RemoteTripChange>)
 
     suspend fun upsertChainHead(accessToken: String, head: RemoteChainHead)
+
+    /** 휴대폰으로 받기: 이 차량의 기간 운행기록부를 10분 동안 여는 링크 토큰 */
+    suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse
 }
 
 class BackendException(val kind: Kind, message: String, cause: Throwable? = null) : Exception(message, cause) {

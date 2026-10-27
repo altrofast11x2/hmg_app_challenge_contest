@@ -2,8 +2,8 @@
 // 서버에서 온 글자는 항상 textContent로 넣는다 (innerHTML을 쓰지 않아 스크립트 삽입을 막는다).
 import * as api from './api.js';
 import {
-  buildLogbook, csvFileName, formDate, km, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodLabel, periodMonth, periodRange,
-  pickPeriod, PURPOSE_LABELS, statementCsv, statementFileName, taxFormNote, yearPeriod,
+  buildLogbook, csvFileName, formDate, km, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
+  periodRange, pickPeriod, PURPOSE_LABELS, shareTokenFromHash, statementCsv, statementFileName, taxFormNote, yearPeriod,
 } from './logbook.js';
 
 const root = document.getElementById('app');
@@ -130,6 +130,12 @@ async function boot() {
     return;
   }
   api.configure({ url: config.SUPABASE_URL, key: config.SUPABASE_KEY });
+  // 차 화면의 QR 코드로 연 휴대폰은 로그인 없이 그 운행기록부만 보여 준다
+  const shareToken = shareTokenFromHash(location.hash);
+  if (shareToken) {
+    await renderShare(shareToken);
+    return;
+  }
   if (api.currentUser()) await enter();
   else renderLogin();
 }
@@ -444,7 +450,7 @@ function statementTable(byVehicle, period) {
 }
 
 /** 서식 미리보기. 종이 서식이라 라이트 테마 토큰으로 보여 주고, 인쇄하면 서식만 A4 가로로 나온다 */
-function openTaxForms(entries, period) {
+function openTaxForms(entries, period, org = state.org) {
   const root = document.documentElement;
   const previousTheme = root.dataset.theme;
   root.dataset.theme = 'light';
@@ -466,14 +472,14 @@ function openTaxForms(entries, period) {
       el('button', { class: 'button-primary', onclick: () => window.print() }, '인쇄 · PDF로 저장'),
       el('button', { class: 'button-secondary', onclick: close }, '닫기'),
     ),
-    entries.map((entry) => taxFormPage(entry, period)),
+    entries.map((entry) => taxFormPage(entry, period, org)),
   );
   document.addEventListener('keydown', onKey);
   document.body.append(overlay);
 }
 
 /** 국세청고시 제2025-8호 별지 「업무용승용차 운행기록부」와 같은 칸 배치 (차량 한 대) */
-function taxFormPage({ vehicle, logbook }, period) {
+function taxFormPage({ vehicle, logbook }, period, org) {
   const { summary } = logbook;
   const th = (text, props = {}) => el('th', { scope: 'col', ...props }, text);
   const blank = (props = {}) => el('td', { class: 'tax-shade', ...props });
@@ -484,9 +490,9 @@ function taxFormPage({ vehicle, logbook }, period) {
         el('td', { rowspan: '2', class: 'tax-period' }, formDate(period.from), el('br'), '~', el('br'), formDate(period.to)),
         el('td', { rowspan: '2', class: 'tax-title' }, '업무용승용차 운행기록부'),
         el('th', { scope: 'row' }, '법인명'),
-        el('td', {}, state.org.name),
+        el('td', {}, org.name),
       ),
-      el('tr', {}, el('th', { scope: 'row' }, '사업자등록번호'), el('td', {}, state.org.businessNumber ?? '')),
+      el('tr', {}, el('th', { scope: 'row' }, '사업자등록번호'), el('td', {}, org.businessNumber ?? '')),
     )),
     el('h3', {}, '1. 기본정보'),
     el('table', { class: 'tax-basic' },
@@ -527,6 +533,58 @@ function taxFormPage({ vehicle, logbook }, period) {
     ),
     el('p', { class: 'tax-source' }, '국세청고시 제2025-8호 별지 서식과 같은 칸 · 자동 운행기록부(DriveLog)가 차량 계기판 거리로 작성'),
   );
+}
+
+// ─── 휴대폰으로 받기 (차 화면의 QR 코드로 열린다, 로그인 없음) ─────────────────
+// 차에는 메일·메신저 앱이 없어서, 운전자가 휴대폰에서 운행기록부를 열어 저장·보낸다. 링크는 10분 동안만 열린다.
+
+async function renderShare(token) {
+  const content = el('section', { class: 'content share' }, message('운행기록부를 불러오는 중…'));
+  setScreen(el('header', { class: 'topbar' }, appMark(), el('strong', { class: 'brand' }, '자동 운행기록부')), el('main', {}, content));
+  try {
+    const shared = await api.sharedLogbook(token);
+    if (shared.status !== 'OK') {
+      content.replaceChildren(
+        el('h1', {}, '링크가 만료됐어요'),
+        el('p', {}, '휴대폰으로 받기 링크는 10분 동안만 열려요. 차의 운행기록부에서 [휴대폰으로 받기]를 다시 눌러 새 QR 코드를 찍으세요.'),
+      );
+      return;
+    }
+    const period = periodFromRange(shared.from_ms, shared.to_ms);
+    const vehicle = {
+      id: shared.vehicle.id,
+      name: shared.vehicle.display_name || shared.vehicle.vin || '차량',
+      model: shared.vehicle.model,
+      plateNumber: shared.vehicle.plate_number,
+    };
+    const org = { name: shared.org.name, businessNumber: shared.org.business_number };
+    const logbook = buildLogbook(shared.trips, { drivers: shared.drivers, vehicles: { [vehicle.id]: vehicle.name } });
+    const csv = logbookCsv(logbook);
+    const fileName = csvFileName(period, vehicle.name);
+    content.replaceChildren(
+      el('h1', {}, `${vehicle.name} 운행기록부`),
+      el('p', { class: 'muted' }, `${org.name} · ${periodLabel(period)}`),
+      el('div', { class: 'toolbar' },
+        el('button', { class: 'button-primary', onclick: () => download(csv, fileName) }, 'CSV 저장'),
+        shareFileButton(csv, fileName, `${vehicle.name} 운행기록부 ${periodLabel(period)}`),
+        el('button', { class: 'button-secondary', onclick: () => openTaxForms([{ vehicle, logbook }], period, org) }, '세무서 제출용 서식 · PDF'),
+      ),
+      logbookSummary(logbook.summary),
+      logbookTable(logbook, false, periodMonth(period) != null),
+      el('p', { class: 'muted' }, `차에서 만든 링크로 열린 페이지예요 (${formatDateTime(shared.expires_at)}까지). 저장한 파일은 이 휴대폰에만 남아요.`),
+    );
+  } catch (error) {
+    content.replaceChildren(message(error.message, 'error'));
+  }
+}
+
+/** 휴대폰의 공유(카톡·메일 등)로 CSV 파일을 보낸다. 브라우저가 파일 공유를 못 하면 버튼을 넣지 않는다 */
+function shareFileButton(csv, fileName, title) {
+  const file = new File([csv], fileName, { type: 'text/csv' });
+  if (!navigator.canShare?.({ files: [file] })) return null;
+  return el('button', {
+    class: 'button-secondary', onclick: () => navigator.share({ files: [file], title }).catch(() => {}),
+  }, '보내기 (카톡·메일)');
 }
 
 // ─── 차량 ─────────────────────────────────────────────────────────────
@@ -763,5 +821,10 @@ function renderDeveloper() {
     }
   }
 }
+
+// 열린 페이지에서 다른 QR 주소로 # 뒤만 바뀌면 새로 읽는다
+window.addEventListener('hashchange', () => {
+  if (shareTokenFromHash(location.hash)) location.reload();
+});
 
 boot();

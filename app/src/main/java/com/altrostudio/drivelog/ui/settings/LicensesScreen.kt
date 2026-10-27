@@ -33,6 +33,7 @@ private val LIBRARIES = listOf(
     OpenSourceLibrary("Asta Sans (글꼴)", "The Asta Sans Project Authors", OFL_1_1),
     OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("OkHttp, Okio", "Square", APACHE_2),
+    OpenSourceLibrary("ZXing core (QR 코드)", "ZXing authors", APACHE_2),
     OpenSourceLibrary("Jetpack Compose (UI, Foundation, Material 3)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("Kotlin Standard Library, kotlin-reflect", "JetBrains", APACHE_2),
     OpenSourceLibrary("kotlinx.coroutines, kotlinx.serialization", "JetBrains", APACHE_2),

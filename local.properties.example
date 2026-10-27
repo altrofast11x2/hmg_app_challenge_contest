@@ -6,3 +6,6 @@ sdk.dir=C\:\\Users\\<사용자>\\AppData\\Local\\Android\\Sdk
 # 공개 키는 앱에 들어가도 되는 키이고 데이터 보호는 RLS가 맡는다. service_role 키는 절대 넣지 않는다.
 supabase.url=https://<project-ref>.supabase.co
 supabase.anonKey=
+
+# 휴대폰으로 받기 QR 코드가 여는 관리자 웹 주소 (비워 두면 https://altrostudio-drivelog.vercel.app)
+# drivelog.webUrl=https://altrostudio-drivelog.vercel.app

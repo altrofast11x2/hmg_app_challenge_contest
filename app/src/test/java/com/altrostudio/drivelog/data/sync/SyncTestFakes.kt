@@ -8,6 +8,8 @@ import com.altrostudio.drivelog.data.remote.PairResponse
 import com.altrostudio.drivelog.data.remote.RemoteChainHead
 import com.altrostudio.drivelog.data.remote.RemoteTrip
 import com.altrostudio.drivelog.data.remote.RemoteTripChange
+import com.altrostudio.drivelog.data.remote.ShareLinkRequest
+import com.altrostudio.drivelog.data.remote.ShareLinkResponse
 
 /** 서버를 흉내 낸다. 올라온 기록은 id로 덮어써서 실제 서버(upsert)처럼 중복이 생기지 않는다 */
 class FakeBackendApi : BackendApi {
@@ -52,6 +54,15 @@ class FakeBackendApi : BackendApi {
     override suspend fun upsertChainHead(accessToken: String, head: RemoteChainHead) {
         accept(accessToken)
         chainHeads[head.vehicleId] = head
+    }
+
+    var lastShareRequest: ShareLinkRequest? = null
+    var shareResponse = ShareLinkResponse(status = "OK", token = "token-1", expiresAt = "2026-10-27T05:34:12.123456+00:00")
+
+    override suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse {
+        accept(accessToken)
+        lastShareRequest = request
+        return shareResponse
     }
 
     private fun newSession(refreshToken: String) =

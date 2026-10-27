@@ -156,6 +156,9 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     onSelectMonth = logbookViewModel::selectMonth,
                     onSelectPeriod = logbookViewModel::selectPeriod,
                     connectedOrgName = state.pairing?.orgName,
+                    onShare = logbookViewModel::createShareLink,
+                    onRetryShare = logbookViewModel::createShareLink,
+                    onDismissShare = logbookViewModel::dismissShare,
                     onClassify = logbookViewModel::classify,
                     onExport = logbookViewModel::exportCsv,
                     modifier = modifier

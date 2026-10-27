@@ -91,6 +91,9 @@ fun LogbookScreen(
     onSelectPeriod: (LogbookPeriod) -> Unit,
     /** 연결한 조직 이름. 있으면 차에서 CSV를 저장하는 대신 관리자 웹에서 받으라고 안내한다 */
     connectedOrgName: String?,
+    onShare: () -> Unit,
+    onRetryShare: () -> Unit,
+    onDismissShare: () -> Unit,
     onClassify: (tripId: String, purpose: TripPurpose) -> Unit,
     onExport: () -> Unit,
     modifier: Modifier = Modifier
@@ -133,7 +136,26 @@ fun LogbookScreen(
                         // 조직에 연결한 차는 기록이 관리자 웹에 모이므로, 차 안에 CSV 파일을 남기지 않고 웹에서 받게 한다
                         // (사용자 피드백 2026-10-27: 차에서 파일로 저장해도 쓸 데가 없다). 연결하지 않은 차는 CSV로 저장한다
                         if (connectedOrgName != null) {
-                            ExportOnWebNote(connectedOrgName)
+                            // 휴대폰으로 받기: 차에는 메일·메신저 앱이 없어서 QR 코드로 휴대폰에 넘긴다 (사용자 요청 2026-10-27)
+                            val shareButton = @Composable {
+                                DriveLogButton(
+                                    text = stringResource(R.string.logbook_share_button),
+                                    onClick = onShare,
+                                    kind = ButtonKind.Secondary,
+                                    icon = DriveLogIcons.Phone
+                                )
+                            }
+                            if (compact) {
+                                Column(verticalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
+                                    ExportOnWebNote(connectedOrgName)
+                                    shareButton()
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
+                                    shareButton()
+                                    ExportOnWebNote(connectedOrgName)
+                                }
+                            }
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DriveLogTheme.dimens.spacingSmall)) {
                                 BigButton(
@@ -171,6 +193,9 @@ fun LogbookScreen(
                 }
             }
         }
+    }
+    state.share?.let { share ->
+        ShareDialog(share = share, periodTitle = periodTitle(state.period), onRetry = onRetryShare, onDismiss = onDismissShare)
     }
     if (pickingPeriod) {
         PeriodDialog(

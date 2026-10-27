@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.altrostudio.drivelog.AppContainer
 import com.altrostudio.drivelog.DriveLogApp
+import com.altrostudio.drivelog.data.sync.ShareLinkResult
 import com.altrostudio.drivelog.data.trip.ChainVerification
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
@@ -50,7 +51,9 @@ data class LogbookUiState(
     val exporting: Boolean = false,
     val exportResult: ExportResult? = null,
     /** 바로 고를 수 있는 달 (오래된 달부터, 이번 달까지) */
-    val months: List<MonthChoice> = emptyList()
+    val months: List<MonthChoice> = emptyList(),
+    /** 휴대폰으로 받기 QR 코드 (null이면 닫힘) */
+    val share: ShareState? = null
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -90,6 +93,21 @@ class LogbookViewModel(
     fun classify(tripId: String, purpose: TripPurpose) {
         viewModelScope.launch { container.trips.classify(tripId, purpose, TripRecorder.DRIVER_ACTOR, now()) }
     }
+
+    /** 휴대폰으로 받기: 보고 있는 기간의 운행기록부를 휴대폰에서 여는 QR 코드 링크를 만든다 */
+    fun createShareLink() {
+        val (from, to) = period.value.range(zone)
+        viewModelScope.launch {
+            _state.update { it.copy(share = ShareState.Creating) }
+            val share = when (val result = container.shareLinks.create(from, to)) {
+                is ShareLinkResult.Ready -> ShareState.Ready(result.url, result.expiresAtMs)
+                else -> ShareState.Failed(result)
+            }
+            _state.update { it.copy(share = share) }
+        }
+    }
+
+    fun dismissShare() = _state.update { it.copy(share = null) }
 
     fun exportCsv() {
         val logbook = state.value.logbook ?: return

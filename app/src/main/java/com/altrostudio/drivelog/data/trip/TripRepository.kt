@@ -66,6 +66,12 @@ interface TripRepository {
     suspend fun assignOrg(orgId: String, driverId: String?)
 
     suspend fun chainHeads(): List<ChainHeadEntity>
+
+    /**
+     * 그 차량 해시 체인의 ID = 첫 기록(seq 1)의 해시. 아직 기록이 없으면 null.
+     * 동의를 철회하거나 앱을 다시 설치하면 같은 차(VIN)에서 체인이 seq 1부터 새로 시작하므로, 서버는 이 ID로 체인을 구분한다
+     */
+    suspend fun chainId(vehicleId: String): String?
 }
 
 data class PendingUploads(val trips: List<TripEntity>, val changes: List<TripChangeEntity>) {

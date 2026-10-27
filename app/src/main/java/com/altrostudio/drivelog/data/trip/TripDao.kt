@@ -73,6 +73,13 @@ interface TripDao {
     @Query("SELECT * FROM chain_heads")
     suspend fun chainHeads(): List<ChainHeadEntity>
 
+    /** 그 차량 체인의 첫 기록(seq 1) 해시. 첫 기록은 운행이다 */
+    @Query(
+        "SELECT hash FROM trips WHERE vehicleId = :vehicleId AND chainSeq = 1 " +
+            "UNION ALL SELECT hash FROM trip_changes WHERE vehicleId = :vehicleId AND chainSeq = 1 LIMIT 1"
+    )
+    suspend fun chainStartHash(vehicleId: String): String?
+
     @Query(
         "SELECT * FROM trips WHERE status = 'COMPLETED' AND syncState = 'PENDING' AND chainSeq IS NOT NULL " +
             "ORDER BY chainSeq LIMIT :limit"

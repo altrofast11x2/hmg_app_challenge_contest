@@ -67,7 +67,8 @@ class OkHttpBackendApiTest {
             id = "t1", orgId = "o1", vehicleId = "v1", driverId = null, startedAtMs = 1, endedAtMs = 2,
             startOdometerKm = 100.0, endOdometerKm = 112.3, odometerSource = "VEHICLE", startSocPercent = null,
             endSocPercent = null, efficiency = null, efficiencyType = null, startAddress = null, endAddress = null,
-            visitNote = null, purpose = "PERSONAL", chainSeq = 1, prevHash = "0".repeat(64), hash = "a".repeat(64)
+            visitNote = null, purpose = "PERSONAL", chainId = "a".repeat(64), chainSeq = 1, prevHash = "0".repeat(64),
+            hash = "a".repeat(64)
         )
 
         api().upsertTrips("device-token", listOf(trip))
@@ -80,6 +81,18 @@ class OkHttpBackendApiTest {
         assertTrue(body.contains("\"start_address\":null"))
         assertTrue(body.contains("\"end_odometer_km\":112.3"))
         assertTrue(body.contains("\"chain_seq\":1"))
+        assertTrue(body.contains("\"chain_id\":\"${"a".repeat(64)}\""))
+    }
+
+    @Test
+    fun `체인 머리는 차량과 체인 ID 기준으로 덮어쓴다 (같은 차의 옛 체인 머리는 남는다)`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(201))
+
+        api().upsertChainHead("device-token", RemoteChainHead("v1", "o1", "c1", 2, "h"))
+
+        val request = server.takeRequest()
+        assertEquals("/rest/v1/chain_heads?on_conflict=vehicle_id,chain_id", request.path)
+        assertEquals("""[{"vehicle_id":"v1","org_id":"o1","chain_id":"c1","seq":2,"hash":"h"}]""", request.body.readUtf8())
     }
 
     @Test
@@ -87,8 +100,8 @@ class OkHttpBackendApiTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"message":"JWT expired"}"""))
         server.enqueue(MockResponse().setResponseCode(500))
 
-        assertEquals(BackendException.Kind.UNAUTHORIZED, failureKind { api().upsertChainHead("t", RemoteChainHead("v1", "o1", 1, "h")) })
-        assertEquals(BackendException.Kind.SERVER, failureKind { api().upsertChainHead("t", RemoteChainHead("v1", "o1", 1, "h")) })
+        assertEquals(BackendException.Kind.UNAUTHORIZED, failureKind { api().upsertChainHead("t", RemoteChainHead("v1", "o1", "c1", 1, "h")) })
+        assertEquals(BackendException.Kind.SERVER, failureKind { api().upsertChainHead("t", RemoteChainHead("v1", "o1", "c1", 1, "h")) })
     }
 
     @Test

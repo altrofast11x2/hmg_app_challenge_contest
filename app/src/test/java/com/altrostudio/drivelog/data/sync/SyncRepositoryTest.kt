@@ -8,6 +8,7 @@ import com.altrostudio.drivelog.fake.FakeTripRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -56,6 +57,28 @@ class SyncRepositoryTest {
         assertEquals(SyncState.SYNCED, trips.trip("t1").syncState)
         assertEquals("org-1", trips.trip("t1").orgId)
         assertEquals(SyncOutcome.UpToDate, sync.sync())
+    }
+
+    @Test
+    fun `동의 철회 뒤 같은 차에서 새로 시작한 체인은 체인 ID(첫 기록의 해시)로 옛 체인과 구분해 올린다`() = runTest {
+        completedTrip("t1", TripPurpose.BUSINESS)
+        pairing.value = demoOrg
+        sync.sync()
+        val firstChain = checkNotNull(trips.trip("t1").hash)
+        assertEquals(firstChain, api.trips.getValue("t1").chainId)
+        assertEquals(listOf(firstChain), api.changes.values.map { it.chainId })
+        assertEquals(firstChain, api.chainHeads.getValue(VEHICLE_ID).chainId)
+
+        // 동의 철회로 차 안 기록이 지워진 뒤 다시 연결해 운행
+        trips.deleteAll()
+        completedTrip("t2", TripPurpose.COMMUTE)
+        assertEquals(SyncOutcome.Uploaded(trips = 1, changes = 1), sync.sync())
+
+        val second = api.trips.getValue("t2")
+        assertEquals(1L, second.chainSeq)
+        assertEquals(trips.trip("t2").hash, second.chainId)
+        assertNotEquals(firstChain, second.chainId)
+        assertEquals(second.chainId, api.chainHeads.getValue(VEHICLE_ID).chainId)
     }
 
     @Test

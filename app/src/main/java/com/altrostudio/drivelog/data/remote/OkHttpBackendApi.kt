@@ -44,7 +44,7 @@ class OkHttpBackendApi(
     }
 
     override suspend fun upsertChainHead(accessToken: String, head: RemoteChainHead) {
-        post("/rest/v1/chain_heads?on_conflict=vehicle_id", json.encodeToString(listOf(head)), accessToken, prefer = UPSERT)
+        post("/rest/v1/chain_heads?on_conflict=vehicle_id,chain_id", json.encodeToString(listOf(head)), accessToken, prefer = UPSERT)
     }
 
     override suspend fun unpairOwnVehicle(accessToken: String) {

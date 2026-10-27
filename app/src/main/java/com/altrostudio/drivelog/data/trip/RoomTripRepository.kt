@@ -145,6 +145,8 @@ class RoomTripRepository(
 
     override suspend fun chainHeads(): List<ChainHeadEntity> = dao.chainHeads()
 
+    override suspend fun chainId(vehicleId: String): String? = dao.chainStartHash(vehicleId)
+
     private suspend fun update(tripId: String, change: (TripEntity) -> TripEntity) {
         database.withTransaction {
             val trip = dao.trip(tripId) ?: return@withTransaction

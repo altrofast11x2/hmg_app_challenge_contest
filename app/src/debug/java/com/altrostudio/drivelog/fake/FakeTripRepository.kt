@@ -180,6 +180,11 @@ class FakeTripRepository(
 
     override suspend fun chainHeads(): List<ChainHeadEntity> = mutex.withLock { heads.values.toList() }
 
+    override suspend fun chainId(vehicleId: String): String? = mutex.withLock {
+        trips.value.firstOrNull { it.vehicleId == vehicleId && it.chainSeq == 1L }?.hash
+            ?: changes.firstOrNull { it.vehicleId == vehicleId && it.chainSeq == 1L }?.hash
+    }
+
     override suspend fun deleteAll() = mutex.withLock {
         trips.value = emptyList()
         stops.clear()

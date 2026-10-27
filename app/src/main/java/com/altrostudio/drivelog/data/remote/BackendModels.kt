@@ -84,6 +84,8 @@ data class RemoteTrip(
     @SerialName("end_address") val endAddress: String?,
     @SerialName("visit_note") val visitNote: String?,
     val purpose: String,
+    /** 체인 ID = 그 체인 첫 기록(seq 1)의 해시 (0009). 동의 철회·앱 재설치 뒤 같은 차에서 새로 시작한 체인과 구분한다 */
+    @SerialName("chain_id") val chainId: String,
     @SerialName("chain_seq") val chainSeq: Long,
     @SerialName("prev_hash") val prevHash: String,
     val hash: String
@@ -101,6 +103,7 @@ data class RemoteTripChange(
     val actor: String,
     val reason: String?,
     @SerialName("created_at_ms") val createdAtMs: Long,
+    @SerialName("chain_id") val chainId: String,
     @SerialName("chain_seq") val chainSeq: Long,
     @SerialName("prev_hash") val prevHash: String,
     val hash: String
@@ -110,6 +113,7 @@ data class RemoteTripChange(
 data class RemoteChainHead(
     @SerialName("vehicle_id") val vehicleId: String,
     @SerialName("org_id") val orgId: String,
+    @SerialName("chain_id") val chainId: String,
     val seq: Long,
     val hash: String
 )

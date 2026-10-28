@@ -39,6 +39,8 @@
 
 Playground 상단 Workspace › Pleos App Market Console (https://appmarket.pleos.ai/console) 에서 앱을 추가하고 심사를 요청한다. 현대자동차그룹 통합 계정(account.hyundaimotorgroup.com)으로 로그인해야 하고, 처음이면 콘솔 개발자 가입·약관 동의가 필요하다 — 본인이 직접 한다. IARC 연령 등급도 콘솔의 등록 과정에서 받는다.
 
+**2026-10-28 확인한 가입 조건** (https://appmarket.pleos.ai/console/join): ① 비즈니스 유형 선택 → ② 조직 인증 정보 입력 → ③ 인증 심사. 유형은 **법인만** 가능하고 "로그인한 계정 ID의 도메인과 개발사 웹사이트의 도메인이 일치"해야 한다. **개인은 "향후 지원 예정"**이라 지금은 고를 수 없다. 공모전(1차 서류·2차 PT·전시)은 App Market 등록을 요구하지 않으므로(참가 가이드·FAQ에 언급 없음), 지금은 이 문서의 자료를 준비해 두고 법인·도메인 메일이 생기거나 개인 가입이 열리면 등록한다. 궁금하면 appdevchallenge@hyundai-partners.com(공모전), partnership@pleos.ai(Pleos)에 문의.
+
 ## 심사 노트 (초안)
 
 - 시험 방법: Pleos Connect Emulator + Virtual Console에서 기어 D → 계기판 거리 증가 → P → 분류 화면에서 용도 선택. 주행 중 화면에는 터치 요소가 없습니다.

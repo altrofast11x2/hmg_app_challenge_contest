@@ -29,6 +29,7 @@
         android:name=".DriveLogApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -72,12 +73,14 @@
                 android:value="vehicle_trip_logging" />
         </service>
 
-        <!-- 시스템의 부팅 완료 방송만 받으면 되므로 다른 앱에 노출하지 않는다 (Pleos 앱 보안 가이드) -->
+        <!-- 시스템의 부팅 완료·앱 업데이트 방송만 받으면 되므로 다른 앱에 노출하지 않는다 (Pleos 앱 보안 가이드) -->
         <receiver
             android:name=".service.BootReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- 앱 업데이트 직후 기록 서비스를 다시 켠다 -->
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
     </application>

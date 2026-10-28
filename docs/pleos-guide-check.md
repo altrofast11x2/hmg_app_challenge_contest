@@ -11,7 +11,7 @@
 | 주행 안전을 고려한 설계 | CarUxRestrictions로 주행 중 기능 축소, 시선 분산 최소화, 터치 최소화, 음성 연계 | `CarUxRestrictionsManager` + `distractionOptimized`. 주행 중에는 터치 요소가 없는 화면만, 운행 시작·정차·분류 결과는 음성(TextToSpeech)으로 알림 | 맞춤 |
 | 지역별 주행 규제 | 주행 중 키보드·설정·검색 제한 | 주행 중 화면에 입력·설정 없음. 연결 코드 입력(키패드)·설정은 정차 중에만 | 맞춤 |
 | 앱 구조 및 동작 모델 | portrait·landscape 모두 설계, 창 크기가 바뀌어도 핵심 기능 유지, 백그라운드에서 돌아오면 상태 복원 | 1200dp 기준 2분할(portrait) 배치, 화면 상태는 `rememberSaveable`, 운행은 DB에 즉시 저장 후 복원 | 맞춤 |
-| 성능 및 리소스 | 주행 중 CPU 5% 미만, RAM 400 MB 이하, 불필요한 폴링 금지 | 기록 엔진은 기어·계기판 변화 구독(폴링 없음), 동기화는 WorkManager(네트워크 있을 때만). 실차 CPU 측정은 남음 | 맞춤 |
+| 성능 및 리소스 | 주행 중 CPU 5% 미만(내비 아닌 앱), 정차 중 25% 이하, RAM 400 MB 이하, 빠른 콜드 스타트, 백그라운드 타이머·폴링 최소화 | 에뮬레이터 측정(2026-10-28, `top`·`dumpsys meminfo`·`am start -W`): 콜드 스타트 0.71초, 메모리 PSS 74~81 MB, 정차 중 CPU 0~0.4%, 주행 중 계기판이 1초마다 바뀔 때 1.7% (D로 바꾸는 순간 10초 평균 5.2% — 주행 화면 전환·음성 안내·DB 저장이 한꺼번에). 기록 엔진은 기어·계기판 변화 구독(폴링 없음), 동기화는 WorkManager. "이번 달" 확인이 화면이 꺼져 있어도 1분마다 돌던 것을 다음 달 시작 시각까지 기다리도록(최대 1시간) **고침**. 실차 측정은 남음 | 고침 |
 | 보안 및 개인정보 | 동의 흐름을 쉽게, 불필요한 PII 미저장, **로그의 개인정보 마스킹** | 동의 화면(A01), 비업무는 주소 즉시 삭제. 기록 엔진이 실패 로그에 방문처 이름·주소를 남기던 것을 입력 종류만 남기도록 **고침** | 고침 |
 | API 호환성 | Vehicle SDK는 `check*Capabilities`로 확인, TextToSpeech는 전체 호환 | 모든 Vehicle 조회 전에 capability 확인, 지원 안 하면 값 없음으로 기록 | 맞춤 |
 
@@ -23,7 +23,7 @@
 | Glanceability | 입력 후 0.25초 안에 반응, 늦으면 진행 중 표시 | 누름 효과 100 ms (`drivelog_press_duration`), 서버를 기다리는 버튼(연결 코드 확인, 휴대폰으로 받기)은 누르는 즉시 로딩 표시 | 맞춤 |
 | Display Layout / Window | Landscape·Portrait 두 배치 | 위 "앱 구조" 참고. 폼 팩터 콘솔(가상 디스플레이) 시험은 남음 | 맞춤 |
 | Typography | 최소 12sp | 가장 작은 글자 24px (`drivelog_label_small`) | 맞춤 |
-| App Icon | Adaptive Icon(전경·배경 분리) | adaptive icon. 단색(themed) 아이콘 레이어는 없음 (lint 경고) | 맞춤 |
+| App Icon | Adaptive Icon(전경·배경 분리) | adaptive icon(배경·전경) + 단색(themed) 레이어 **추가**. 마켓용 512 PNG는 [app-market-assets/icon-512.png](app-market-assets/icon-512.png) | 고침 |
 
 ## 3. 개발 (vehicle-app-developer-guide)
 
@@ -55,8 +55,9 @@
 | 앱 보안 — 컴포넌트 노출 | 외부에서 부를 필요 없는 컴포넌트는 노출하지 않음 | `BootReceiver`가 `exported=true`였다 → `false` (부팅 완료 방송은 시스템이 보내므로 그대로 받음, 재부팅 후 서비스 자동 시작 확인) | 고침 |
 | 앱 보안 — 통신 | HTTPS, TLS 1.2 이상 | OkHttp 기본(TLS 1.2·1.3, MODERN_TLS), Android 9+ 평문 통신 차단 | 맞춤 |
 | 앱 보안 — 배포 | 배포용 인증서, 디버깅 비활성화, 비밀 하드코딩 금지 | release는 `CN=AltroStudio DriveLog` 인증서(키는 저장소 밖), debuggable 아님. Supabase 공개 키(publishable)만 들어가고 service_role·TTS Client Secret은 넣지 않음 | 맞춤 |
-| 앱 보안 — 백업 | 쓰지 않는 자동 백업 비활성화 | `allowBackup=false`, `dataExtractionRules`로 기기 간 이전도 막음 | 맞춤 |
+| 앱 보안 — 백업 | 쓰지 않는 자동 백업 비활성화, 민감 데이터는 백업에서 제외 | `allowBackup=false`, Android 12+ `dataExtractionRules`, Android 11 이하 `fullBackupContent`(모든 영역 제외, 이번에 **추가**) | 고침 |
 | **앱 버전 관리** | 배포·심사 요청마다 버전을 올림 | versionCode 1 → 2, versionName 0.1.0 → 0.2.0. 규칙은 [app-market.md](app-market.md) | 고침 |
+| 앱 업데이트 뒤 기록 재시작 | 사용자가 직접 업데이트하면 실행 중인 앱이 꺼진다 | 업데이트 뒤 앱을 열 때까지 기록 서비스가 꺼져 있던 것을 `MY_PACKAGE_REPLACED`로 바로 다시 켜도록 **고침**. 에뮬레이터에서 새 APK 설치 → 화면을 열지 않아도 포그라운드 서비스 시작(`PACKAGE_REPLACED`) 확인 | 고침 |
 | **앱 업데이트** | App Market은 자동 업데이트를 하지 않음 → 앱이 버전 확인, "최신 버전이 존재합니다…" 안내, `market://detail?package=` 이동 | 하루 한 번 관리자 웹의 `app-version.json`을 받아 새 버전이면 정차 중 홈에서 안내 → [이동] 시 앱 마켓 상세. 열 수 없으면 안내 문구. 에뮬레이터에서 안내창 확인(에뮬레이터 앱 마켓은 이 주소를 처리하지 않음) | 고침 |
 | 앱 태그 표기 | 공식 영문명 태그 필수 | 태그 `DriveLog`(영문 필수) + `자동 운행기록부` 등 ([app-market.md](app-market.md)) | 맞춤 |
 | 심사 — 개인정보 | 항목·목적·보유기간·거부할 권리 고지, 동의 버튼 외의 행동을 동의로 보지 않음, 철회 시 삭제 | A01 동의 화면(거부할 권리 카드, "동의하고 시작"만 동의), 철회 시 차 안 기록 삭제·서버 연결 해제 | 맞춤 |

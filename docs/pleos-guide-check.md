@@ -60,9 +60,9 @@
 | **앱 업데이트** | App Market은 자동 업데이트를 하지 않음 → 앱이 버전 확인, "최신 버전이 존재합니다…" 안내, `market://detail?package=` 이동 | 하루 한 번 관리자 웹의 `app-version.json`을 받아 새 버전이면 정차 중 홈에서 안내 → [이동] 시 앱 마켓 상세. 열 수 없으면 안내 문구. 에뮬레이터에서 안내창 확인(에뮬레이터 앱 마켓은 이 주소를 처리하지 않음) | 고침 |
 | 앱 태그 표기 | 공식 영문명 태그 필수 | 태그 `DriveLog`(영문 필수) + `자동 운행기록부` 등 ([app-market.md](app-market.md)) | 맞춤 |
 | 심사 — 개인정보 | 항목·목적·보유기간·거부할 권리 고지, 동의 버튼 외의 행동을 동의로 보지 않음, 철회 시 삭제 | A01 동의 화면(거부할 권리 카드, "동의하고 시작"만 동의), 철회 시 차 안 기록 삭제·서버 연결 해제 | 맞춤 |
-| 심사 — 등록정보 | 개인정보처리방침 URL, 위치정보 이용 시 위치정보 약관 URL, 심사용 계정 | 처리방침 공개 페이지 https://altrostudio-drivelog.vercel.app/privacy.html (앱 문구에서 자동 생성). 위치정보 약관은 남음 | 남음 |
+| 심사 — 등록정보 | 개인정보처리방침 URL, 위치정보 이용 시 위치정보 약관 URL, 심사용 계정, 아이콘 512, 스크린샷 | 처리방침 공개 페이지 https://altrostudio-drivelog.vercel.app/privacy.html (앱 문구에서 자동 생성), 아이콘·스크린샷 5장 [app-market-assets/](app-market-assets/). 위치정보 약관은 초안 [location-terms-draft.md](location-terms-draft.md) — 법률 검토 남음 | 남음 |
 | 심사 — 기능·성능 | 더미 데이터·임시 파일 없음, 10초 안에 실행 | 데모 데이터는 `backend/seed`에만, Fake는 debug 빌드에만 | 맞춤 |
-| SDK 퍼미션 | Vehicle SDK 퍼미션은 App Market과 사전 협의·승인 | 쓰는 권한 6개와 이유를 [sdk-usage.md](sdk-usage.md)에 정리. 실제 신청은 남음 | 남음 |
+| SDK 퍼미션 | Vehicle SDK 퍼미션은 App Market과 사전 협의·승인 | Playground My Project "자동 운행기록부"에서 Vehicle 조회·NaviHelper 권한이 **사용 가능**임을 확인(2026-10-28). TextToSpeech는 Playground에 "준비 중"으로 표시(신청 불가) — 차량 안 엔진은 등록 없이 동작 | 맞춤 |
 
 ## 6. 이번에 하지 않은 것 (제안)
 

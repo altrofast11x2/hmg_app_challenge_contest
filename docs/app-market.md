@@ -17,7 +17,7 @@
 | 개인정보 처리 | 수집: 운행 시작·종료 시각, 계기판 거리, 배터리 잔량, 출발·도착 주소, 방문처(내비 도착 정보), VIN 또는 기기 ID, 운행 용도 · 이용: 운행기록부 작성 · 전송: 조직에 연결한 차량만 조직 서버로 · 파기: 비업무는 주소 즉시 삭제, 동의 철회 시 차 안 전부 삭제 |
 | 위치정보 활용 | 활용함 — 운행 시작·종료 두 시점의 주소만 (NaviHelper). 실시간 위치 추적 없음, GPS·FusedLocation 미사용 |
 | 앱 접근 권한 | 차량 데이터: `CAR_DRIVE`(계기판), `CAR_INFO`(VIN), `CAR_ENERGY`(배터리·전비), `NAVI_ROUTE`(주소·도착), AAOS `CAR_POWERTRAIN`(기어·주차 브레이크) · 음성 안내 `TTS_SERVICE` · 인터넷 · 포그라운드 서비스 · 부팅 완료. 카메라·마이크·연락처·저장소 권한 없음 |
-| SDK 추가 권한 | Pleos Playground My Project의 프로젝트 ID 입력 (Vehicle SDK 퍼미션은 App Market과 사전 협의·승인 필요, 남음) |
+| SDK 추가 권한 | Pleos Playground My Project "자동 운행기록부"의 프로젝트 ID `d2e82bc9-88ab-43b4-90a4-7fc6fa4975ef` (카테고리 비즈니스). 2026-10-28 확인한 SDK 권한 상태: Vehicle 조회 11개 항목·NaviHelper 2개 항목 **사용 가능**, TextToSpeech·SpeechToText·FusedLocation·차량 제어는 **준비 중**(신청 버튼 없음). 이 앱은 TextToSpeech를 차량 안 엔진(ON_DEVICE)으로만 써서 서버 등록이 필요 없지만, 마켓 심사에서 TTS 권한 상태를 묻는다면 partnership@pleos.ai에 확인 |
 | 광고성 정보 | 보내지 않음 |
 
 ## 언어별 정보 (한국어)
@@ -29,11 +29,15 @@
 | 자세한 설명 | 운행을 시작하면 차가 계기판 거리와 출발·도착지를 자동으로 적고, 정차하면 출퇴근·일반업무·비업무 중 하나만 누르면 됩니다. 주행 중에는 화면을 만지지 않아도 운행 시작과 정차를 음성으로 알려 줍니다. 국세청 업무용승용차 운행기록부 서식 그대로 월별 기록부를 만들고, 기록은 해시 체인으로 묶여 고친 흔적이 남습니다. 회사에 연결하면 관리자가 웹에서 모든 차량의 기록부를 받아 세무 제출에 씁니다. 비업무 운행은 주소 없이 거리만 남습니다. |
 | 태그 (최대 20) | `DriveLog`(영문 공식명, 필수), 자동 운행기록부, 운행기록부, 업무용 차량, 법인차, 국세청, 차량일지 |
 | 개인정보처리방침 URL | https://altrostudio-drivelog.vercel.app/privacy.html (앱의 처리방침 문구로 웹 빌드 때 만든다: `web/scripts/privacy.mjs`) |
-| 위치정보 서비스 이용약관 URL | **남음** — 위치정보 활용을 "활용함"으로 고르면 필수. 약관 작성과 위치기반서비스사업 신고 대상인지 법률 검토가 먼저 필요 |
-| 앱 아이콘 | 512×512 PNG/JPEG, 1 MB 이하 — `ic_launcher` 벡터를 내보내야 함 (남음) |
-| IVI 스크린샷 | 2560×1380 · 1700×1212 · 840×1212 중, 2~8장. 예: 주행 중 화면, 정차 후 원탭 분류, 홈, 월별 운행기록부, 휴대폰으로 받기 (남음) |
+| 위치정보 서비스 이용약관 URL | **남음** — 위치정보 활용을 "활용함"으로 고르면 필수. 초안: [location-terms-draft.md](location-terms-draft.md). 위치기반서비스사업 신고 대상인지 법률 검토 뒤 공개(웹 `/location-terms.html`) |
+| 앱 아이콘 | [app-market-assets/icon-512.png](app-market-assets/icon-512.png) (512×512 PNG, 9 KB). 앱의 adaptive icon(배경 #0B3D5C + 장부·체크 벡터)에서 기기에 보이는 가운데 72dp를 그린 것 (`make_icon.py`) |
+| IVI 스크린샷 | [app-market-assets/](app-market-assets/) `screenshot-1-classify` ~ `screenshot-5-settings` (1700×1212 PNG 5장: 정차 후 원탭 분류, 주행 중, 홈, 월별 운행기록부, 설정·음성 안내). 에뮬레이터 앱 창(1682×1210)을 그대로 잘라 가운데에 둠 (`make_screenshots.py`). 지금 데모 데이터에는 콜드 부팅 때 생긴 0→255 km 시험 운행이 섞여 업무사용비율이 23.3%로 보인다 → 마켓용으로는 깨끗한 데모 데이터로 다시 찍는 것을 권장 |
 | 출시 노트 | 0.2.0: 음성 안내, 차 안 기록 암호화, 새 버전 안내, 뒤로 가기 시 앱 숨김 |
 | 고객 지원 | 이메일 kazinobel9807@gmail.com · 웹사이트 https://altrostudio-drivelog.vercel.app |
+
+## App Market Console
+
+Playground 상단 Workspace › Pleos App Market Console (https://appmarket.pleos.ai/console) 에서 앱을 추가하고 심사를 요청한다. 현대자동차그룹 통합 계정(account.hyundaimotorgroup.com)으로 로그인해야 하고, 처음이면 콘솔 개발자 가입·약관 동의가 필요하다 — 본인이 직접 한다. IARC 연령 등급도 콘솔의 등록 과정에서 받는다.
 
 ## 심사 노트 (초안)
 

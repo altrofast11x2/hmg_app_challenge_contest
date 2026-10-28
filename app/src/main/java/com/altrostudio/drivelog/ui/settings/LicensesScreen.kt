@@ -3,7 +3,8 @@ package com.altrostudio.drivelog.ui.settings
 import androidx.annotation.RawRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -27,10 +28,12 @@ private data class OpenSourceLibrary(val name: String, val owner: String, val li
 
 private const val APACHE_2 = "Apache License 2.0"
 private const val OFL_1_1 = "SIL Open Font License 1.1"
+private const val BSD_ZETETIC = "BSD 계열 (SQLCipher Community Edition License)"
 
 private val LIBRARIES = listOf(
     OpenSourceLibrary("Pleos Connect SDK (Vehicle, NaviHelper, TextToSpeech)", "Pleos", "Pleos Playground 이용약관"),
     OpenSourceLibrary("Asta Sans (글꼴)", "The Asta Sans Project Authors", OFL_1_1),
+    OpenSourceLibrary("SQLCipher for Android (운행 기록 DB 암호화)", "Zetetic, LLC", BSD_ZETETIC),
     OpenSourceLibrary("AndroidX (Core, Activity, Lifecycle, Room, SQLite, WorkManager 외)", "The Android Open Source Project", APACHE_2),
     OpenSourceLibrary("OkHttp, Okio", "Square", APACHE_2),
     OpenSourceLibrary("ZXing core (QR 코드)", "ZXing authors", APACHE_2),
@@ -48,8 +51,13 @@ private val LIBRARIES = listOf(
 )
 
 /** 보고 있는 라이선스 원문 (없으면 목록) */
-private enum class LicenseText(@RawRes val res: Int) { APACHE(R.raw.apache_license_2_0), OFL(R.raw.sil_ofl_1_1) }
+private enum class LicenseText(@RawRes val res: Int) {
+    APACHE(R.raw.apache_license_2_0),
+    OFL(R.raw.sil_ofl_1_1),
+    SQLCIPHER(R.raw.sqlcipher_license)
+}
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     var shown by rememberSaveable { mutableStateOf<LicenseText?>(null) }
@@ -62,12 +70,13 @@ fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = DriveLogTheme.colors
     ScreenScaffold(title = stringResource(R.string.licenses_title), onBack = onBack, modifier = modifier) {
         Text(stringResource(R.string.licenses_intro), style = typography.body, color = colors.textSecondary)
-        Row(horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall), verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
             if (shown != null) {
                 DriveLogButton(text = stringResource(R.string.licenses_back_to_list), onClick = { shown = null }, kind = ButtonKind.Secondary)
             } else {
                 DriveLogButton(text = stringResource(R.string.licenses_show_apache), onClick = { shown = LicenseText.APACHE }, kind = ButtonKind.Secondary)
                 DriveLogButton(text = stringResource(R.string.licenses_show_ofl), onClick = { shown = LicenseText.OFL }, kind = ButtonKind.Secondary)
+                DriveLogButton(text = stringResource(R.string.licenses_show_sqlcipher), onClick = { shown = LicenseText.SQLCIPHER }, kind = ButtonKind.Secondary)
             }
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {

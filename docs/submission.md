@@ -37,7 +37,7 @@
 |---|---|---|
 | 차량특화성 | 모바일 대비 차량 환경만의 가치, 주행·정차 맥락과 차량 기능의 결합 | 계기판 거리를 차가 직접 기록, 기어로 운행 시작·끝, 주행 중 조작 0, 정차 후 원탭 분류 |
 | 창의성 | 독창성, 운전자·동승자의 불편과 해결 방식 | 운전자(작성)·관리자(취합)·세무 담당(신뢰)을 "고칠 수 없는 기록"으로, 차에는 공유 앱이 없어 QR로 휴대폰에 넘기기 |
-| 기술 활용성 | Pleos Playground SDK·API를 핵심 기능과 사용 경험에 활용 | Vehicle(Odometer·CarInfo·EvBattery), NaviHelper(출발·도착 주소, 방문처), TextToSpeech(운행 시작·정차·분류 음성 안내, 차량 안 엔진) — [sdk-usage.md](sdk-usage.md) |
+| 기술 활용성 | Pleos Playground SDK·API를 핵심 기능과 사용 경험에 활용 | Vehicle(Odometer·CarInfo·EvBattery), NaviHelper(출발·도착 주소, 방문처), TextToSpeech(운행 시작·정차·분류 음성 안내, 차량 안 엔진, Pleos 오디오 포커스 정책) — [sdk-usage.md](sdk-usage.md). Pleos 개발·보안·심사 가이드 대조 — [pleos-guide-check.md](pleos-guide-check.md) |
 | 사업성 | 타깃 고객, 예상 MAU, Retention Rate, 서비스 확대 계획 | [business.md](business.md) 계산 틀과 확대 계획. **⏳ 시장 규모·MAU·Retention 숫자는 팀이 공식 통계로 채워야 한다** |
 
 ## 4. 가산점 · 그 밖

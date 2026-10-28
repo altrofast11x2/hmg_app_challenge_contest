@@ -97,16 +97,19 @@ class OkHttpBackendApiTest {
     }
 
     @Test
-    fun `기기 확인은 차량을 조회해 보이면 true, 서버에서 연결이 끊겨 안 보이면 false`() = runTest {
+    fun `기기 확인은 보이는 차량 목록에 이 차가 있으면 true, 서버에서 연결이 끊겨 없으면 false`() = runTest {
         server.enqueue(MockResponse().setBody("""[{"id":"KMH 1&2"}]"""))
+        server.enqueue(MockResponse().setBody("""[{"id":"OTHER-VIN"}]"""))
         server.enqueue(MockResponse().setBody("[]"))
 
         assertTrue(api().isVehicleDevice("device-token", "KMH 1&2"))
         assertFalse(api().isVehicleDevice("device-token", "KMH 1&2"))
+        assertFalse(api().isVehicleDevice("device-token", "KMH 1&2"))
 
+        // 차량 식별번호(VIN)는 주소에 넣지 않는다
         val request = server.takeRequest()
         assertEquals("GET", request.method)
-        assertEquals("/rest/v1/vehicles?select=id&id=eq.KMH%201%262", request.path)
+        assertEquals("/rest/v1/vehicles?select=id", request.path)
         assertEquals("Bearer device-token", request.getHeader("Authorization"))
         assertEquals("anon-key", request.getHeader("apikey"))
     }

@@ -136,6 +136,8 @@ adb forward tcp:8088 tcp:8088
 | 기획 요약 (심사 항목별) | [docs/plan-summary.md](docs/plan-summary.md) |
 | 공모전 제출 점검표 | [docs/submission.md](docs/submission.md) |
 | Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
+| Pleos Playground 가이드 대조 (기획·디자인·개발·테스트·보안·심사) | [docs/pleos-guide-check.md](docs/pleos-guide-check.md) |
+| Pleos App Market 제출 준비 (등록정보·버전 관리) | [docs/app-market.md](docs/app-market.md) |
 | 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |
 | 사업성 | [docs/business.md](docs/business.md) |
 | 기록 무결성 (해시 체인) | [docs/integrity.md](docs/integrity.md) |
@@ -165,6 +167,6 @@ adb forward tcp:8088 tcp:8088
 ## 라이선스
 
 - 이 저장소의 코드: [MIT](LICENSE)
-- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, ZXing(QR 코드), Kotlin·kotlinx 등 Apache License 2.0, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
+- 사용한 오픈소스와 라이선스: [docs/licenses.md](docs/licenses.md) (Pleos Connect SDK, AndroidX·Jetpack Compose, OkHttp·Okio, ZXing(QR 코드), Kotlin·kotlinx 등 Apache License 2.0, DB 암호화 SQLCipher는 BSD 계열, 글꼴 Asta Sans는 SIL Open Font License 1.1). 앱 안에서는 **설정 › 오픈소스 라이선스**에 같은 내용이 있습니다.
 - 관리자 웹(`web/`)은 외부 JavaScript 라이브러리를 쓰지 않고, 글꼴 Asta Sans만 Google Fonts에서 불러옵니다.
 - 현대자동차그룹·Pleos의 로고와 상표는 쓰지 않습니다.

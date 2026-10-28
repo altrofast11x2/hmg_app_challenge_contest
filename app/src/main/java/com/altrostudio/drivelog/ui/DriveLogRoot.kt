@@ -1,7 +1,13 @@
 package com.altrostudio.drivelog.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,12 +15,16 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.altrostudio.drivelog.R
 import com.altrostudio.drivelog.data.sync.SyncOutcome
 import com.altrostudio.drivelog.data.trip.TripPurpose
+import com.altrostudio.drivelog.domain.update.LatestVersion
+import com.altrostudio.drivelog.ui.components.ButtonKind
+import com.altrostudio.drivelog.ui.components.DriveLogButton
 import com.altrostudio.drivelog.ui.classify.ClassificationScreen
 import com.altrostudio.drivelog.ui.connect.ConnectScreen
 import com.altrostudio.drivelog.ui.connect.ConnectViewModel
@@ -27,6 +37,7 @@ import com.altrostudio.drivelog.ui.logbook.LogbookViewModel
 import com.altrostudio.drivelog.ui.settings.LicensesScreen
 import com.altrostudio.drivelog.ui.settings.PrivacyPolicyScreen
 import com.altrostudio.drivelog.ui.settings.SettingsScreen
+import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
 /** 정차 중에 이동할 수 있는 화면 */
 enum class Destination(val parent: Destination?) {
@@ -83,7 +94,8 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
 
         !state.consentGiven -> ConsentScreen(
             onAgree = viewModel::agree,
-            onExit = { activity?.finish() },
+            // 앱을 끝내지 않고 숨긴다 (Pleos CCP 가이드: 최상위에서 나갈 때 moveTaskToBack)
+            onExit = { activity?.moveTaskToBack(true) },
             totalSteps = if (viewModel.backendConfigured) 2 else null,
             modifier = modifier
         )
@@ -120,7 +132,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     connectViewModel.reset()
                     destination = Destination.HOME
                 },
-                // 처음 연결할 때만 건너뛸 수 있다. 뒤로가기는 앱 종료 (design/specs/A02-connect.md)
+                // 처음 연결할 때만 건너뛸 수 있다. 뒤로가기는 앱을 숨긴다 (design/specs/A02-connect.md, MainActivity)
                 onSkip = if (destination == Destination.CONNECT) null else viewModel::skipPairing,
                 onBack = if (destination == Destination.CONNECT) {
                     {
@@ -191,6 +203,42 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             Destination.LICENSES -> LicensesScreen(onBack = { destination = Destination.SETTINGS }, modifier = modifier)
         }
     }
+
+    // 새 버전 안내는 정차 중 홈에서만 띄운다 (분류·연결 중에는 끼어들지 않는다)
+    val update by viewModel.availableUpdate.collectAsStateWithLifecycle()
+    val showUpdate = !state.drivingRestricted && state.consentGiven && destination == Destination.HOME &&
+        !onboardingConnect && parkedTrip == null && classifyingTripId == null
+    update?.takeIf { showUpdate }?.let { UpdateDialog(it, onDismiss = viewModel::dismissUpdate) }
+}
+
+/** 새 버전 안내 (Pleos 앱 업데이트 가이드의 문구와 순서: 안내 → 앱 마켓 상세 페이지로 이동) */
+@Composable
+private fun UpdateDialog(latest: LatestVersion, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val typography = DriveLogTheme.typography
+    val colors = DriveLogTheme.colors
+    val marketFailed = stringResource(R.string.update_market_unavailable)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.surfaceRaised,
+        title = { Text(stringResource(R.string.update_title), style = typography.title, color = colors.textPrimary) },
+        text = { Text(stringResource(R.string.update_message, latest.versionName), style = typography.body, color = colors.textSecondary) },
+        confirmButton = {
+            DriveLogButton(
+                text = stringResource(R.string.update_open_market),
+                onClick = {
+                    onDismiss()
+                    val detail = Intent(Intent.ACTION_VIEW, Uri.parse("market://detail?package=${context.packageName}"))
+                    try {
+                        context.startActivity(detail)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(context, marketFailed, Toast.LENGTH_LONG).show()
+                    }
+                }
+            )
+        },
+        dismissButton = { DriveLogButton(text = stringResource(R.string.update_later), onClick = onDismiss, kind = ButtonKind.Text) }
+    )
 }
 
 @Composable

@@ -67,7 +67,8 @@ class TripRecorder(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    log("운행 기록 처리 실패: $input", e)
+                    // 입력 내용(방문처 이름·주소)은 개인정보라 로그에 남기지 않는다 (Pleos 앱 보안 가이드)
+                    log("운행 기록 처리 실패: ${input::class.simpleName}", e)
                 }
             }
         }

@@ -17,10 +17,13 @@ import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
 import com.altrostudio.drivelog.domain.logbook.currentMonthFlow
 import com.altrostudio.drivelog.domain.trip.TripRecorder
+import com.altrostudio.drivelog.domain.update.LatestVersion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -126,6 +129,20 @@ class MainViewModel(
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
         MainUiState(month = currentMonth.value, pairing = container.pairing.pairing.value, pairingSkipped = container.pairing.skipped.value)
     )
+
+    private val _availableUpdate = MutableStateFlow<LatestVersion?>(null)
+
+    /** 앱 마켓에 올라온 새 버전 (Pleos 앱 업데이트 가이드: 앱을 열 때 확인해 안내한다) */
+    val availableUpdate: StateFlow<LatestVersion?> = _availableUpdate.asStateFlow()
+
+    init {
+        // 동의하기 전에는 아무 곳과도 통신하지 않는다
+        if (container.consent.consentGiven.value) viewModelScope.launch { _availableUpdate.value = container.updateChecker.check() }
+    }
+
+    fun dismissUpdate() {
+        _availableUpdate.value = null
+    }
 
     /** 서버 주소·키가 들어간 빌드인지 (아니면 연결 화면을 건너뛴다) */
     val backendConfigured: Boolean get() = container.pairing.isConfigured

@@ -15,6 +15,7 @@
 | Kotlin Standard Library, kotlin-reflect | JetBrains | Apache License 2.0 |
 | kotlinx.coroutines, kotlinx.serialization | JetBrains | Apache License 2.0 |
 | Dagger, Hilt (Pleos SDK가 포함) | Google | Apache License 2.0 |
+| SQLCipher for Android 4.17.0 (운행 기록 DB 암호화) | Zetetic, LLC | BSD 계열 SQLCipher Community Edition License (`res/raw/sqlcipher_license.txt`, 앱 안에서 전문 표시) |
 | Gson (Pleos SDK가 포함) | Google | Apache License 2.0 |
 | Material Components for Android, Tink, Error Prone Annotations (Pleos TextToSpeech가 포함) | Google | Apache License 2.0 |
 | JNA, Java Native Access (Pleos TextToSpeech가 포함) | JNA authors | Apache License 2.0 (LGPL 2.1과의 이중 라이선스 중 Apache 2.0) |

@@ -29,8 +29,9 @@ android {
         // Pleos 요구사항: API 28 이상 (차량 보안 요건)
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // 앱에 영향을 주는 변경을 배포·제출할 때마다 올린다 (Pleos 앱 버전 관리 정책, docs/app-market.md)
+        versionCode = 2
+        versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -103,6 +104,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.zxing.core)
+    // 운행 기록 DB 암호화 (Pleos 앱 보안 가이드)
+    implementation(libs.sqlcipher.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

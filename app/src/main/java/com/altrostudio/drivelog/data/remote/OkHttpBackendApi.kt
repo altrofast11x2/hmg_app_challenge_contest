@@ -6,6 +6,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -54,8 +56,10 @@ class OkHttpBackendApi(
     }
 
     override suspend fun isVehicleDevice(accessToken: String, vehicleId: String): Boolean =
-        json.parseToJsonElement(get("/rest/v1/vehicles", mapOf("select" to "id", "id" to "eq.$vehicleId"), accessToken))
-            .jsonArray.isNotEmpty()
+        // 차량 식별번호(VIN)를 주소에 넣지 않는다 (Pleos 앱 보안 가이드: URL 내 민감정보 금지).
+        // 기기 계정은 RLS로 자기 차량만 보이므로 목록을 받아 앱에서 찾는다
+        json.parseToJsonElement(get("/rest/v1/vehicles", mapOf("select" to "id"), accessToken))
+            .jsonArray.any { it.jsonObject["id"]?.jsonPrimitive?.content == vehicleId }
 
     override suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse =
         json.decodeFromString(post("/rest/v1/rpc/create_share_link", json.encodeToString(request), accessToken))

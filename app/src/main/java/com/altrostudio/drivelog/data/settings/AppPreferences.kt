@@ -3,17 +3,26 @@ package com.altrostudio.drivelog.data.settings
 import android.content.Context
 import androidx.core.content.edit
 import com.altrostudio.drivelog.data.remote.DeviceSession
+import com.altrostudio.drivelog.data.security.KeystoreCipher
+import com.altrostudio.drivelog.data.security.SecretStore
+import com.altrostudio.drivelog.data.security.StringCipher
 import com.altrostudio.drivelog.data.sync.Pairing
 import com.altrostudio.drivelog.data.sync.SyncSettings
+import com.altrostudio.drivelog.domain.update.UpdateSettings
 import com.altrostudio.drivelog.domain.voice.VoiceSettings
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.security.SecureRandom
 
-/** 기기에 저장하는 간단한 설정 */
-class AppPreferences(context: Context) : SyncSettings, VoiceSettings {
+/**
+ * 기기에 저장하는 간단한 설정.
+ * 차량 ID·VIN·기기 계정 토큰·조직 연결·DB 키는 Keystore 키로 암호화해 저장한다 (Pleos 앱 보안 가이드)
+ */
+class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) : SyncSettings, VoiceSettings, UpdateSettings {
 
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    private val secrets = SecretStore(cipher, read = { prefs.getString(it, null) }, write = { key, value -> prefs.edit { putString(key, value) } })
 
     /** 개인정보 수집·이용 동의. 동의 버튼을 눌렀을 때만 true가 된다 */
     var consentGiven: Boolean
@@ -30,12 +39,12 @@ class AppPreferences(context: Context) : SyncSettings, VoiceSettings {
         set(value) = prefs.edit { putInt(KEY_CONSENT_VERSION, value) }
 
     var vehicleId: String?
-        get() = prefs.getString(KEY_VEHICLE_ID, null)
-        set(value) = prefs.edit { putString(KEY_VEHICLE_ID, value) }
+        get() = secrets.get(KEY_VEHICLE_ID)
+        set(value) = secrets.put(KEY_VEHICLE_ID, value)
 
     override var vin: String?
-        get() = prefs.getString(KEY_VIN, null)
-        set(value) = prefs.edit { putString(KEY_VIN, value) }
+        get() = secrets.get(KEY_VIN)
+        set(value) = secrets.put(KEY_VIN, value)
 
     /** 정차(P)가 이 시간 동안 이어지면 미분류로 운행을 마친다 */
     var parkedTimeoutMs: Long
@@ -47,23 +56,43 @@ class AppPreferences(context: Context) : SyncSettings, VoiceSettings {
         get() = prefs.getBoolean(KEY_VOICE_GUIDANCE, true)
         set(value) = prefs.edit { putBoolean(KEY_VOICE_GUIDANCE, value) }
 
+    override var lastUpdateCheckAt: Long
+        get() = prefs.getLong(KEY_UPDATE_CHECK_AT, 0L)
+        set(value) = prefs.edit { putLong(KEY_UPDATE_CHECK_AT, value) }
+
     /** 차량용 기기 계정의 로그인 세션 */
     override var deviceSession: DeviceSession?
-        get() = prefs.getString(KEY_DEVICE_SESSION, null)?.let { runCatching { json.decodeFromString<DeviceSession>(it) }.getOrNull() }
-        set(value) = prefs.edit { putString(KEY_DEVICE_SESSION, value?.let { json.encodeToString(it) }) }
+        get() = secrets.get(KEY_DEVICE_SESSION)?.let { runCatching { json.decodeFromString<DeviceSession>(it) }.getOrNull() }
+        set(value) = secrets.put(KEY_DEVICE_SESSION, value?.let { json.encodeToString(it) })
 
     /** 연결된 조직. null이면 아직 연결하지 않았다 */
     override var pairing: Pairing?
-        get() = prefs.getString(KEY_PAIRING, null)?.let { runCatching { json.decodeFromString<Pairing>(it) }.getOrNull() }
-        set(value) = prefs.edit { putString(KEY_PAIRING, value?.let { json.encodeToString(it) }) }
+        get() = secrets.get(KEY_PAIRING)?.let { runCatching { json.decodeFromString<Pairing>(it) }.getOrNull() }
+        set(value) = secrets.put(KEY_PAIRING, value?.let { json.encodeToString(it) })
 
     /** 연결 화면에서 [나중에 연결]을 골랐다 */
     override var pairingSkipped: Boolean
         get() = prefs.getBoolean(KEY_PAIRING_SKIPPED, false)
         set(value) = prefs.edit { putBoolean(KEY_PAIRING_SKIPPED, value) }
 
-    /** 동의를 철회하면 저장된 설정(차량 ID, VIN 포함)을 모두 지운다 */
-    fun clearAll() = prefs.edit { clear() }
+    /**
+     * 운행 기록 DB 암호화 키 (32바이트 난수의 16진수). 처음 부를 때 만든다.
+     * 동의 철회로 설정을 지워도 남긴다 (DB 파일은 남고 내용만 지워지므로, 키를 지우면 다시 열 수 없다)
+     */
+    @Synchronized
+    fun databasePassphrase(): String = secrets.get(KEY_DB_KEY) ?: run {
+        val bytes = ByteArray(DB_KEY_BYTES).also { SecureRandom().nextBytes(it) }
+        bytes.joinToString("") { "%02x".format(it) }.also { secrets.put(KEY_DB_KEY, it) }
+    }
+
+    /** 동의를 철회하면 저장된 설정(차량 ID, VIN 포함)을 모두 지운다. DB 키만 남긴다 */
+    fun clearAll() {
+        val dbKey = prefs.getString(KEY_DB_KEY, null)
+        prefs.edit {
+            clear()
+            putString(KEY_DB_KEY, dbKey)
+        }
+    }
 
     companion object {
         const val DEFAULT_PARKED_TIMEOUT_MS = 5 * 60_000L
@@ -75,6 +104,9 @@ class AppPreferences(context: Context) : SyncSettings, VoiceSettings {
         private const val KEY_VIN = "vin"
         private const val KEY_PARKED_TIMEOUT = "parked_timeout_ms"
         private const val KEY_VOICE_GUIDANCE = "voice_guidance"
+        private const val KEY_DB_KEY = "database_key"
+        private const val KEY_UPDATE_CHECK_AT = "update_check_at"
+        private const val DB_KEY_BYTES = 32
         private const val KEY_DEVICE_SESSION = "device_session"
         private const val KEY_PAIRING = "pairing"
         private const val KEY_PAIRING_SKIPPED = "pairing_skipped"

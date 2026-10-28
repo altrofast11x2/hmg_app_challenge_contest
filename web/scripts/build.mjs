@@ -2,10 +2,15 @@
 // 사용: node web/scripts/build.mjs  →  vercel deploy web/dist --prod
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { configSource } from './config.mjs';
+import { privacyPage } from './privacy.mjs';
 
 const WEB = new URL('../', import.meta.url);
 const DIST = new URL('dist/', WEB);
-const PUBLIC_FILES = ['index.html', 'vercel.json', 'css/tokens.css', 'css/app.css', 'js/app.js', 'js/api.js', 'js/logbook.js', 'js/signup.js'];
+// app-version.json: 차량 앱이 하루 한 번 받아 보는 최신 버전 (앱 versionCode를 올려 배포할 때 같이 올린다)
+const PUBLIC_FILES = [
+  'index.html', 'vercel.json', 'app-version.json', 'css/tokens.css', 'css/app.css', 'css/policy.css',
+  'js/app.js', 'js/api.js', 'js/logbook.js', 'js/signup.js',
+];
 
 const source = configSource();
 // 이전 결과를 지우되, vercel CLI가 프로젝트 연결 정보를 두는 .vercel 폴더는 남긴다
@@ -19,4 +24,6 @@ for (const file of PUBLIC_FILES) {
   cpSync(new URL(file, WEB), new URL(file, DIST));
 }
 writeFileSync(new URL('js/config.js', DIST), source);
-console.log(`web/dist를 만들었습니다 (${PUBLIC_FILES.length + 1}개 파일).`);
+// 공개 개인정보 처리방침 (App Market 제출용 URL: /privacy.html)
+writeFileSync(new URL('privacy.html', DIST), privacyPage());
+console.log(`web/dist를 만들었습니다 (${PUBLIC_FILES.length + 2}개 파일).`);

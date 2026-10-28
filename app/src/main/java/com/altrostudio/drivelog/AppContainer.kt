@@ -16,11 +16,13 @@ import com.altrostudio.drivelog.data.sync.SyncRepository
 import com.altrostudio.drivelog.data.sync.SyncScheduler
 import com.altrostudio.drivelog.data.trip.RoomTripRepository
 import com.altrostudio.drivelog.data.trip.TripRepository
+import com.altrostudio.drivelog.data.update.WebLatestVersionSource
 import com.altrostudio.drivelog.data.vehicle.PleosVehicleDataSource
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
 import com.altrostudio.drivelog.data.voice.PleosSpeaker
 import com.altrostudio.drivelog.domain.consent.ConsentManager
 import com.altrostudio.drivelog.domain.trip.TripRecorder
+import com.altrostudio.drivelog.domain.update.UpdateChecker
 import com.altrostudio.drivelog.domain.voice.VoiceGuide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +40,7 @@ class AppContainer(context: Context) {
 
     val navi: NaviDataSource by lazy { PleosNaviDataSource(appContext) }
 
-    private val database by lazy { DriveLogDatabase.create(appContext) }
+    private val database by lazy { DriveLogDatabase.create(appContext) { preferences.databasePassphrase() } }
 
     val trips: TripRepository by lazy { RoomTripRepository(database) }
 
@@ -72,6 +74,11 @@ class AppContainer(context: Context) {
     val csvSaver by lazy { CsvFileSaver(appContext) }
 
     val voiceGuide by lazy { VoiceGuide(PleosSpeaker(appContext), preferences) }
+
+    val updateChecker by lazy {
+        val installed = appContext.packageManager.getPackageInfo(appContext.packageName, 0).longVersionCode.toInt()
+        UpdateChecker(WebLatestVersionSource(appContext.getString(R.string.web_url))::fetch, installed, preferences)
+    }
 
     val recorder by lazy {
         TripRecorder(

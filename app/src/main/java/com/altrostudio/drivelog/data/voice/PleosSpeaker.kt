@@ -6,6 +6,9 @@ import ai.pleos.playground.tts.constant.Mode
 import ai.pleos.playground.tts.listener.EventListener
 import ai.pleos.playground.tts.listener.OnInitializeListener
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -17,25 +20,57 @@ import java.util.Locale
  * 차량 안 음성 엔진(ON_DEVICE)만 쓴다: 서버 모드에 필요한 Client Secret을 APK에 넣지 않고,
  * 읽는 문장(거리·용도)도 차 밖으로 나가지 않는다.
  * 처음 읽을 때 SDK를 연결하고, 연결되는 동안 들어온 안내는 가장 최근 것 하나만 읽는다.
+ *
+ * Pleos 오디오 포커스 정책: 읽기 전에 알림 용도로 "잠깐, 다른 소리는 줄여도 됨"(MAY_DUCK) 포커스를 요청하고,
+ * 받지 못하면(통화·긴급 안내 중 등) 읽지 않는다. 다 읽으면 반납하고, 포커스를 잃으면 멈춘다.
+ * 첫 음절이 잘리지 않도록 150 ms 뒤에 읽기 시작한다 (Pleos TTS 선행 묵음 가이드. 음성 데이터는 음성 서비스가
+ * 만들어 앞에 묵음을 넣을 수 없으므로 재생을 늦추는 방법을 쓴다).
  * SDK 호출과 상태는 메인 스레드에서만 다룬다
  */
 class PleosSpeaker(private val context: Context) : Speaker {
 
     private val main = Handler(Looper.getMainLooper())
+    private val audioManager = context.getSystemService(AudioManager::class.java)
+    private val attributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build()
+    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+        .setAudioAttributes(attributes)
+        .setOnAudioFocusChangeListener(::onFocusChange, main)
+        .build()
+
     private var tts: TextToSpeech? = null
     private var state = State.IDLE
-    private var speaking = false
     private var pending: String? = null
+
+    // 읽기 상태: 시작을 미뤄 둔 안내, speak()는 불렀지만 아직 시작 신호가 없음, 읽는 중, 포커스를 가짐
+    private var scheduled: String? = null
+    private var awaitingStart = false
+    private var speaking = false
+    private var holdingFocus = false
+
+    private val speakScheduled = Runnable {
+        val text = scheduled ?: return@Runnable
+        scheduled = null
+        awaitingStart = true
+        call("speak") { it.speak(text, true) }
+    }
+    private val focusWatchdog = Runnable { releaseFocus() }
 
     private val events = object : EventListener {
         override fun onReady() = Unit
-        override fun onStart() = onMain { speaking = true }
+        override fun onStart() = onMain {
+            awaitingStart = false
+            speaking = true
+        }
         override fun onUpdatedRms(rms: Double) = Unit
-        override fun onDone() = onMain { speaking = false }
-        override fun onStop() = onMain { speaking = false }
+        override fun onDone() = onMain { finished() }
+        override fun onStop() = onMain { finished() }
         override fun onError(errorType: ErrorType) = onMain {
-            speaking = false
             Log.w(TAG, "읽기 실패: $errorType")
+            awaitingStart = false
+            finished()
         }
     }
 
@@ -52,7 +87,10 @@ class PleosSpeaker(private val context: Context) : Speaker {
 
     override fun stop() = onMain {
         pending = null
+        scheduled = null
+        main.removeCallbacks(speakScheduled)
         if (state == State.READY && speaking) call("stop") { it.stop() }
+        releaseFocus()
     }
 
     private fun connect() {
@@ -81,6 +119,8 @@ class PleosSpeaker(private val context: Context) : Speaker {
         state = State.READY
         call("addEventListener") { it.addEventListener(events) }
         call("setLocale") { it.setLocale(Locale.KOREA) }
+        // 음성 서비스가 알림 용도로 재생하도록 (기본값은 미디어 용도라 음악처럼 취급된다)
+        call("setAudioAttributes") { it.setAudioAttributes(attributes) }
         pending?.let(::speakNow)
         pending = null
     }
@@ -97,8 +137,37 @@ class PleosSpeaker(private val context: Context) : Speaker {
 
     /** 읽는 중이면 멈추고 새 안내를 읽는다 (정차 안내 중에 바로 분류해도 결과를 들려준다) */
     private fun speakNow(text: String) {
+        if (!holdingFocus) {
+            if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                Log.i(TAG, "오디오 포커스를 받지 못해 안내를 읽지 않음")
+                return
+            }
+            holdingFocus = true
+        }
         if (speaking) call("stop") { it.stop() }
-        call("speak") { it.speak(text, true) }
+        scheduled = text
+        main.removeCallbacks(speakScheduled)
+        main.postDelayed(speakScheduled, PREROLL_MS)
+        // 음성 서비스가 끝 신호를 주지 않아도 다른 앱의 소리가 계속 줄어 있지 않도록
+        main.removeCallbacks(focusWatchdog)
+        main.postDelayed(focusWatchdog, MAX_SPEECH_MS)
+    }
+
+    /** 읽기가 끝나거나 멈췄다. 이어서 읽을 안내가 없으면 포커스를 반납한다 */
+    private fun finished() {
+        speaking = false
+        if (scheduled == null && !awaitingStart) releaseFocus()
+    }
+
+    private fun onFocusChange(change: Int) {
+        if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) stop()
+    }
+
+    private fun releaseFocus() {
+        main.removeCallbacks(focusWatchdog)
+        if (!holdingFocus) return
+        holdingFocus = false
+        audioManager.abandonAudioFocusRequest(focusRequest)
     }
 
     private fun call(name: String, block: (TextToSpeech) -> Unit) {
@@ -108,6 +177,10 @@ class PleosSpeaker(private val context: Context) : Speaker {
         } catch (e: Exception) {
             Log.w(TAG, "TextToSpeech.$name 실패: ${e.message}")
             if (state == State.CONNECTING) onConnectFailed(current, ErrorType.UNKNOWN)
+            if (name == "speak") {
+                awaitingStart = false
+                finished()
+            }
         }
     }
 
@@ -120,5 +193,7 @@ class PleosSpeaker(private val context: Context) : Speaker {
     private companion object {
         const val TAG = "DriveLog/Voice"
         const val CONNECT_TIMEOUT_MS = 10_000L
+        const val PREROLL_MS = 150L
+        const val MAX_SPEECH_MS = 30_000L
     }
 }

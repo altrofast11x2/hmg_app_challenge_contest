@@ -20,7 +20,12 @@ abstract class DriveLogDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
 
     companion object {
-        fun create(context: Context): DriveLogDatabase =
-            Room.databaseBuilder(context, DriveLogDatabase::class.java, "drivelog.db").build()
+        private const val NAME = "drivelog.db"
+
+        /** 운행 기록(주소·방문처 포함)은 [passphrase]로 암호화해 저장한다 ([EncryptedOpenHelperFactory]) */
+        fun create(context: Context, passphrase: () -> String): DriveLogDatabase =
+            Room.databaseBuilder(context, DriveLogDatabase::class.java, NAME)
+                .openHelperFactory(EncryptedOpenHelperFactory(context.getDatabasePath(NAME), passphrase))
+                .build()
     }
 }

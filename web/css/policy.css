@@ -1,0 +1,34 @@
+/* 공개 문서(개인정보 처리방침) 페이지. 색·글자·간격은 tokens.css의 drivelog_ 토큰만 쓴다 */
+body {
+  margin: 0;
+  background: var(--drivelog-background);
+  color: var(--drivelog-text-secondary);
+  font: var(--drivelog-web-body);
+}
+
+.policy {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--drivelog-spacing-extra-large) var(--drivelog-spacing-small);
+}
+
+.policy h1 {
+  margin: 0 0 var(--drivelog-spacing-extra-small);
+  color: var(--drivelog-text-primary);
+  font: var(--drivelog-web-headline);
+}
+
+.policy h2 {
+  margin: var(--drivelog-spacing-large) 0 var(--drivelog-spacing-extra-small);
+  color: var(--drivelog-text-primary);
+  font: var(--drivelog-web-title);
+}
+
+.policy p {
+  margin: 0 0 var(--drivelog-spacing-extra-small);
+}
+
+.policy-meta {
+  color: var(--drivelog-text-tertiary);
+  font: var(--drivelog-web-label);
+}

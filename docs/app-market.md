@@ -17,7 +17,7 @@
 | 개인정보 처리 | 수집: 운행 시작·종료 시각, 계기판 거리, 배터리 잔량, 출발·도착 주소, 방문처(내비 도착 정보), VIN 또는 기기 ID, 운행 용도 · 이용: 운행기록부 작성 · 전송: 조직에 연결한 차량만 조직 서버로 · 파기: 비업무는 주소 즉시 삭제, 동의 철회 시 차 안 전부 삭제 |
 | 위치정보 활용 | 활용함 — 운행 시작·종료 두 시점의 주소만 (NaviHelper). 실시간 위치 추적 없음, GPS·FusedLocation 미사용 |
 | 앱 접근 권한 | 차량 데이터: `CAR_DRIVE`(계기판), `CAR_INFO`(VIN), `CAR_ENERGY`(배터리·전비), `NAVI_ROUTE`(주소·도착), AAOS `CAR_POWERTRAIN`(기어·주차 브레이크) · 음성 안내 `TTS_SERVICE` · 인터넷 · 포그라운드 서비스 · 부팅 완료. 카메라·마이크·연락처·저장소 권한 없음 |
-| SDK 추가 권한 | Pleos Playground My Project "자동 운행기록부"의 프로젝트 ID `d2e82bc9-88ab-43b4-90a4-7fc6fa4975ef` (카테고리 비즈니스). 2026-10-28 확인한 SDK 권한 상태: Vehicle 조회 11개 항목·NaviHelper 2개 항목 **사용 가능**, TextToSpeech·SpeechToText·FusedLocation·차량 제어는 **준비 중**(신청 버튼 없음). 이 앱은 TextToSpeech를 차량 안 엔진(ON_DEVICE)으로만 써서 서버 등록이 필요 없지만, 마켓 심사에서 TTS 권한 상태를 묻는다면 partnership@pleos.ai에 확인 |
+| SDK 추가 권한 | Pleos Playground My Project "자동 운행기록부"의 프로젝트 ID `d2e82bc9-88ab-43b4-90a4-7fc6fa4975ef` (카테고리 비즈니스). 2026-10-28 확인한 SDK 권한 상태: Vehicle 조회 11개 항목·NaviHelper 2개 항목 **사용 가능**, TextToSpeech·SpeechToText·FusedLocation·차량 제어는 **준비 중**(신청 버튼 없음). 이 앱은 TextToSpeech를 차량 안 엔진(ON_DEVICE)으로만 써서 서버 등록이 필요 없지만, 마켓 심사에서 TTS 권한 상태를 묻는다면 partnership@pleos.ai에 확인. 공모전 설명회(2026-10-28): 개발 단계에서는 승인 없이 manifest 선언만으로 Vehicle·NaviHelper·STT·TTS·FusedLocation을 쓸 수 있고, 승인된 권한만 심사하는 것은 마켓 배포 때 |
 | 광고성 정보 | 보내지 않음 |
 
 ## 언어별 정보 (한국어)

@@ -34,6 +34,7 @@ class FakeBackendApi : BackendApi {
 
     /** 올리기를 권한 거부(403)로 막는다 (서버에서 연결이 끊긴 뒤의 서버처럼) */
     var forbidUploads = false
+    var failChainHeadOnce = false
 
     /** 다음 토큰 갱신을 이 오류로 거부한다 (기기 계정이 서버에서 지워짐) */
     var refreshFailure: Exception? = null
@@ -84,6 +85,10 @@ class FakeBackendApi : BackendApi {
     override suspend fun upsertChainHead(accessToken: String, head: RemoteChainHead) {
         accept(accessToken)
         forbidIfUnpaired()
+        if (failChainHeadOnce) {
+            failChainHeadOnce = false
+            throw BackendException(BackendException.Kind.NETWORK, "offline")
+        }
         chainHeads[head.vehicleId] = head
     }
 

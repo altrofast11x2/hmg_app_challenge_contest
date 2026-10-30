@@ -96,13 +96,15 @@ class SyncRepository(
             tripCount += batch.trips.size
             changeCount += changes.size
         }
-        if (tripCount + changeCount == 0) return SyncOutcome.UpToDate
+        // 기록 업로드 후 머리 업로드만 실패해도 다음 동기화에서 다시 시도한다.
+        // 아직 미전송 기록이 남았다면 서버에 없는 미래의 머리를 올리지 않는다.
+        if (!trips.pendingUploads(1).isEmpty) return SyncOutcome.Uploaded(tripCount, changeCount)
         // 체인 머리를 마지막에 올려 서버에서 끝부분 누락을 확인할 수 있게 한다
         trips.chainHeads().forEach { head ->
             val remoteHead = RemoteChainHead(head.vehicleId, current.orgId, chainId(head.vehicleId), head.seq, head.hash)
             auth.withToken { api.upsertChainHead(it, remoteHead) }
         }
-        return SyncOutcome.Uploaded(tripCount, changeCount)
+        return if (tripCount + changeCount == 0) SyncOutcome.UpToDate else SyncOutcome.Uploaded(tripCount, changeCount)
     }
 
     /** 확인하지 못하면(인터넷 끊김 등) 연결된 것으로 본다 */

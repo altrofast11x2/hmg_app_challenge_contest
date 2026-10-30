@@ -142,6 +142,19 @@ class SyncRepositoryTest {
     }
 
     @Test
+    fun `체인 머리 업로드가 실패하면 전송할 운행이 없어도 다음 동기화에서 재시도한다`() = runTest {
+        completedTrip("t1", TripPurpose.BUSINESS)
+        pairing.value = demoOrg
+        api.failChainHeadOnce = true
+
+        assertEquals(SyncOutcome.Offline, sync.sync())
+        assertEquals(SyncState.SYNCED, trips.trip("t1").syncState)
+        assertTrue(api.chainHeads.isEmpty())
+        assertEquals(SyncOutcome.UpToDate, sync.sync())
+        assertEquals(2L, api.chainHeads.getValue(VEHICLE_ID).seq)
+    }
+
+    @Test
     fun `인터넷이 없으면 기록을 그대로 두고 다음에 다시 올린다`() = runTest {
         completedTrip("t1")
         pairing.value = demoOrg

@@ -4,6 +4,7 @@ import com.altrostudio.drivelog.data.navi.NaviArrival
 import com.altrostudio.drivelog.data.trip.ChainHeadEntity
 import com.altrostudio.drivelog.data.trip.ChainVerification
 import com.altrostudio.drivelog.data.trip.ChangeField
+import com.altrostudio.drivelog.data.trip.DriverRef
 import com.altrostudio.drivelog.data.trip.PendingUploads
 import com.altrostudio.drivelog.data.trip.SyncState
 import com.altrostudio.drivelog.data.trip.TripChangeEntity
@@ -16,6 +17,9 @@ import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.data.trip.TripStopEntity
 import com.altrostudio.drivelog.data.trip.classifiedAs
 import com.altrostudio.drivelog.data.trip.completed
+import com.altrostudio.drivelog.data.trip.driverLabel
+import com.altrostudio.drivelog.data.trip.normalizedWorkNote
+import com.altrostudio.drivelog.data.trip.withDriver
 import com.altrostudio.drivelog.data.vehicle.EnergyEfficiency
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,6 +109,52 @@ class FakeTripRepository(
         val sealed = TripLedger.sealTrip(trip.completed(at, destination, now()), heads[trip.vehicleId])
         replace(sealed)
         heads[trip.vehicleId] = TripLedger.headOf(sealed)
+        TripLedger.completionChanges(sealed, at, newId).forEach {
+            changes += it
+            heads[trip.vehicleId] = TripLedger.headOf(it)
+        }
+    }
+
+    override suspend fun setDriver(tripId: String, driver: DriverRef?, actor: String, at: Long) = mutex.withLock {
+        val trip = trips.value.firstOrNull { it.id == tripId } ?: return@withLock
+        val updated = trip.withDriver(driver, now())
+        if (updated.driverLabel() == trip.driverLabel() && updated.driverId == trip.driverId) return@withLock
+        if (trip.status == TripStatus.COMPLETED) {
+            val change = TripLedger.newChange(
+                newId(), trip, ChangeField.DRIVER, trip.driverLabel(), updated.driverLabel(), actor, at, heads[trip.vehicleId]
+            )
+            changes += change
+            heads[trip.vehicleId] = TripLedger.headOf(change)
+        }
+        replace(updated)
+    }
+
+    override suspend fun setPlan(tripId: String, purpose: TripPurpose?, workNote: String?) = update(tripId) {
+        if (it.status == TripStatus.COMPLETED) {
+            it
+        } else {
+            it.copy(
+                plannedPurpose = purpose?.takeIf { p -> p != TripPurpose.UNCLASSIFIED },
+                workNote = if (purpose == TripPurpose.PERSONAL) null else normalizedWorkNote(workNote) ?: it.workNote
+            )
+        }
+    }
+
+    override suspend fun setWorkNote(tripId: String, note: String?, actor: String, at: Long): Boolean = mutex.withLock {
+        val trip = trips.value.firstOrNull { it.id == tripId } ?: return@withLock false
+        check(trip.status == TripStatus.COMPLETED)
+        if (trip.purpose == TripPurpose.PERSONAL) return@withLock false
+        val clean = normalizedWorkNote(note)
+        if (clean == trip.workNote) return@withLock true
+        val change = TripLedger.newChange(newId(), trip, ChangeField.WORK_NOTE, trip.workNote, clean, actor, at, heads[trip.vehicleId])
+        changes += change
+        heads[trip.vehicleId] = TripLedger.headOf(change)
+        replace(trip.copy(workNote = clean, syncState = SyncState.PENDING, updatedAt = now()))
+        true
+    }
+
+    override suspend fun latestCompletedTrip(): TripEntity? = mutex.withLock {
+        trips.value.filter { it.status == TripStatus.COMPLETED }.maxWithOrNull(compareBy({ it.endedAt }, { it.startedAt }))
     }
 
     override suspend fun discardTrip(tripId: String) = mutex.withLock {
@@ -179,7 +229,7 @@ class FakeTripRepository(
         changes.replaceAll { if (it.tripId in otherOrgTrips && it.syncState == SyncState.PENDING) it.copy(syncState = SyncState.SYNCED) else it }
         trips.value = trips.value.map {
             when {
-                it.orgId == null -> it.copy(orgId = orgId, driverId = driverId)
+                it.orgId == null -> it.copy(orgId = orgId, driverId = it.driverId ?: driverId)
                 it.id in otherOrgTrips && it.syncState == SyncState.PENDING -> it.copy(syncState = SyncState.SYNCED)
                 else -> it
             }

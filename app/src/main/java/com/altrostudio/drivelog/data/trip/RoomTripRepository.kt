@@ -85,8 +85,57 @@ class RoomTripRepository(
             val sealed = TripLedger.sealTrip(trip.completed(at, destination, now()), dao.chainHead(trip.vehicleId))
             dao.updateTrip(sealed)
             dao.upsertChainHead(TripLedger.headOf(sealed))
+            TripLedger.completionChanges(sealed, at, newId).forEach {
+                dao.insertChange(it)
+                dao.upsertChainHead(TripLedger.headOf(it))
+            }
         }
     }
+
+    override suspend fun setDriver(tripId: String, driver: DriverRef?, actor: String, at: Long) {
+        database.withTransaction {
+            val trip = dao.trip(tripId) ?: return@withTransaction
+            val updated = trip.withDriver(driver, now())
+            if (updated.driverLabel() == trip.driverLabel() && updated.driverId == trip.driverId) return@withTransaction
+            if (trip.status == TripStatus.COMPLETED) {
+                val change = TripLedger.newChange(
+                    newId(), trip, ChangeField.DRIVER, trip.driverLabel(), updated.driverLabel(), actor, at, dao.chainHead(trip.vehicleId)
+                )
+                dao.insertChange(change)
+                dao.upsertChainHead(TripLedger.headOf(change))
+            }
+            dao.updateTrip(updated)
+        }
+    }
+
+    override suspend fun setPlan(tripId: String, purpose: TripPurpose?, workNote: String?) = update(tripId) {
+        if (it.status == TripStatus.COMPLETED) {
+            it
+        } else {
+            it.copy(
+                plannedPurpose = purpose?.takeIf { p -> p != TripPurpose.UNCLASSIFIED },
+                workNote = if (purpose == TripPurpose.PERSONAL) null else normalizedWorkNote(workNote) ?: it.workNote
+            )
+        }
+    }
+
+    override suspend fun setWorkNote(tripId: String, note: String?, actor: String, at: Long): Boolean =
+        database.withTransaction {
+            val trip = dao.trip(tripId) ?: return@withTransaction false
+            check(trip.status == TripStatus.COMPLETED) { "완료된 운행만 업무 내용을 적을 수 있습니다" }
+            if (trip.purpose == TripPurpose.PERSONAL) return@withTransaction false
+            val clean = normalizedWorkNote(note)
+            if (clean == trip.workNote) return@withTransaction true
+            val change = TripLedger.newChange(
+                newId(), trip, ChangeField.WORK_NOTE, trip.workNote, clean, actor, at, dao.chainHead(trip.vehicleId)
+            )
+            dao.insertChange(change)
+            dao.upsertChainHead(TripLedger.headOf(change))
+            dao.updateTrip(trip.copy(workNote = clean, syncState = SyncState.PENDING, updatedAt = now()))
+            true
+        }
+
+    override suspend fun latestCompletedTrip(): TripEntity? = dao.latestCompletedTrip()
 
     override suspend fun discardTrip(tripId: String) {
         database.withTransaction {

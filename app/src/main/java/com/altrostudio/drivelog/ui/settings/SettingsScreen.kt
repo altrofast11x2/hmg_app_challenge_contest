@@ -28,7 +28,7 @@ import com.altrostudio.drivelog.ui.components.DriveLogCard
 import com.altrostudio.drivelog.ui.components.ScreenScaffold
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
-/** 설정: 차량 정보, 조직 연결, 음성 안내, 개인정보 처리방침, 오픈소스 라이선스, 동의 철회. A08 명세가 나오면 명세대로 바꾼다 */
+/** 설정: 차량 정보, 조직 연결, 음성 안내, 차 안 연동, 개인정보 처리방침, 오픈소스 라이선스, 동의 철회. A08 명세가 나오면 명세대로 바꾼다 */
 @Composable
 fun SettingsScreen(
     vin: String?,
@@ -36,6 +36,7 @@ fun SettingsScreen(
     canConnect: Boolean,
     voiceGuidance: Boolean,
     onVoiceGuidanceChange: (Boolean) -> Unit,
+    cabin: CabinToggles,
     onBack: () -> Unit,
     onConnect: () -> Unit,
     onOpenPrivacy: () -> Unit,
@@ -76,7 +77,26 @@ fun SettingsScreen(
                     )
                 }
             }
-            VoiceGuidanceCard(voiceGuidance, onVoiceGuidanceChange)
+            ToggleCard(stringResource(R.string.settings_voice), stringResource(R.string.settings_voice_description), voiceGuidance, onVoiceGuidanceChange)
+            Text(stringResource(R.string.settings_cabin), style = typography.label, color = colors.textSecondary)
+            ToggleCard(
+                stringResource(R.string.settings_auto_comfort),
+                stringResource(R.string.settings_auto_comfort_description),
+                cabin.autoComfort,
+                cabin.onAutoComfortChange
+            )
+            ToggleCard(
+                stringResource(R.string.settings_ambient_cue),
+                stringResource(R.string.settings_ambient_cue_description),
+                cabin.ambientCue,
+                cabin.onAmbientCueChange
+            )
+            ToggleCard(
+                stringResource(R.string.settings_exit_check),
+                stringResource(R.string.settings_exit_check_description),
+                cabin.exitCheck,
+                cabin.onExitCheckChange
+            )
             DriveLogButton(stringResource(R.string.settings_privacy), onOpenPrivacy, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
             DriveLogButton(stringResource(R.string.settings_licenses), onOpenLicenses, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
             DriveLogButton(stringResource(R.string.settings_withdraw), { confirmingWithdraw = true }, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
@@ -102,9 +122,19 @@ fun SettingsScreen(
     }
 }
 
+/** 설정의 차 안 연동 스위치 세 개 */
+data class CabinToggles(
+    val autoComfort: Boolean,
+    val ambientCue: Boolean,
+    val exitCheck: Boolean,
+    val onAutoComfortChange: (Boolean) -> Unit,
+    val onAmbientCueChange: (Boolean) -> Unit,
+    val onExitCheckChange: (Boolean) -> Unit
+)
+
 /** 카드 전체를 눌러 켜고 끈다 (스위치만 누르기에는 차 화면에서 작다) */
 @Composable
-private fun VoiceGuidanceCard(enabled: Boolean, onChange: (Boolean) -> Unit) {
+private fun ToggleCard(title: String, description: String, enabled: Boolean, onChange: (Boolean) -> Unit) {
     val dimens = DriveLogTheme.dimens
     val colors = DriveLogTheme.colors
     DriveLogCard(
@@ -115,8 +145,8 @@ private fun VoiceGuidanceCard(enabled: Boolean, onChange: (Boolean) -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
-                Text(stringResource(R.string.settings_voice), style = DriveLogTheme.typography.title, color = colors.textPrimary)
-                Text(stringResource(R.string.settings_voice_description), style = DriveLogTheme.typography.body, color = colors.textSecondary)
+                Text(title, style = DriveLogTheme.typography.title, color = colors.textPrimary)
+                Text(description, style = DriveLogTheme.typography.body, color = colors.textSecondary)
             }
             Switch(
                 checked = enabled,

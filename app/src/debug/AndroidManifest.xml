@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 제어 시험 화면(ControlProbeActivity)용. debug 빌드에만 들어간다 -->
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_LIGHTS" />
+    <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_CLIMATE" />
+    <uses-permission android:name="pleos.car.permission.CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_DOORS" />
+
     <application>
         <!-- SDK 연결 확인 화면. 기어 D에서도 값 변화를 보려고 주의 분산 최적화로 선언하고, 버튼은 주행 중에 잠근다 -->
         <activity
@@ -17,6 +29,12 @@
                 android:name="distractionOptimized"
                 android:value="true" />
         </activity>
+
+        <!-- 차량 제어 시험. adb am start로만 실행한다 (런처에 보이지 않음) -->
+        <activity
+            android:name=".debug.ControlProbeActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 
 </manifest>

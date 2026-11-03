@@ -1,32 +1,52 @@
 package com.altrostudio.drivelog
 
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import com.altrostudio.drivelog.data.DriveLogDatabase
 import com.altrostudio.drivelog.data.export.CsvFileSaver
 import com.altrostudio.drivelog.data.navi.NaviDataSource
 import com.altrostudio.drivelog.data.navi.PleosNaviDataSource
 import com.altrostudio.drivelog.data.remote.DeviceAuth
 import com.altrostudio.drivelog.data.remote.OkHttpBackendApi
+import com.altrostudio.drivelog.data.remote.RemoteVehicleStatus
 import com.altrostudio.drivelog.data.remote.SupabaseConfig
 import com.altrostudio.drivelog.data.settings.AppPreferences
 import com.altrostudio.drivelog.data.settings.VehicleIdentity
+import com.altrostudio.drivelog.data.sync.CabinSync
 import com.altrostudio.drivelog.data.sync.PairingRepository
+import com.altrostudio.drivelog.data.sync.RoomCabinSyncStore
 import com.altrostudio.drivelog.data.sync.ShareLinkRepository
 import com.altrostudio.drivelog.data.sync.SyncRepository
 import com.altrostudio.drivelog.data.sync.SyncScheduler
 import com.altrostudio.drivelog.data.trip.RoomTripRepository
 import com.altrostudio.drivelog.data.trip.TripRepository
+import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.data.update.WebLatestVersionSource
+import com.altrostudio.drivelog.data.vehicle.CabinControl
+import com.altrostudio.drivelog.data.vehicle.NoCabinControl
+import com.altrostudio.drivelog.data.vehicle.PleosCabinControl
 import com.altrostudio.drivelog.data.vehicle.PleosVehicleDataSource
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
 import com.altrostudio.drivelog.data.voice.PleosSpeaker
+import com.altrostudio.drivelog.domain.cabin.AmbientPalette
+import com.altrostudio.drivelog.domain.cabin.CabinAssistant
+import com.altrostudio.drivelog.domain.cabin.VehicleStatusReport
 import com.altrostudio.drivelog.domain.consent.ConsentManager
+import com.altrostudio.drivelog.domain.driver.DriverProfiles
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.domain.update.UpdateChecker
+import com.altrostudio.drivelog.domain.voice.GleoActions
 import com.altrostudio.drivelog.domain.voice.VoiceGuide
+import com.altrostudio.drivelog.ui.theme.DriveLogDarkColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** 앱 전체에서 하나씩만 쓰는 객체를 만든다 (수동 의존성 주입) */
 class AppContainer(context: Context) {
@@ -36,7 +56,12 @@ class AppContainer(context: Context) {
 
     val preferences = AppPreferences(appContext)
 
-    val vehicle: VehicleDataSource by lazy { PleosVehicleDataSource(appContext) }
+    private val pleosVehicle by lazy { PleosVehicleDataSource(appContext) }
+
+    val vehicle: VehicleDataSource get() = pleosVehicle
+
+    /** 차량 제어 (공조·시트 열선·무드등·창문·실내등·문 잠금). 차량 OS가 아니면 아무것도 하지 않는다 */
+    val cabin: CabinControl by lazy { if (pleosVehicle.isAutomotive) PleosCabinControl(pleosVehicle.sdk) else NoCabinControl }
 
     val navi: NaviDataSource by lazy { PleosNaviDataSource(appContext) }
 
@@ -59,8 +84,21 @@ class AppContainer(context: Context) {
         PairingRepository(backendApi, deviceAuth, preferences, vehicleIdentity::vehicleId, trips, backendConfig.isConfigured)
     }
 
+    private val cabinSync by lazy { CabinSync(backendApi, RoomCabinSyncStore(database.driverDao(), preferences)) }
+
     val sync by lazy {
-        SyncRepository(backendApi, deviceAuth, pairing.pairing, trips, vehicleIdentity::vehicleId, onUnpaired = { pairing.forget() })
+        SyncRepository(
+            backendApi,
+            deviceAuth,
+            pairing.pairing,
+            trips,
+            vehicleIdentity::vehicleId,
+            onUnpaired = {
+                pairing.forget()
+                forgetDrivers()
+            },
+            cabinSync = cabinSync
+        )
     }
 
     val shareLinks by lazy {
@@ -80,6 +118,37 @@ class AppContainer(context: Context) {
         UpdateChecker(WebLatestVersionSource(appContext.getString(R.string.web_url))::fetch, installed, preferences)
     }
 
+    /** 공용차 운전자 (조직 명단, 지금 운전자, 맞춤 설정) */
+    val drivers by lazy {
+        val paired = pairing.pairing.map { it != null }.stateIn(appScope, SharingStarted.Eagerly, pairing.pairing.value != null)
+        DriverProfiles(database.driverDao(), cabin, trips, preferences, paired, appScope)
+    }
+
+    /** 무드등 신호·하차 점검·운전자 설정 기억 */
+    val cabinAssistant by lazy {
+        val colors = DriveLogDarkColors
+        CabinAssistant(
+            cabin = cabin,
+            vehicle = vehicle,
+            drivers = drivers,
+            settings = preferences,
+            // 무드등 색은 디자인 토큰의 용도 색과 같다 (분류 대기는 경고색)
+            palette = AmbientPalette(
+                pending = colors.statusWarning.toArgb() and RGB,
+                commute = colors.purposeCommuteBackground.toArgb() and RGB,
+                business = colors.purposeBusinessBackground.toArgb() and RGB,
+                personal = colors.purposePersonalBackground.toArgb() and RGB
+            ),
+            say = voiceGuide::say,
+            report = ::queueStatusReport,
+            onComfortChanged = { syncScheduler.requestSync() },
+            scope = appScope
+        )
+    }
+
+    /** Gleo AI 음성 명령 (운행 용도·업무 내용 기록, 운전자 바꾸기, 운행 요약) */
+    val gleoActions by lazy { GleoActions(appContext, recorder, trips, drivers, consent.consentGiven) }
+
     val recorder by lazy {
         TripRecorder(
             vehicle = vehicle,
@@ -88,7 +157,58 @@ class AppContainer(context: Context) {
             vehicleId = vehicleIdentity::vehicleId,
             parkedTimeoutMs = { preferences.parkedTimeoutMs },
             scope = appScope,
-            announce = voiceGuide::announce
+            announce = voiceGuide::announce,
+            currentDriver = { drivers.currentRef() },
+            driverNeedsConfirmation = { drivers.needsConfirmation() }
         )
+    }
+
+    /** 앱이 시작될 때: 동기화 예약, 조직에 새로 연결되면 운전자 명단을 바로 받는다 */
+    fun startBackground() {
+        syncScheduler.start()
+        var wasPaired = pairing.pairing.value != null
+        pairing.pairing.onEach { current ->
+            if (current != null && !wasPaired) {
+                cabinSync.refreshRosterSoon()
+                syncScheduler.requestSync()
+            }
+            wasPaired = current != null
+        }.launchIn(appScope)
+        // 앱을 켤 때 명단·맞춤 설정·차량 상태를 한 번 맞춘다 (올릴 운행이 없어도)
+        if (wasPaired) syncScheduler.requestSync()
+    }
+
+    /** 동의한 뒤 기록 서비스가 부른다: 운행 감지와 차 안 연동을 함께 시작한다 */
+    fun startRecording() {
+        recorder.start()
+        cabinAssistant.start(recorder.moments) { trips.activeTrip()?.status == TripStatus.PARKED }
+    }
+
+    /** 조직 연결이 끊기면 운전자 명단과 고른 운전자를 잊는다 (다른 기업의 직원 이름을 남기지 않는다) */
+    private fun forgetDrivers() {
+        drivers.forget()
+        appScope.launch { database.driverDao().deleteAll() }
+    }
+
+    /** 조직에 연결한 차만 관리자 웹 차량 현황에 올린다 */
+    private suspend fun queueStatusReport(report: VehicleStatusReport) {
+        if (pairing.pairing.value == null) return
+        preferences.pendingStatus = RemoteVehicleStatus(
+            reportedAtMs = report.reportedAt,
+            tripId = report.tripId,
+            driverId = report.driverId,
+            driverName = report.driverName,
+            odometerKm = report.odometerKm,
+            socPercent = report.socPercent,
+            openWindows = report.openWindows.map { it.name }.sorted(),
+            doorsLocked = report.doorsLocked,
+            cabinLightOn = report.cabinLightOn,
+            tidied = report.tidied.map { it.name }.sorted()
+        )
+        syncScheduler.requestSync()
+    }
+
+    private companion object {
+        const val RGB = 0xFFFFFF
     }
 }

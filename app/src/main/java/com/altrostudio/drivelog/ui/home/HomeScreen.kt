@@ -38,7 +38,12 @@ import com.altrostudio.drivelog.R
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.distanceKm
+import com.altrostudio.drivelog.domain.cabin.ExitCheck
+import com.altrostudio.drivelog.domain.cabin.TidyItem
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
+import com.altrostudio.drivelog.ui.cabin.DriverCard
+import com.altrostudio.drivelog.ui.cabin.DriverCardState
+import com.altrostudio.drivelog.ui.cabin.ExitCheckBanner
 import com.altrostudio.drivelog.ui.components.ButtonKind
 import com.altrostudio.drivelog.ui.components.DriveLogButton
 import com.altrostudio.drivelog.ui.components.DriveLogCard
@@ -70,7 +75,8 @@ sealed interface SyncChipState {
 
 /**
  * A03 홈 (design/specs/A03-home.md). 정차 중에만 보인다.
- * 맨 위에 미분류 운행 배너, 그 아래 이번 달 카드와 최근 운행 카드.
+ * 맨 위에 미분류 운행 배너, 하차 전 확인 배너, 공용차 운전자 카드(조직에 연결한 차), 그 아래 이번 달 카드와 최근 운행 카드.
+ * 하차 전 확인·운전자 카드는 A03 명세에 없어 공통 컴포넌트와 토큰으로 만들었다 (design/REQUESTS.md 2026-11-03)
  */
 @Composable
 fun HomeScreen(
@@ -82,7 +88,13 @@ fun HomeScreen(
     onClassifyNow: () -> Unit,
     onOpenLogbook: () -> Unit,
     onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    driverCard: DriverCardState? = null,
+    exitCheck: ExitCheck? = null,
+    onConfirmDriver: () -> Unit = {},
+    onChangeDriver: () -> Unit = {},
+    onTidy: (Set<TidyItem>) -> Unit = {},
+    onDismissExitCheck: () -> Unit = {}
 ) {
     val dimens = DriveLogTheme.dimens
     ScreenFrame(modifier = modifier) { portrait ->
@@ -94,6 +106,8 @@ fun HomeScreen(
         }
         val banner: @Composable () -> Unit = {
             if (unclassifiedTrips.isNotEmpty()) UnclassifiedBanner(unclassifiedTrips, portrait, onClassifyNow)
+            if (exitCheck != null) ExitCheckBanner(exitCheck, portrait, onTidy, onDismissExitCheck)
+            if (driverCard != null) DriverCard(driverCard, portrait, onConfirmDriver, onChangeDriver)
         }
         if (portrait) {
             Column(

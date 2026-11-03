@@ -46,7 +46,7 @@ class ConsentManager(
     }
 
     companion object {
-        /** 동의문 내용을 바꾸면 올려서 다시 동의받는다. 2: 조직 연결 시 서버 제공 내용 추가 */
-        const val CONSENT_VERSION = 2
+        /** 동의문 내용을 바꾸면 올려서 다시 동의받는다. 2: 조직 연결 시 서버 제공 내용 추가, 3: 운전자·차량 맞춤 설정·차 안 상태·음성 업무 내용 (0.3.0) */
+        const val CONSENT_VERSION = 3
     }
 }

@@ -3,11 +3,16 @@ package com.altrostudio.drivelog.data.settings
 import android.content.Context
 import androidx.core.content.edit
 import com.altrostudio.drivelog.data.remote.DeviceSession
+import com.altrostudio.drivelog.data.remote.RemoteVehicleStatus
 import com.altrostudio.drivelog.data.security.KeystoreCipher
 import com.altrostudio.drivelog.data.security.SecretStore
 import com.altrostudio.drivelog.data.security.StringCipher
+import com.altrostudio.drivelog.data.sync.CabinSyncPrefs
 import com.altrostudio.drivelog.data.sync.Pairing
 import com.altrostudio.drivelog.data.sync.SyncSettings
+import com.altrostudio.drivelog.data.vehicle.AmbientLight
+import com.altrostudio.drivelog.domain.cabin.CabinSettings
+import com.altrostudio.drivelog.domain.driver.DriverSettings
 import com.altrostudio.drivelog.domain.update.UpdateSettings
 import com.altrostudio.drivelog.domain.voice.VoiceSettings
 import kotlinx.serialization.decodeFromString
@@ -19,7 +24,8 @@ import java.security.SecureRandom
  * 기기에 저장하는 간단한 설정.
  * 차량 ID·VIN·기기 계정 토큰·조직 연결·DB 키는 Keystore 키로 암호화해 저장한다 (Pleos 앱 보안 가이드)
  */
-class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) : SyncSettings, VoiceSettings, UpdateSettings {
+class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) :
+    SyncSettings, VoiceSettings, UpdateSettings, DriverSettings, CabinSettings, CabinSyncPrefs {
 
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     private val secrets = SecretStore(cipher, read = { prefs.getString(it, null) }, write = { key, value -> prefs.edit { putString(key, value) } })
@@ -75,6 +81,51 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
         get() = prefs.getBoolean(KEY_PAIRING_SKIPPED, false)
         set(value) = prefs.edit { putBoolean(KEY_PAIRING_SKIPPED, value) }
 
+    // ─── 공용차 운전자 ──────────────────────────────────────────
+
+    override var currentDriverId: String?
+        get() = prefs.getString(KEY_CURRENT_DRIVER, null)
+        set(value) = prefs.edit { putString(KEY_CURRENT_DRIVER, value) }
+
+    override var driverConfirmedAt: Long
+        get() = prefs.getLong(KEY_DRIVER_CONFIRMED_AT, 0L)
+        set(value) = prefs.edit { putLong(KEY_DRIVER_CONFIRMED_AT, value) }
+
+    override var lastTripEndedAt: Long
+        get() = prefs.getLong(KEY_LAST_TRIP_ENDED_AT, 0L)
+        set(value) = prefs.edit { putLong(KEY_LAST_TRIP_ENDED_AT, value) }
+
+    override var autoComfort: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_COMFORT, true)
+        set(value) = prefs.edit { putBoolean(KEY_AUTO_COMFORT, value) }
+
+    // ─── 무드등 신호·하차 점검 ─────────────────────────────────────
+
+    override var ambientCue: Boolean
+        get() = prefs.getBoolean(KEY_AMBIENT_CUE, true)
+        set(value) = prefs.edit { putBoolean(KEY_AMBIENT_CUE, value) }
+
+    override var exitCheck: Boolean
+        get() = prefs.getBoolean(KEY_EXIT_CHECK, true)
+        set(value) = prefs.edit { putBoolean(KEY_EXIT_CHECK, value) }
+
+    /** "색|밝기|켜짐" (값이 없으면 빈칸) */
+    override var savedAmbient: AmbientLight?
+        get() = prefs.getString(KEY_SAVED_AMBIENT, null)?.split('|')?.takeIf { it.size == 3 }?.let { (color, brightness, on) ->
+            AmbientLight(color.toIntOrNull(), brightness.toIntOrNull(), on.toBooleanStrictOrNull())
+        }
+        set(value) = prefs.edit {
+            putString(KEY_SAVED_AMBIENT, value?.let { listOf(it.color ?: "", it.brightness ?: "", it.on ?: "").joinToString("|") })
+        }
+
+    override var pendingStatus: RemoteVehicleStatus?
+        get() = secrets.get(KEY_PENDING_STATUS)?.let { runCatching { json.decodeFromString<RemoteVehicleStatus>(it) }.getOrNull() }
+        set(value) = secrets.put(KEY_PENDING_STATUS, value?.let { json.encodeToString(it) })
+
+    override var rosterFetchedAt: Long
+        get() = prefs.getLong(KEY_ROSTER_FETCHED_AT, 0L)
+        set(value) = prefs.edit { putLong(KEY_ROSTER_FETCHED_AT, value) }
+
     /**
      * 운행 기록 DB 암호화 키 (32바이트 난수의 16진수). 처음 부를 때 만든다.
      * 동의 철회로 설정을 지워도 남긴다 (DB 파일은 남고 내용만 지워지므로, 키를 지우면 다시 열 수 없다)
@@ -110,6 +161,15 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
         private const val KEY_DEVICE_SESSION = "device_session"
         private const val KEY_PAIRING = "pairing"
         private const val KEY_PAIRING_SKIPPED = "pairing_skipped"
+        private const val KEY_CURRENT_DRIVER = "current_driver"
+        private const val KEY_DRIVER_CONFIRMED_AT = "driver_confirmed_at"
+        private const val KEY_LAST_TRIP_ENDED_AT = "last_trip_ended_at"
+        private const val KEY_AUTO_COMFORT = "auto_comfort"
+        private const val KEY_AMBIENT_CUE = "ambient_cue"
+        private const val KEY_EXIT_CHECK = "exit_check"
+        private const val KEY_SAVED_AMBIENT = "saved_ambient"
+        private const val KEY_PENDING_STATUS = "pending_status"
+        private const val KEY_ROSTER_FETCHED_AT = "roster_fetched_at"
         private val json = Json { ignoreUnknownKeys = true }
     }
 }

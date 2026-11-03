@@ -25,7 +25,13 @@ import com.altrostudio.drivelog.ui.theme.DriveLogTheme
  * A04 주행 중 명세가 나오면 이 화면을 명세대로 바꾼다.
  */
 @Composable
-fun DrivingScreen(drivingTrip: TripEntity?, odometerKm: Float?, waitingMessage: String?, modifier: Modifier = Modifier) {
+fun DrivingScreen(
+    drivingTrip: TripEntity?,
+    odometerKm: Float?,
+    waitingMessage: String?,
+    modifier: Modifier = Modifier,
+    driverName: String? = null
+) {
     val colors = DriveLogTheme.colors
     val typography = DriveLogTheme.typography
     ScreenFrame(modifier = modifier, background = colors.backgroundDriving) {
@@ -54,6 +60,9 @@ fun DrivingScreen(drivingTrip: TripEntity?, odometerKm: Float?, waitingMessage: 
                         style = typography.body,
                         color = colors.textSecondary
                     )
+                    (drivingTrip.driverName ?: driverName)?.let {
+                        Text(stringResource(R.string.driving_driver, it), style = typography.body, color = colors.textSecondary)
+                    }
                     Text(stringResource(R.string.driving_hint), style = typography.body, color = colors.textTertiary, textAlign = TextAlign.Center)
                 }
                 else -> {

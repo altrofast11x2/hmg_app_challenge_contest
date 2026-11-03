@@ -20,5 +20,11 @@ enum class ChangeField(val isLocation: Boolean) {
     PURPOSE(false),
     VISIT_NOTE(true),
     START_ODOMETER(false),
-    END_ODOMETER(false)
+    END_ODOMETER(false),
+
+    /** 운행기록부 ④사용자(성명·부서). 운행을 마칠 때 남기고, 나중에 바꾸면 다시 남긴다 */
+    DRIVER(false),
+
+    /** 업무 내용(음성 업무 일지). 거래처 이름 같은 내용이 들어가므로 비업무로 바뀌면 방문처처럼 지운다 */
+    WORK_NOTE(true)
 }

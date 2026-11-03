@@ -25,6 +25,7 @@ import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.domain.update.LatestVersion
 import com.altrostudio.drivelog.ui.components.ButtonKind
 import com.altrostudio.drivelog.ui.components.DriveLogButton
+import com.altrostudio.drivelog.ui.cabin.DriverPickerDialog
 import com.altrostudio.drivelog.ui.classify.ClassificationScreen
 import com.altrostudio.drivelog.ui.connect.ConnectScreen
 import com.altrostudio.drivelog.ui.connect.ConnectViewModel
@@ -36,6 +37,7 @@ import com.altrostudio.drivelog.ui.logbook.LogbookScreen
 import com.altrostudio.drivelog.ui.logbook.LogbookViewModel
 import com.altrostudio.drivelog.ui.settings.LicensesScreen
 import com.altrostudio.drivelog.ui.settings.PrivacyPolicyScreen
+import com.altrostudio.drivelog.ui.settings.CabinToggles
 import com.altrostudio.drivelog.ui.settings.SettingsScreen
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 
@@ -66,6 +68,9 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
     // 홈의 [지금 분류하기]: 지금 분류 중인 미분류 운행
     var classifyingTripId by rememberSaveable { mutableStateOf<String?>(null) }
     val connectViewModel: ConnectViewModel = viewModel(factory = ConnectViewModel.Factory)
+    val driverCard by viewModel.driverCard.collectAsStateWithLifecycle()
+    val exitCheck by viewModel.exitCheck.collectAsStateWithLifecycle()
+    var pickingDriver by rememberSaveable { mutableStateOf(false) }
     val activity = LocalActivity.current
 
     BackHandler(enabled = !state.drivingRestricted && state.consentGiven && destination.parent != null) {
@@ -84,6 +89,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
         state.drivingRestricted -> DrivingScreen(
             drivingTrip = state.drivingTrip,
             odometerKm = state.odometerKm,
+            driverName = driverCard?.current?.name,
             waitingMessage = when {
                 !state.consentGiven -> stringResource(R.string.driving_wait_consent)
                 onboardingConnect || destination == Destination.CONNECT -> stringResource(R.string.driving_wait_connect)
@@ -156,7 +162,13 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                 onClassifyNow = { classifyingTripId = state.unclassifiedTrips.firstOrNull()?.id },
                 onOpenLogbook = { destination = Destination.LOGBOOK },
                 onOpenSettings = { destination = Destination.SETTINGS },
-                modifier = modifier
+                modifier = modifier,
+                driverCard = driverCard,
+                exitCheck = exitCheck,
+                onConfirmDriver = viewModel::confirmDriver,
+                onChangeDriver = { pickingDriver = true },
+                onTidy = viewModel::tidyUp,
+                onDismissExitCheck = viewModel::dismissExitCheck
             )
             Destination.LOGBOOK -> {
                 val driverName = state.pairing?.driverName ?: stringResource(R.string.default_driver_name)
@@ -178,6 +190,9 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             }
             Destination.SETTINGS -> {
                 var voiceGuidance by rememberSaveable { mutableStateOf(viewModel.voiceGuidance) }
+                var autoComfort by rememberSaveable { mutableStateOf(viewModel.autoComfort) }
+                var ambientCue by rememberSaveable { mutableStateOf(viewModel.ambientCue) }
+                var exitCheckOn by rememberSaveable { mutableStateOf(viewModel.exitCheckEnabled) }
                 SettingsScreen(
                     vin = viewModel.vin,
                     orgName = state.pairing?.orgName,
@@ -187,6 +202,23 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                         voiceGuidance = it
                         viewModel.setVoiceGuidance(it)
                     },
+                    cabin = CabinToggles(
+                        autoComfort = autoComfort,
+                        ambientCue = ambientCue,
+                        exitCheck = exitCheckOn,
+                        onAutoComfortChange = {
+                            autoComfort = it
+                            viewModel.setAutoComfort(it)
+                        },
+                        onAmbientCueChange = {
+                            ambientCue = it
+                            viewModel.setAmbientCue(it)
+                        },
+                        onExitCheckChange = {
+                            exitCheckOn = it
+                            viewModel.setExitCheckEnabled(it)
+                        }
+                    ),
                     onBack = { destination = Destination.HOME },
                     onConnect = { destination = Destination.CONNECT },
                     onOpenPrivacy = { destination = Destination.PRIVACY },
@@ -202,6 +234,20 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             Destination.PRIVACY -> PrivacyPolicyScreen(onBack = { destination = Destination.SETTINGS }, modifier = modifier)
             Destination.LICENSES -> LicensesScreen(onBack = { destination = Destination.SETTINGS }, modifier = modifier)
         }
+    }
+
+    // 운전자 고르기 (정차 중 홈에서만)
+    val card = driverCard
+    if (pickingDriver && card != null && !state.drivingRestricted && destination == Destination.HOME) {
+        DriverPickerDialog(
+            roster = card.roster,
+            currentId = card.current?.id,
+            onSelect = { driver ->
+                pickingDriver = false
+                viewModel.selectDriver(driver.id)
+            },
+            onDismiss = { pickingDriver = false }
+        )
     }
 
     // 새 버전 안내는 정차 중 홈에서만 띄운다 (분류·연결 중에는 끼어들지 않는다)

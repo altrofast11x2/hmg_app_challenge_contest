@@ -145,7 +145,7 @@
 
     <!-- 개인정보 처리방침 -->
     <string name="privacy_title">개인정보 처리방침</string>
-    <string name="privacy_body">AltroStudio(이하 개발사)는 자동 운행기록부 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 차량 안의 기록과 설정(차량 식별번호, 로그인 정보 포함)은 이 차량의 보안 저장소(Android Keystore) 키로 암호화해 보관합니다. 비업무로 분류한 운행은 분류하는 즉시 주소와 도착 정보를 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다. 조직에 연결한 차량이면 서버와의 연결도 끊어 그 뒤로는 기록을 보내지 않습니다. 이미 서버에 올라간 기록은 5항에 따릅니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)이 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n조직에 연결한 차량에서 운행기록부의 [휴대폰으로 받기]를 누르면, 고른 기간의 운행 기록을 10분 동안 열 수 있는 주소(QR 코드)를 만듭니다. 그 10분 동안은 주소를 아는 사람 누구나 그 기록을 볼 수 있으니 다른 사람에게 보여 주지 마세요.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람할 수 있습니다. 조직에 연결하지 않은 차량은 CSV로 내보내고, 연결한 차량은 [휴대폰으로 받기]로 휴대폰에서 받을 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 음성 안내와 업데이트 확인\n음성 안내는 차량 안의 음성 엔진(Pleos TextToSpeech)으로 읽어, 읽는 문장이 차 밖으로 나가지 않습니다. 새 버전 안내를 위해 하루에 한 번 개발사 웹사이트에서 최신 버전 번호만 받아 오며, 이때 운행 기록이나 차량 정보는 보내지 않습니다.\n\n9. 문의\nAltroStudio · kazinobel9807@gmail.com</string>
+    <string name="privacy_body">AltroStudio(이하 개발사)는 자동 운행기록부 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도. 조직에 연결한 차량에서는 운전자의 이름·부서, 운전자별 차량 맞춤 설정(공조 온도, 시트 열선·통풍, 무드등 색), 운행을 마칠 때의 차 안 상태(창문 열림, 실내등, 문 잠김, 배터리 잔량), Gleo AI에 말한 업무 내용도 처리합니다.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 운전자 명단은 조직 서버에서 받습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람. 공용차를 쓰는 운전자별 차량 맞춤, 다음 운전자를 위한 차량 상태 확인.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 차량 안의 기록과 설정(차량 식별번호, 로그인 정보 포함)은 이 차량의 보안 저장소(Android Keystore) 키로 암호화해 보관합니다. 비업무로 분류한 운행은 분류하는 즉시 주소, 도착 정보, 업무 내용을 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다. 조직에 연결한 차량이면 서버와의 연결도 끊어 그 뒤로는 기록을 보내지 않습니다. 이미 서버에 올라간 기록은 5항에 따릅니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)과 운전자별 맞춤 설정, 운행을 마칠 때의 차 안 상태가 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 맞춤 설정은 같은 조직의 다른 공용차에서 그 운전자를 고를 때도 쓰입니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n조직에 연결한 차량에서 운행기록부의 [휴대폰으로 받기]를 누르면, 고른 기간의 운행 기록을 10분 동안 열 수 있는 주소(QR 코드)를 만듭니다. 그 10분 동안은 주소를 아는 사람 누구나 그 기록을 볼 수 있으니 다른 사람에게 보여 주지 마세요.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람할 수 있습니다. 조직에 연결하지 않은 차량은 CSV로 내보내고, 연결한 차량은 [휴대폰으로 받기]로 휴대폰에서 받을 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 음성 안내와 업데이트 확인\n음성 안내는 차량 안의 음성 엔진(Pleos TextToSpeech)으로 읽어, 읽는 문장이 차 밖으로 나가지 않습니다. Gleo AI 음성 명령으로 운행 용도·업무 내용·운전자를 기록할 수 있습니다. 음성 인식은 차량의 Gleo AI가 하고, 이 앱은 인식된 글자(용도, 업무 내용, 이름)만 받습니다. 새 버전 안내를 위해 하루에 한 번 개발사 웹사이트에서 최신 버전 번호만 받아 오며, 이때 운행 기록이나 차량 정보는 보내지 않습니다.\n\n9. 차량 제어\n운전자를 고르면 그분의 설정으로 공조 온도·시트 열선·무드등을 맞추고, 정차 후 용도를 기다릴 때와 고른 뒤 잠깐 무드등 색을 바꿨다가 원래대로 되돌립니다. 창문 닫기·실내등 끄기·문 잠그기는 정차 중 운전자가 화면에서 직접 누를 때만 합니다. 설정에서 각각 끌 수 있습니다.\n\n10. 문의\nAltroStudio · kazinobel9807@gmail.com</string>
 
     <!-- 오픈소스 라이선스 -->
     <string name="licenses_title">오픈소스 라이선스</string>
@@ -182,6 +182,10 @@
         <item>배터리 잔량</item>
         <item>차량 식별</item>
         <item>운행 용도</item>
+        <item>운전자</item>
+        <item>차량 맞춤 설정</item>
+        <item>차 안 상태</item>
+        <item>업무 내용</item>
     </string-array>
     <string-array name="consent_collected_values">
         <item>운행 전·후 계기판 누적거리 (차량에서 직접 읽음)</item>
@@ -190,24 +194,32 @@
         <item>운행 전·후 남은 비율 (전기차)</item>
         <item>차대번호(VIN). 확인되지 않으면 앱이 만든 기기 ID</item>
         <item>출퇴근 / 일반업무 / 비업무 (직접 선택)</item>
+        <item>조직에 연결한 차량에서 고른 운전자의 이름·부서 (운행기록부 사용자 칸)</item>
+        <item>운전자별 공조 온도·시트 열선·무드등 색 (그분이 마지막으로 쓴 값을 기억해 다음에 맞춰요)</item>
+        <item>운행을 마칠 때 창문·실내등·문 잠김 상태 (하차 점검)</item>
+        <item>Gleo AI에 말한 업무 내용 (비업무로 고르면 바로 지워요)</item>
     </string-array>
     <string-array name="consent_not_collected_labels">
         <item>실시간 위치</item>
         <item>비업무 주소</item>
         <item>주행 속도</item>
+        <item>음성</item>
     </string-array>
     <string-array name="consent_not_collected_values">
         <item>이동 중 위치와 경로는 저장하지 않아요</item>
         <item>비업무 운행은 주소 없이 거리만 남겨요</item>
         <item>속도는 읽지 않아요</item>
+        <item>목소리는 차량의 Gleo AI가 처리하고, 이 앱은 받아 적은 글자만 받아요</item>
     </string-array>
     <string-array name="consent_purpose_labels">
         <item>운행기록부</item>
         <item>조직 열람</item>
+        <item>공용차 관리</item>
     </string-array>
     <string-array name="consent_purpose_values">
         <item>업무용 승용차 운행기록부 작성과 열람</item>
         <item>관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우, 그 조직 관리자의 열람과 취합</item>
+        <item>운전자별 차량 맞춤, 다음 운전자를 위한 차량 상태(창문·배터리) 확인</item>
     </string-array>
     <string-array name="consent_retention_labels">
         <item>이 차량</item>
@@ -248,4 +260,47 @@
     <string name="licenses_show_sqlcipher">SQLCipher 라이선스 전문 보기</string>
     <string name="licenses_back_to_list">목록으로</string>
     <string name="logbook_month_chip_year">%1$d년</string>
+
+    <!-- 공용차 운전자 (홈 운전자 카드, 운전자 고르기) -->
+    <string name="driver_card_title">운전하는 분</string>
+    <string name="driver_card_none">운전하는 분을 골라 주세요</string>
+    <string name="driver_card_confirm_title">오늘 운전하시는 분이 맞나요?</string>
+    <string name="driver_card_hint">운행기록부 사용자 칸에 적히고, 그분의 온도·열선·무드등으로 차를 맞춰요</string>
+    <string name="driver_confirm_yes">맞아요</string>
+    <string name="driver_change">바꾸기</string>
+    <string name="driver_choose">고르기</string>
+    <string name="driver_picker_title">운전하는 분을 골라 주세요</string>
+    <string name="driver_picker_hint">고르면 그분의 맞춤 설정으로 차를 맞춰요. 운행이 끝나면 그때의 설정을 다시 기억해요</string>
+    <string name="driver_assigned">이 차 배정</string>
+    <string name="driver_current">지금 운전</string>
+    <string name="driver_comfort_temp">%1$s°</string>
+    <string name="driver_comfort_heat">열선 %1$d단계</string>
+    <string name="driver_comfort_vent">통풍 %1$d단계</string>
+    <string name="driver_comfort_seat_off">열선 끔</string>
+    <string name="driver_comfort_ambient">무드등</string>
+    <string name="driver_comfort_none">맞춤 설정 없음 · 운행이 끝나면 지금 설정을 기억해요</string>
+    <string name="driver_applying">맞추는 중…</string>
+    <string name="driver_applied">%1$s 님 설정으로 맞췄어요</string>
+    <string name="driver_applied_nothing">%1$s 님으로 기록해요</string>
+    <string name="driving_driver">%1$s 님 운행</string>
+
+    <!-- 하차 전 확인 -->
+    <string name="exit_check_title">내리기 전에 확인해 주세요</string>
+    <string name="exit_check_done_title">차를 정리했어요</string>
+    <string name="exit_check_light">실내등이 켜져 있어요</string>
+    <string name="exit_check_battery">배터리 %1$d%% · 다음 분을 위해 충전해 주세요</string>
+    <string name="exit_check_tidy">한 번에 정리</string>
+    <string name="exit_check_lock">문 잠그기</string>
+    <string name="exit_check_close">닫기</string>
+    <string name="exit_check_failed">차가 받아들이지 않은 항목이 있어요. 직접 확인해 주세요</string>
+    <string name="exit_check_safety">창문은 닫히는 동안 손이 끼지 않게 확인해 주세요</string>
+
+    <!-- 설정: 차 안 연동 -->
+    <string name="settings_cabin">차 안 연동</string>
+    <string name="settings_auto_comfort">운전자 맞춤 설정</string>
+    <string name="settings_auto_comfort_description">운전하는 분을 고르면 그분의 온도·시트 열선·무드등으로 차를 맞춰요</string>
+    <string name="settings_ambient_cue">무드등 신호</string>
+    <string name="settings_ambient_cue_description">정차 후 용도를 기다릴 때와 고른 뒤에 무드등 색으로 알려요. 끝나면 원래 색으로 돌아가요</string>
+    <string name="settings_exit_check">하차 점검</string>
+    <string name="settings_exit_check_description">운행을 마치면 열린 창문·켜진 실내등·배터리를 확인해 알려요</string>
 </resources>

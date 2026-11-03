@@ -55,6 +55,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 시험용: ./gradlew assembleDebug -Pdrivelog.debugSuffix=.probe 로 빌드하면 패키지 이름이 달라져
+            // 에뮬레이터의 시연용 release 앱(기록 포함)을 지우지 않고 함께 설치할 수 있다
+            (project.findProperty("drivelog.debugSuffix") as String?)?.takeIf { it.isNotBlank() }?.let { applicationIdSuffix = it }
+        }
         release {
             signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false

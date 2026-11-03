@@ -14,8 +14,8 @@ sealed interface TripState {
 sealed interface TripEvent {
     data class GearChanged(val gear: GearPosition, val at: Long) : TripEvent
 
-    /** 정차 중 운전자가 용도를 골랐다 */
-    data class Classified(val purpose: TripPurpose, val at: Long) : TripEvent {
+    /** 정차 중 운전자가 용도를 골랐다. [actor]는 수정 이력의 "바꾼 사람" (화면 누름, 음성) */
+    data class Classified(val purpose: TripPurpose, val at: Long, val actor: String = TripRecorder.DRIVER_ACTOR) : TripEvent {
         init {
             require(purpose != TripPurpose.UNCLASSIFIED) { "미분류는 고를 수 없습니다" }
         }
@@ -32,7 +32,12 @@ sealed interface TripEffect {
     data class ResumeDriving(val tripId: String) : TripEffect
 
     /** [purpose]가 null이면 미분류로 마친다 */
-    data class CompleteTrip(val tripId: String, val purpose: TripPurpose?, val at: Long) : TripEffect
+    data class CompleteTrip(
+        val tripId: String,
+        val purpose: TripPurpose?,
+        val at: Long,
+        val actor: String = TripRecorder.DRIVER_ACTOR
+    ) : TripEffect
 }
 
 data class Transition(val state: TripState, val effect: TripEffect? = null)
@@ -72,7 +77,7 @@ class TripStateMachine(
                     Transition(state)
                 }
             is TripEvent.Classified ->
-                Transition(TripState.Idle, TripEffect.CompleteTrip(state.tripId, event.purpose, event.at))
+                Transition(TripState.Idle, TripEffect.CompleteTrip(state.tripId, event.purpose, event.at, event.actor))
             is TripEvent.Tick ->
                 if (event.at - state.parkedAt >= parkedTimeoutMs()) {
                     Transition(TripState.Idle, TripEffect.CompleteTrip(state.tripId, null, event.at))

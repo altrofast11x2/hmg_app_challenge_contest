@@ -48,8 +48,24 @@ data class TripEntity(
     val prevHash: String? = null,
     val hash: String? = null,
     val syncState: SyncState = SyncState.PENDING,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** 운행기록부 ④사용자. 운행 당시의 이름·부서를 남긴다 (나중에 명단에서 이름이 바뀌어도 기록은 그대로) */
+    val driverName: String? = null,
+    val driverDepartment: String? = null,
+    /** 업무 내용 (음성 업무 일지). 비업무 운행에는 남기지 않는다 */
+    val workNote: String? = null,
+    /** 주행 중 음성으로 미리 정한 용도. 정차하면 이 용도로 운행을 마친다 */
+    val plannedPurpose: TripPurpose? = null
 )
+
+/** 운행에 적는 운전자 (운행기록부 ④사용자 칸) */
+data class DriverRef(val id: String?, val name: String, val department: String?) {
+    /** 수정 이력과 화면에 쓰는 이름. 예: "김민준 · 영업1팀" */
+    val label: String get() = if (department.isNullOrBlank()) name else "$name · $department"
+}
+
+/** 이 운행의 운전자 이름(부서 포함). 운전자를 고르지 않았으면 null */
+fun TripEntity.driverLabel(): String? = driverName?.let { DriverRef(driverId, it, driverDepartment).label }
 
 /** 주행 중 도착한 경유지·목적지 */
 @Entity(
@@ -118,8 +134,24 @@ fun TripEntity.completed(at: Long, destinationName: String?, updatedAt: Long): T
 fun TripEntity.classifiedAs(purpose: TripPurpose, updatedAt: Long): TripEntity {
     val classified = copy(purpose = purpose, syncState = SyncState.PENDING, updatedAt = updatedAt)
     return if (purpose == TripPurpose.PERSONAL) {
-        classified.copy(startAddress = null, endAddress = null, visitNote = null)
+        classified.copy(startAddress = null, endAddress = null, visitNote = null, workNote = null)
     } else {
         classified
     }
+}
+
+/** 운전자를 적는다. null이면 운전자 칸을 비운다 */
+fun TripEntity.withDriver(driver: DriverRef?, updatedAt: Long): TripEntity = copy(
+    driverId = driver?.id,
+    driverName = driver?.name,
+    driverDepartment = driver?.department,
+    syncState = SyncState.PENDING,
+    updatedAt = updatedAt
+)
+
+/** 업무 내용은 앞뒤 공백을 지우고 200자까지 (서버 열 길이) */
+fun normalizedWorkNote(note: String?): String? = note?.trim()?.take(TripLimits.WORK_NOTE_MAX)?.takeIf { it.isNotEmpty() }
+
+object TripLimits {
+    const val WORK_NOTE_MAX = 200
 }

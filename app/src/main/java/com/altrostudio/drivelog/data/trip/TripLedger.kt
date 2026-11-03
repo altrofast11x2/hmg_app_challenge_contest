@@ -75,6 +75,32 @@ object TripLedger {
         return unsealed.copy(hash = HashChain.hash(unsealed.prevHash, changeFields(unsealed)))
     }
 
+    /**
+     * 운행을 마칠 때 운행 기록 바로 뒤에 함께 남기는 이력: 운전자(④사용자), 주행 중 음성으로 남긴 업무 내용.
+     * 운행 기록(TRIP)의 해시 규칙은 바꾸지 않고 수정 이력으로 체인에 넣는다 (docs/integrity.md)
+     */
+    fun completionChanges(sealed: TripEntity, at: Long, newId: () -> String): List<TripChangeEntity> {
+        var head = headOf(sealed)
+        val actor = driverActor(sealed.driverId)
+        val changes = mutableListOf<TripChangeEntity>()
+        sealed.driverLabel()?.let { label ->
+            newChange(newId(), sealed, ChangeField.DRIVER, null, label, actor, at, head).also {
+                changes += it
+                head = headOf(it)
+            }
+        }
+        sealed.workNote?.let { note ->
+            changes += newChange(newId(), sealed, ChangeField.WORK_NOTE, null, note, actor, at, head)
+        }
+        return changes
+    }
+
+    /** 수정 이력의 "바꾼 사람". 운전자를 모르면 차량의 기본 운전자 */
+    fun driverActor(driverId: String?): String = "driver:" + (driverId ?: "default")
+
+    /** 음성(Gleo AI)으로 바꾼 이력의 "바꾼 사람" */
+    fun voiceActor(driverId: String?): String = "voice:" + (driverId ?: "default")
+
     fun headOf(trip: TripEntity) =
         ChainHeadEntity(trip.vehicleId, checkNotNull(trip.chainSeq), checkNotNull(trip.hash))
 

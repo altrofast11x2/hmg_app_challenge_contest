@@ -102,8 +102,12 @@ interface TripDao {
     )
     fun observePendingCount(): Flow<Int>
 
-    @Query("UPDATE trips SET orgId = :orgId, driverId = :driverId WHERE orgId IS NULL")
+    /** 운전자를 고른 운행은 그 운전자를 그대로 둔다 */
+    @Query("UPDATE trips SET orgId = :orgId, driverId = COALESCE(driverId, :driverId) WHERE orgId IS NULL")
     suspend fun assignOrg(orgId: String, driverId: String?)
+
+    @Query("SELECT * FROM trips WHERE status = 'COMPLETED' ORDER BY endedAt DESC, startedAt DESC LIMIT 1")
+    suspend fun latestCompletedTrip(): TripEntity?
 
     @Query(
         "UPDATE trip_changes SET syncState = 'SYNCED' WHERE syncState = 'PENDING' " +

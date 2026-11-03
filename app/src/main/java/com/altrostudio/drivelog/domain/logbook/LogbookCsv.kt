@@ -14,7 +14,7 @@ object LogbookCsv {
 
     private val HEADER = listOf(
         "사용일자", "사용자", "주행 전 계기판 거리(km)", "주행 후 계기판 거리(km)", "주행거리(km)",
-        "업무용 사용거리 출퇴근용(km)", "업무용 사용거리 일반업무용(km)", "비고(방문처)", "구분"
+        "업무용 사용거리 출퇴근용(km)", "업무용 사용거리 일반업무용(km)", "비고(방문처·업무 내용)", "구분"
     )
 
     private val PURPOSE_LABELS = mapOf(

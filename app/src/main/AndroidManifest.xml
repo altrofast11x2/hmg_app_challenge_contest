@@ -16,6 +16,23 @@
     <!-- 음성 안내 (Pleos TextToSpeech, 차량 안 음성 엔진) -->
     <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
 
+    <!-- 공용차 운전자 맞춤: 운전석 공조 온도 읽기·바꾸기 -->
+    <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_CLIMATE" />
+    <!-- 공용차 운전자 맞춤: 운전석 시트 열선·통풍 읽기·바꾸기 -->
+    <uses-permission android:name="pleos.car.permission.CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_SEATS" />
+    <!-- 무드등 신호(분류 대기·분류 결과)와 맞춤 무드등 색, 하차 점검의 실내등 확인 (읽기·무드등 색은 CAR_LIGHTS) -->
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <!-- 하차 점검 [한 번에 정리]: 실내등 끄기 -->
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_LIGHTS" />
+    <!-- 하차 점검: 열린 창문 확인, [한 번에 정리]의 창문 닫기 -->
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_WINDOWS" />
+    <!-- 하차 점검: 문 잠김 확인, [문 잠그기] -->
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_DOORS" />
+
     <!-- 앱 화면이 닫혀 있어도 운행을 감지하는 포그라운드 서비스, 차량이 켜지면 다시 시작 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -72,6 +89,18 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="vehicle_trip_logging" />
         </service>
+
+        <!-- Gleo AI 음성 명령 (assets/schema.json의 함수, component "service"). Gleo AI가 이 앱을 지정해 보내므로 노출한다.
+             받는 일은 운행 용도·업무 내용 기록, 운전자 바꾸기, 기록부 요약뿐이다 (Pleos 앱 연동 가이드) -->
+        <receiver
+            android:name=".service.GleoActionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="RECORD_TRIP_PURPOSE" />
+                <action android:name="SET_DRIVER" />
+                <action android:name="GET_DRIVING_SUMMARY" />
+            </intent-filter>
+        </receiver>
 
         <!-- 시스템의 부팅 완료·앱 업데이트 방송만 받으면 되므로 다른 앱에 노출하지 않는다 (Pleos 앱 보안 가이드) -->
         <receiver

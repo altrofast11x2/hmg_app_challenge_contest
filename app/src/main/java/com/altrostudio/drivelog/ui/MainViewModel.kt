@@ -12,13 +12,19 @@ import com.altrostudio.drivelog.data.sync.SyncOutcome
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
+import com.altrostudio.drivelog.domain.cabin.CabinPhrases
+import com.altrostudio.drivelog.domain.cabin.ExitCheck
+import com.altrostudio.drivelog.domain.cabin.TidyItem
+import com.altrostudio.drivelog.domain.driver.DriverSource
 import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
 import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.logbook.LogbookSummary
 import com.altrostudio.drivelog.domain.logbook.currentMonthFlow
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.domain.update.LatestVersion
+import com.altrostudio.drivelog.ui.cabin.DriverCardState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
@@ -144,6 +151,86 @@ class MainViewModel(
         _availableUpdate.value = null
     }
 
+    // ─── 공용차 운전자 ──────────────────────────────────────────
+
+    private val driverApplying = MutableStateFlow(false)
+    private val driverMessage = MutableStateFlow<String?>(null)
+
+    /** 운전자를 다시 확인할 때가 되었는지 1분마다 다시 본다 */
+    private val minuteTicks = flow {
+        while (true) {
+            emit(System.currentTimeMillis())
+            delay(TICK_MS)
+        }
+    }
+
+    /** 홈 운전자 카드. 조직에 연결하지 않았거나 명단이 없으면 null (카드를 보이지 않는다) */
+    val driverCard: StateFlow<DriverCardState?> = combine(
+        container.drivers.enabled,
+        container.drivers.current,
+        container.drivers.roster,
+        combine(driverApplying, driverMessage) { applying, message -> applying to message },
+        minuteTicks
+    ) { enabled, current, roster, (applying, message), _ ->
+        if (!enabled) {
+            null
+        } else {
+            DriverCardState(current, roster, container.drivers.needsConfirmation(), applying, message)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+    /** 운전자를 고른다: 운행기록부 사용자 칸 + 그분의 맞춤 설정으로 차를 맞추고 소리로 알린다 */
+    fun selectDriver(driverId: String) {
+        viewModelScope.launch {
+            driverApplying.value = true
+            val selection = try {
+                container.drivers.select(driverId, DriverSource.TOUCH)
+            } finally {
+                driverApplying.value = false
+            }
+            selection ?: return@launch
+            val text = CabinPhrases.applied(selection.driver.name, selection.applied)
+            driverMessage.value = text
+            container.voiceGuide.say(text)
+            delay(MESSAGE_MS)
+            if (driverMessage.value == text) driverMessage.value = null
+        }
+    }
+
+    /** [맞아요]: 지금 운전자를 확인하고 그분의 설정을 다시 맞춘다 */
+    fun confirmDriver() {
+        container.drivers.current.value?.let { selectDriver(it.id) }
+    }
+
+    // ─── 하차 점검 ──────────────────────────────────────────
+
+    val exitCheck: StateFlow<ExitCheck?> get() = container.cabinAssistant.exitCheck
+
+    fun tidyUp(items: Set<TidyItem>) {
+        viewModelScope.launch { container.cabinAssistant.tidyUp(items) }
+    }
+
+    fun dismissExitCheck() = container.cabinAssistant.dismissExitCheck()
+
+    // ─── 설정: 차 안 연동 ──────────────────────────────────────
+
+    val autoComfort: Boolean get() = container.preferences.autoComfort
+
+    fun setAutoComfort(on: Boolean) = container.drivers.setAutoComfort(on)
+
+    val ambientCue: Boolean get() = container.preferences.ambientCue
+
+    fun setAmbientCue(on: Boolean) {
+        container.preferences.ambientCue = on
+    }
+
+    val exitCheckEnabled: Boolean get() = container.preferences.exitCheck
+
+    fun setExitCheckEnabled(on: Boolean) {
+        container.preferences.exitCheck = on
+        if (!on) container.cabinAssistant.dismissExitCheck()
+    }
+
     /** 서버 주소·키가 들어간 빌드인지 (아니면 연결 화면을 건너뛴다) */
     val backendConfigured: Boolean get() = container.pairing.isConfigured
 
@@ -175,6 +262,10 @@ class MainViewModel(
 
     companion object {
         private const val STOP_TIMEOUT_MS = 5_000L
+        private const val TICK_MS = 60_000L
+
+        /** 맞춤 적용 결과 문장을 카드에 보여 주는 시간 */
+        private const val MESSAGE_MS = 8_000L
         private const val RECENT_TRIP_COUNT = 4
 
         val Factory = viewModelFactory {

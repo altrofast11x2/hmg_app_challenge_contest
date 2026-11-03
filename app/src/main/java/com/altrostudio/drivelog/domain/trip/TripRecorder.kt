@@ -3,6 +3,8 @@ package com.altrostudio.drivelog.domain.trip
 import android.util.Log
 import com.altrostudio.drivelog.data.navi.NaviArrival
 import com.altrostudio.drivelog.data.navi.NaviDataSource
+import com.altrostudio.drivelog.data.trip.DriverRef
+import com.altrostudio.drivelog.data.trip.TripLedger
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripRepository
 import com.altrostudio.drivelog.data.trip.TripStatus
@@ -10,12 +12,16 @@ import com.altrostudio.drivelog.data.vehicle.GearPosition
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
 import com.altrostudio.drivelog.domain.voice.TripAnnouncement
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -36,6 +42,10 @@ class TripRecorder(
     private val parkedTimeoutMs: () -> Long,
     private val scope: CoroutineScope,
     private val announce: (TripAnnouncement) -> Unit = {},
+    /** 지금 운전자 (공용차 운전자 확인). 기록을 시작할 때 운행에 적는다 */
+    private val currentDriver: () -> DriverRef? = { null },
+    /** 운전자를 오래 확인하지 않았으면 시작 안내에서 바꿀 수 있다고 알린다 */
+    private val driverNeedsConfirmation: () -> Boolean = { false },
     private val now: () -> Long = System::currentTimeMillis,
     newTripId: () -> String = { UUID.randomUUID().toString() }
 ) {
@@ -45,6 +55,11 @@ class TripRecorder(
     private val started = AtomicBoolean(false)
     private val _state = MutableStateFlow<TripState>(TripState.Idle)
     val state: StateFlow<TripState> = _state.asStateFlow()
+
+    private val _moments = MutableSharedFlow<TripMoment>(extraBufferCapacity = MOMENT_BUFFER)
+
+    /** 저장을 마친 운행 순간 (무드등 신호·하차 점검·운전자 설정 기억이 듣는다) */
+    val moments: SharedFlow<TripMoment> = _moments.asSharedFlow()
 
     private var job: Job? = null
     private var lastOdometerKm: Float? = null
@@ -88,8 +103,20 @@ class TripRecorder(
     }
 
     /** 정차 중 운전자가 고른 용도로 운행을 마친다. 주행 중에는 무시된다 */
-    fun classify(purpose: TripPurpose) {
-        inputs.trySend(Input.Event(TripEvent.Classified(purpose, now())))
+    fun classify(purpose: TripPurpose, actor: String = DRIVER_ACTOR) {
+        inputs.trySend(Input.Event(TripEvent.Classified(purpose, now(), actor)))
+    }
+
+    /**
+     * 음성(Gleo AI)으로 용도·업무 내용을 기록한다. 화면을 누르지 않아도 된다.
+     * - 주행 중: 이번 운행에 미리 적어 두고, 정차하면 그 용도로 바로 마친다
+     * - 정차 중: 지금 운행을 그 용도로 마친다
+     * - 운행이 없으면: 최근 [RECENT_TRIP_MS] 안에 마친 운행을 그 용도로 고친다
+     */
+    suspend fun recordByVoice(purpose: TripPurpose, workNote: String?, actor: String): VoiceRecord {
+        val result = CompletableDeferred<VoiceRecord>()
+        inputs.send(Input.Voice(purpose, workNote, actor, result))
+        return result.await()
     }
 
     private suspend fun restore() {
@@ -109,6 +136,17 @@ class TripRecorder(
 
     private suspend fun handle(input: Input, vehicleId: String) {
         when (input) {
+            is Input.Voice -> input.result.complete(
+                try {
+                    recordVoice(input)
+                } catch (e: CancellationException) {
+                    input.result.cancel()
+                    throw e
+                } catch (e: Exception) {
+                    log("음성 기록 실패", e)
+                    VoiceRecord.Failed
+                }
+            )
             is Input.Odometer -> {
                 lastOdometerKm = input.km
                 (state.value as? TripState.Driving)?.let { trips.touch(it.tripId, now()) }
@@ -129,7 +167,14 @@ class TripRecorder(
             is TripEffect.StartTrip -> {
                 // 먼저 저장하고(앱이 곧바로 죽어도 운행이 남도록) 느린 값은 이어서 채운다
                 trips.startTrip(effect.tripId, vehicleId, effect.at, currentOdometerKm())
-                announce(TripAnnouncement.Started)
+                val driver = currentDriver()
+                if (driver != null) {
+                    trips.setDriver(effect.tripId, driver, TripLedger.driverActor(driver.id), effect.at)
+                    announce(TripAnnouncement.StartedBy(driver.name, driverNeedsConfirmation()))
+                } else {
+                    announce(TripAnnouncement.Started)
+                }
+                _moments.tryEmit(TripMoment.Started(effect.tripId))
                 trips.updateStart(
                     effect.tripId,
                     readOrNull { vehicle.readBatterySocPercent() },
@@ -145,15 +190,28 @@ class TripRecorder(
                     readOrNull { navi.currentPlace() }?.address,
                     readOrNull { vehicle.readEfficiency() }
                 )
-                announceParked(effect.tripId)
+                val parkedTrip = trips.activeTrip()?.takeIf { it.id == effect.tripId }
+                val plannedPurpose = parkedTrip?.plannedPurpose
+                _moments.tryEmit(TripMoment.Parked(effect.tripId, awaitingClassification = plannedPurpose == null))
+                if (plannedPurpose != null) {
+                    // 주행 중 음성으로 정한 용도로 바로 마친다 (분류 화면을 누르지 않아도 된다)
+                    val actor = TripLedger.voiceActor(parkedTrip.driverId)
+                    inputs.trySend(Input.Event(TripEvent.Classified(plannedPurpose, now(), actor)))
+                } else {
+                    announceParked(effect.tripId)
+                }
             }
-            is TripEffect.ResumeDriving -> trips.resumeDriving(effect.tripId, now())
+            is TripEffect.ResumeDriving -> {
+                trips.resumeDriving(effect.tripId, now())
+                _moments.tryEmit(TripMoment.Resumed(effect.tripId))
+            }
             is TripEffect.CompleteTrip -> {
                 trips.completeTrip(effect.tripId, effect.at)
                 effect.purpose?.let {
-                    trips.classify(effect.tripId, it, DRIVER_ACTOR, effect.at)
+                    trips.classify(effect.tripId, it, effect.actor, effect.at)
                     announce(TripAnnouncement.Classified(it))
                 }
+                _moments.tryEmit(TripMoment.Completed(effect.tripId, effect.purpose))
             }
         }
     }
@@ -179,6 +237,29 @@ class TripRecorder(
         val distanceKm = trip.startOdometerKm?.let { start -> trip.endOdometerKm?.let { (it - start).coerceAtLeast(0.0) } }
         val suggestion = trip.endAddress?.let { address -> readOrNull { trips.suggestPurpose(address) } }
         announce(TripAnnouncement.Parked(distanceKm, (trip.endedAt ?: now()) - trip.startedAt, suggestion))
+    }
+
+    private suspend fun recordVoice(input: Input.Voice): VoiceRecord = when (val current = state.value) {
+        is TripState.Driving -> {
+            trips.setPlan(current.tripId, input.purpose, input.workNote)
+            VoiceRecord.PlannedWhileDriving
+        }
+        is TripState.Parked -> {
+            trips.setPlan(current.tripId, input.purpose, input.workNote)
+            inputs.trySend(Input.Event(TripEvent.Classified(input.purpose, now(), input.actor)))
+            VoiceRecord.Completed(current.tripId)
+        }
+        TripState.Idle -> {
+            val last = trips.latestCompletedTrip()?.takeIf { now() - (it.endedAt ?: it.startedAt) <= RECENT_TRIP_MS }
+            if (last == null) {
+                VoiceRecord.NoTrip
+            } else {
+                trips.classify(last.id, input.purpose, input.actor, now())
+                if (input.purpose != TripPurpose.PERSONAL) input.workNote?.let { trips.setWorkNote(last.id, it, input.actor, now()) }
+                announce(TripAnnouncement.Classified(input.purpose))
+                VoiceRecord.Corrected(last.id)
+            }
+        }
     }
 
     private fun adjustForRestore(event: TripEvent): TripEvent {
@@ -230,6 +311,12 @@ class TripRecorder(
 
     private sealed interface Input {
         data class Event(val event: TripEvent) : Input
+        class Voice(
+            val purpose: TripPurpose,
+            val workNote: String?,
+            val actor: String,
+            val result: CompletableDeferred<VoiceRecord>
+        ) : Input
         data class Odometer(val km: Float?) : Input
         data class Arrival(val arrival: NaviArrival) : Input
     }
@@ -240,8 +327,30 @@ class TripRecorder(
         /** M1은 차량마다 기본 운전자 1명 (M2에서 운전자 선택) */
         const val DRIVER_ACTOR = "driver:default"
 
+        /** 음성으로 "방금 운행"을 고칠 수 있는 시간 */
+        const val RECENT_TRIP_MS = 30 * 60_000L
+
+        private const val MOMENT_BUFFER = 16
+
         /** 이보다 짧게 움직이고 짧게 달린 운행은 기어만 바꾼 것으로 본다 */
         private const val ACCIDENTAL_MAX_KM = 0.05
         private const val ACCIDENTAL_MAX_MS = 60_000L
     }
+}
+
+/** 음성으로 기록한 결과 */
+sealed interface VoiceRecord {
+    /** 주행 중이라 이번 운행에 적어 두었다. 정차하면 그 용도로 마친다 */
+    data object PlannedWhileDriving : VoiceRecord
+
+    /** 정차 중인 운행을 그 용도로 마쳤다 */
+    data class Completed(val tripId: String) : VoiceRecord
+
+    /** 방금 마친 운행을 그 용도로 고쳤다 */
+    data class Corrected(val tripId: String) : VoiceRecord
+
+    /** 고칠 운행이 없다 */
+    data object NoTrip : VoiceRecord
+
+    data object Failed : VoiceRecord
 }

@@ -38,7 +38,9 @@ class SyncRepository(
     private val pairing: StateFlow<Pairing?>,
     private val trips: TripRepository,
     private val vehicleId: suspend () -> String,
-    private val onUnpaired: () -> Unit
+    private val onUnpaired: () -> Unit,
+    /** 운전자 명단·맞춤 설정·차량 상태 (공용차 연동). 없으면 운행 기록만 올린다 */
+    private val cabinSync: CabinSync? = null
 ) {
     private val mutex = Mutex()
     private val _lastOutcome = MutableStateFlow<SyncOutcome?>(null)
@@ -63,6 +65,16 @@ class SyncRepository(
         } catch (e: Exception) {
             // 어떤 이유로 실패해도 기록은 이 차량에 그대로 남고 다음에 다시 올린다 (앱은 멈추지 않는다)
             SyncOutcome.Failed(e.message ?: e.javaClass.simpleName)
+        }
+        // 운행을 올릴 수 있는 상태였을 때만 차 안 연동 값도 주고받는다 (실패해도 운행 동기화 결과는 그대로)
+        if (outcome is SyncOutcome.Uploaded || outcome == SyncOutcome.UpToDate) {
+            try {
+                cabinSync?.sync(auth)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Unit
+            }
         }
         _lastOutcome.value = outcome
         outcome
@@ -137,7 +149,10 @@ class SyncRepository(
         chainId = chainId,
         chainSeq = checkNotNull(chainSeq),
         prevHash = checkNotNull(prevHash),
-        hash = checkNotNull(hash)
+        hash = checkNotNull(hash),
+        driverName = driverName,
+        driverDepartment = driverDepartment,
+        workNote = workNote
     )
 
     private fun TripChangeEntity.toRemote(orgId: String, chainId: String) = RemoteTripChange(

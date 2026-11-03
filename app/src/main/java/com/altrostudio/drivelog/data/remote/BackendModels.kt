@@ -88,7 +88,12 @@ data class RemoteTrip(
     @SerialName("chain_id") val chainId: String,
     @SerialName("chain_seq") val chainSeq: Long,
     @SerialName("prev_hash") val prevHash: String,
-    val hash: String
+    val hash: String,
+    /** 운행기록부 ④사용자 (운행 당시의 이름·부서, 0010) */
+    @SerialName("driver_name") val driverName: String? = null,
+    @SerialName("driver_department") val driverDepartment: String? = null,
+    /** 업무 내용 (음성 업무 일지, 0010) */
+    @SerialName("work_note") val workNote: String? = null
 )
 
 @Serializable
@@ -117,3 +122,46 @@ data class RemoteChainHead(
     val seq: Long,
     val hash: String
 )
+
+/** device_driver_roster 함수의 한 줄 (0010): 이 차에서 고를 수 있는 운전자 */
+@Serializable
+data class RemoteDriver(
+    val id: String,
+    val name: String,
+    val department: String? = null,
+    val comfort: RemoteComfort? = null,
+    val assigned: Boolean = false,
+    @SerialName("is_default") val isDefault: Boolean = false
+)
+
+/** 운전자 맞춤 설정. 서버는 알려진 항목·범위만 남긴다 (tempC 15~32, seatHeat -3~3, ambientColor "#RRGGBB") */
+@Serializable
+data class RemoteComfort(
+    val tempC: Float? = null,
+    val seatHeat: Int? = null,
+    val ambientColor: String? = null
+)
+
+@Serializable
+data class SaveComfortRequest(
+    @SerialName("p_driver") val driverId: String,
+    @SerialName("p_comfort") val comfort: RemoteComfort
+)
+
+/** device_report_status 함수 인자: 운행을 마쳤을 때의 차 상태 (관리자 웹 차량 현황) */
+@Serializable
+data class RemoteVehicleStatus(
+    @SerialName("reported_at_ms") val reportedAtMs: Long,
+    @SerialName("trip_id") val tripId: String? = null,
+    @SerialName("driver_id") val driverId: String? = null,
+    @SerialName("driver_name") val driverName: String? = null,
+    @SerialName("odometer_km") val odometerKm: Double? = null,
+    @SerialName("soc_percent") val socPercent: Int? = null,
+    @SerialName("open_windows") val openWindows: List<String> = emptyList(),
+    @SerialName("doors_locked") val doorsLocked: Boolean? = null,
+    @SerialName("cabin_light_on") val cabinLightOn: Boolean? = null,
+    val tidied: List<String> = emptyList()
+)
+
+@Serializable
+data class ReportStatusRequest(@SerialName("p_status") val status: RemoteVehicleStatus)

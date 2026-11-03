@@ -37,6 +37,21 @@ interface TripRepository {
     /** 완료된 운행을 분류한다. 분류 이력은 해시 체인에 남고, 비업무면 주소·위치를 지운다 */
     suspend fun classify(tripId: String, purpose: TripPurpose, actor: String, at: Long)
 
+    /**
+     * 운행에 운전자를 적는다. 진행 중인 운행은 값만 바꾸고(마칠 때 이력이 남는다),
+     * 마친 운행은 바꾼 내용을 수정 이력(DRIVER)으로 남긴다
+     */
+    suspend fun setDriver(tripId: String, driver: DriverRef?, actor: String, at: Long)
+
+    /** 주행 중 음성으로 미리 정한 용도·업무 내용. 진행 중인 운행에만 적는다 (정차하면 이 용도로 마친다) */
+    suspend fun setPlan(tripId: String, purpose: TripPurpose?, workNote: String?)
+
+    /** 마친 운행의 업무 내용을 바꾸고 수정 이력(WORK_NOTE)을 남긴다. 비업무 운행에는 적지 않는다(false) */
+    suspend fun setWorkNote(tripId: String, note: String?, actor: String, at: Long): Boolean
+
+    /** 가장 최근에 마친 운행 */
+    suspend fun latestCompletedTrip(): TripEntity?
+
     fun observeTrips(): Flow<List<TripEntity>>
 
     /** [from] 이상 [to] 미만에 시작한 완료 운행 (월별 운행기록부) */

@@ -64,6 +64,16 @@ class OkHttpBackendApi(
     override suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse =
         json.decodeFromString(post("/rest/v1/rpc/create_share_link", json.encodeToString(request), accessToken))
 
+    override suspend fun driverRoster(accessToken: String): List<RemoteDriver> =
+        json.decodeFromString(post("/rest/v1/rpc/device_driver_roster", "{}", accessToken))
+
+    override suspend fun saveComfort(accessToken: String, request: SaveComfortRequest): Boolean =
+        post("/rest/v1/rpc/device_save_comfort", json.encodeToString(request), accessToken).trim() == "true"
+
+    override suspend fun reportStatus(accessToken: String, request: ReportStatusRequest) {
+        post("/rest/v1/rpc/device_report_status", json.encodeToString(request), accessToken)
+    }
+
     private fun AuthResponse.toSession() =
         DeviceSession(accessToken, refreshToken, now() + expiresInSeconds * 1_000, user.id)
 

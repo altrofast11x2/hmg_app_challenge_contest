@@ -1,0 +1,68 @@
+{
+  "packageName": "com.altrostudio.drivelog",
+  "appDescription": "An automatic vehicle logbook for shared company cars that records each trip, its driver, and its business purpose from vehicle data.",
+  "invokeWord": "운행기록부",
+  "version": "0.3.0",
+  "actionCalls": [
+    {
+      "type": "function",
+      "function": {
+        "name": "RECORD_TRIP_PURPOSE",
+        "description": "Records the purpose of the current or most recent trip in the vehicle logbook, optionally with a short note about the work done on the trip.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "purpose": {
+              "type": "string",
+              "description": "Purpose of the trip as defined by the logbook.",
+              "enum": ["COMMUTE", "BUSINESS", "PERSONAL"]
+            },
+            "workNote": {
+              "type": "string",
+              "description": "Short note about the work done on the trip, such as the client visited or the task performed."
+            }
+          },
+          "required": ["purpose"]
+        },
+        "component": "service"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SET_DRIVER",
+        "description": "Sets who is driving this shared company car so that the logbook records the driver and the car applies the driver's saved climate, seat heating, and ambient light settings.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "driverName": {
+              "type": "string",
+              "description": "Name of the driver registered by the company."
+            }
+          },
+          "required": ["driverName"]
+        },
+        "component": "service"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "GET_DRIVING_SUMMARY",
+        "description": "Returns the total distance, business-use distance, and business-use ratio recorded in the vehicle logbook for a period.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "description": "Period of the summary.",
+              "enum": ["TODAY", "THIS_MONTH", "LAST_MONTH"]
+            }
+          },
+          "required": ["period"]
+        },
+        "component": "service"
+      }
+    }
+  ]
+}

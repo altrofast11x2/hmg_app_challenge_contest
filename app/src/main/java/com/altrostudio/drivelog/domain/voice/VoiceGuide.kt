@@ -8,6 +8,9 @@ sealed interface TripAnnouncement {
     /** 기어를 D로 바꿔 기록을 시작했다 */
     data object Started : TripAnnouncement
 
+    /** 공용차에서 [driverName] 님으로 기록을 시작했다. [confirm]이면 다른 사람일 때 바꾸는 방법을 알린다 */
+    data class StartedBy(val driverName: String, val confirm: Boolean) : TripAnnouncement
+
     /** P로 정차했다. 분류를 기다린다. [suggestion]은 같은 곳에서 지난번에 고른 용도 */
     data class Parked(val distanceKm: Double?, val durationMs: Long, val suggestion: TripPurpose?) : TripAnnouncement
 
@@ -38,6 +41,11 @@ class VoiceGuide(private val speaker: Speaker, private val settings: VoiceSettin
     fun announce(announcement: TripAnnouncement) {
         if (settings.voiceGuidance) speaker.speak(VoicePhrases.of(announcement))
     }
+
+    /** 운행 밖의 안내 (운전자 맞춤, 하차 점검). 설정에서 끄면 읽지 않는다 */
+    fun say(text: String) {
+        if (settings.voiceGuidance && text.isNotBlank()) speaker.speak(text)
+    }
 }
 
 /** 읽어 줄 문장. 운전 중에 듣기 쉽게 짧게, 숫자는 단위를 붙여 소리 나는 대로 쓴다 */
@@ -47,6 +55,12 @@ object VoicePhrases {
 
     fun of(announcement: TripAnnouncement): String = when (announcement) {
         TripAnnouncement.Started -> "운행 기록을 시작합니다."
+        is TripAnnouncement.StartedBy ->
+            if (announcement.confirm) {
+                "${announcement.driverName} 님으로 운행 기록을 시작합니다. 다른 분이면 정차한 뒤 화면에서 바꿔 주세요."
+            } else {
+                "${announcement.driverName} 님, 운행 기록을 시작합니다."
+            }
         is TripAnnouncement.Parked -> buildString {
             append("운행을 마쳤습니다. ")
             val distance = distance(announcement.distanceKm)

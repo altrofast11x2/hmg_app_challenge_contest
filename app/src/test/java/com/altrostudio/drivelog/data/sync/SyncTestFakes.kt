@@ -6,8 +6,13 @@ import com.altrostudio.drivelog.data.remote.DeviceSession
 import com.altrostudio.drivelog.data.remote.PairRequest
 import com.altrostudio.drivelog.data.remote.PairResponse
 import com.altrostudio.drivelog.data.remote.RemoteChainHead
+import com.altrostudio.drivelog.data.remote.RemoteComfort
+import com.altrostudio.drivelog.data.remote.RemoteDriver
 import com.altrostudio.drivelog.data.remote.RemoteTrip
 import com.altrostudio.drivelog.data.remote.RemoteTripChange
+import com.altrostudio.drivelog.data.remote.RemoteVehicleStatus
+import com.altrostudio.drivelog.data.remote.ReportStatusRequest
+import com.altrostudio.drivelog.data.remote.SaveComfortRequest
 import com.altrostudio.drivelog.data.remote.ShareLinkRequest
 import com.altrostudio.drivelog.data.remote.ShareLinkResponse
 
@@ -106,6 +111,38 @@ class FakeBackendApi : BackendApi {
         accept(accessToken)
         lastShareRequest = request
         return shareResponse
+    }
+
+    /** 서버 운전자 명단 (device_driver_roster) */
+    var roster = listOf<RemoteDriver>()
+    val savedComforts = mutableMapOf<String, RemoteComfort>()
+    val statusReports = mutableListOf<RemoteVehicleStatus>()
+
+    /** 0010을 적용하지 않은 서버처럼 차 안 연동 함수를 404로 거부한다 */
+    var cabinFunctionsMissing = false
+
+    override suspend fun driverRoster(accessToken: String): List<RemoteDriver> {
+        accept(accessToken)
+        missingIfOld()
+        return roster
+    }
+
+    override suspend fun saveComfort(accessToken: String, request: SaveComfortRequest): Boolean {
+        accept(accessToken)
+        missingIfOld()
+        if (roster.none { it.id == request.driverId }) return false
+        savedComforts[request.driverId] = request.comfort
+        return true
+    }
+
+    override suspend fun reportStatus(accessToken: String, request: ReportStatusRequest) {
+        accept(accessToken)
+        missingIfOld()
+        statusReports += request.status
+    }
+
+    private fun missingIfOld() {
+        if (cabinFunctionsMissing) throw BackendException(BackendException.Kind.SERVER, "HTTP 404: function not found", httpCode = 404)
     }
 
     private fun newSession(refreshToken: String) =

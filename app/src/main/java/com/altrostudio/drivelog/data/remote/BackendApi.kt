@@ -25,6 +25,15 @@ interface BackendApi {
 
     /** 휴대폰으로 받기: 이 차량의 기간 운행기록부를 10분 동안 여는 링크 토큰 */
     suspend fun createShareLink(accessToken: String, request: ShareLinkRequest): ShareLinkResponse
+
+    /** 이 차에서 고를 수 있는 운전자 명단 (승인된 직원은 서버가 운전자로 만든다) */
+    suspend fun driverRoster(accessToken: String): List<RemoteDriver>
+
+    /** 운전자의 맞춤 설정을 저장한다. 그 운전자가 이 조직에 없으면 false */
+    suspend fun saveComfort(accessToken: String, request: SaveComfortRequest): Boolean
+
+    /** 운행을 마쳤을 때의 차 상태를 보고한다 (늦게 보고된 것만 남는다) */
+    suspend fun reportStatus(accessToken: String, request: ReportStatusRequest)
 }
 
 /** [httpCode]: 서버가 답한 HTTP 상태 코드 (응답을 받지 못했으면 null) */

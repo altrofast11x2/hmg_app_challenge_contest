@@ -3,6 +3,7 @@ package com.altrostudio.drivelog.domain.logbook
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.distanceKm
+import com.altrostudio.drivelog.data.trip.driverLabel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -19,7 +20,7 @@ data class LogbookRow(
     val commuteKm: Double,
     /** 업무용 사용거리 중 일반 업무용 */
     val businessKm: Double,
-    /** 비고(방문처) */
+    /** 비고: 방문처와 업무 내용 ("방문처 · 업무 내용") */
     val note: String?,
     val purpose: TripPurpose
 )
@@ -46,19 +47,20 @@ data class Logbook(val period: LogbookPeriod, val rows: List<LogbookRow>, val su
 /** 완료된 운행을 운행기록부(한 달 또는 고른 기간)로 바꾼다 */
 object LogbookBuilder {
 
+    /** [driverName]은 운전자를 고르지 않은 운행에 쓰는 이름 (차량의 기본 운전자) */
     fun build(period: LogbookPeriod, trips: List<TripEntity>, zone: ZoneId, driverName: String): Logbook {
         val rows = trips.sortedBy { it.startedAt }.map { trip ->
             val distance = trip.distanceKm() ?: 0.0
             LogbookRow(
                 tripId = trip.id,
                 date = Instant.ofEpochMilli(trip.startedAt).atZone(zone).toLocalDate(),
-                driver = driverName,
+                driver = trip.driverLabel() ?: driverName,
                 startOdometerKm = trip.startOdometerKm,
                 endOdometerKm = trip.endOdometerKm,
                 distanceKm = distance,
                 commuteKm = if (trip.purpose == TripPurpose.COMMUTE) distance else 0.0,
                 businessKm = if (trip.purpose == TripPurpose.BUSINESS) distance else 0.0,
-                note = trip.visitNote,
+                note = listOfNotNull(trip.visitNote, trip.workNote).joinToString(" · ").ifEmpty { null },
                 purpose = trip.purpose
             )
         }

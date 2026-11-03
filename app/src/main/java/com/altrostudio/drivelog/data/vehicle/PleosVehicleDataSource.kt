@@ -40,6 +40,12 @@ class PleosVehicleDataSource(context: Context) : VehicleDataSource, AutoCloseabl
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val vehicle = Vehicle(appContext).also { it.initialize() }
 
+    /** 차량 제어([PleosCabinControl])도 같은 Vehicle 서비스 연결을 쓴다 */
+    val sdk: Vehicle get() = vehicle
+
+    /** 차량 OS(AAOS)에서 실행 중인지 (아니면 차량 제어를 쓰지 않는다) */
+    val isAutomotive: Boolean = appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+
     // 차량 OS(AAOS)가 아니면 Car API가 없다
     private val car: Car? =
         if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) Car.createCar(appContext) else null

@@ -82,7 +82,7 @@
     <string name="logbook_col_distance">주행거리</string>
     <string name="logbook_col_commute">출퇴근용</string>
     <string name="logbook_col_business">일반업무용</string>
-    <string name="logbook_col_note">비고(방문처)</string>
+    <string name="logbook_col_note">비고(방문처·업무 내용)</string>
     <string name="logbook_col_purpose">구분</string>
     <string name="logbook_classify">분류</string>
     <string name="logbook_unclassified_note">미분류 운행은 업무용 사용거리에 넣지 않습니다</string>

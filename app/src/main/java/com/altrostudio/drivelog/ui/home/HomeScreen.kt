@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -123,10 +124,19 @@ fun HomeScreen(
                 LogbookButton(onOpenLogbook, Modifier.fillMaxWidth())
             }
         } else {
-            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(dimens.spacingLarge)) {
+            // 배너(미분류·하차 전 확인·운전자)가 위에 붙어도 카드 높이는 그대로 두고 화면을 스크롤한다
+            // (2026-11-04: 배너 두 개가 뜨면 이번 달 카드의 범례가 잘렸다)
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val cardsHeight = maxHeight - dimens.topBarHeight - dimens.spacingLarge
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(dimens.spacingLarge)
+            ) {
                 topBar()
                 banner()
-                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(dimens.spacingLarge)) {
+                Row(modifier = Modifier.height(cardsHeight), horizontalArrangement = Arrangement.spacedBy(dimens.spacingLarge)) {
                     MonthCard(
                         month,
                         summary,
@@ -144,6 +154,7 @@ fun HomeScreen(
                             .fillMaxHeight()
                     )
                 }
+            }
             }
         }
     }

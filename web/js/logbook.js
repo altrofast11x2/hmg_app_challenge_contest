@@ -94,10 +94,12 @@ export function kstParts(ms) {
 
 /**
  * 서버의 trips 행을 월별 운행기록부로 바꾼다.
- * names.drivers / names.vehicles: id → 이름 (없으면 '-')
+ * names.drivers / names.vehicles: id → 이름 (없으면 '-'). names.departments: 운전자 id → 부서
+ * 사용자 칸은 차가 운행 당시에 적은 이름·부서(driver_name, driver_department, 0010)를 먼저 쓴다 (나중에 명단에서 이름이 바뀌어도 기록은 그대로)
  */
 export function buildLogbook(trips, names = {}) {
   const drivers = names.drivers ?? {};
+  const departments = names.departments ?? {};
   const vehicles = names.vehicles ?? {};
   const rows = [...trips]
     .sort((a, b) => a.started_at_ms - b.started_at_ms)
@@ -113,14 +115,19 @@ export function buildLogbook(trips, names = {}) {
         weekday: started.weekday,
         startTime: started.time,
         endTime: trip.ended_at_ms != null ? kstParts(trip.ended_at_ms).time : null,
+        vehicleId: trip.vehicle_id,
         vehicle: vehicles[trip.vehicle_id] ?? '-',
-        driver: drivers[trip.driver_id] ?? '-',
+        driver: trip.driver_name ?? drivers[trip.driver_id] ?? '-',
+        department: trip.driver_department ?? departments[trip.driver_id] ?? '',
         startOdometerKm: start,
         endOdometerKm: end,
         distanceKm,
         commuteKm: trip.purpose === 'COMMUTE' ? distanceKm : 0,
         businessKm: trip.purpose === 'BUSINESS' ? distanceKm : 0,
-        note: trip.visit_note ?? null,
+        // 비고 = 방문처 · 업무 내용 (음성 업무 일지)
+        note: [trip.visit_note, trip.work_note].filter(Boolean).join(' · ') || null,
+        visitNote: trip.visit_note ?? null,
+        workNote: trip.work_note ?? null,
         purpose: trip.purpose,
       };
     });
@@ -150,7 +157,7 @@ export const BOM = '\uFEFF';
 
 const HEADER = [
   '사용일자', '사용자', '주행 전 계기판 거리(km)', '주행 후 계기판 거리(km)', '주행거리(km)',
-  '업무용 사용거리 출퇴근용(km)', '업무용 사용거리 일반업무용(km)', '비고(방문처)', '구분',
+  '업무용 사용거리 출퇴근용(km)', '업무용 사용거리 일반업무용(km)', '비고(방문처·업무 내용)', '구분',
 ];
 
 /** 거리는 소수 첫째 자리까지 (값이 없으면 빈칸) */
@@ -194,6 +201,43 @@ export function csvFileName(period, vehicleName) {
   const base = month ? `DriveLog_${month.year}-${pad(month.month)}` : `DriveLog_${period.from}_${period.to}`;
   return vehicleName ? `${base}_${vehicleName.replace(/[\\/:*?"<>|\s]+/g, '_')}.csv` : `${base}.csv`;
 }
+
+// ─── 업무 일지 ─────────────────────────────────────────────────────────
+// 일반업무 운행만 날짜별로 모은다: 언제·누가·어느 차로·어디서·무슨 일을 했는지 (외근 일지)
+
+/** 운행기록부에서 일반업무 운행을 날짜별로 묶는다. 최근 날짜가 위 */
+export function workJournal(logbook) {
+  const days = new Map();
+  for (const row of logbook.rows) {
+    if (row.purpose !== 'BUSINESS') continue;
+    if (!days.has(row.date)) days.set(row.date, { date: row.date, weekday: row.weekday, entries: [], km: 0 });
+    const day = days.get(row.date);
+    day.entries.push(row);
+    day.km += row.distanceKm;
+  }
+  return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+const JOURNAL_HEADER = ['날짜', '시간', '차량', '운전자', '부서', '방문처', '업무 내용', '주행거리(km)'];
+
+export function workJournalCsv(days) {
+  const rows = days.flatMap((day) => [...day.entries].sort((a, b) => a.startTime.localeCompare(b.startTime)).map((row) => [
+    `${row.date}(${row.weekday})`,
+    row.endTime ? `${row.startTime}-${row.endTime}` : row.startTime,
+    row.vehicle,
+    row.driver,
+    row.department,
+    row.visitNote ?? '',
+    row.workNote ?? '',
+    km(row.distanceKm),
+  ]));
+  return BOM + [JOURNAL_HEADER, ...rows].map((line) => line.map(escapeCsv).join(',')).join('\r\n') + '\r\n';
+}
+
+export const workJournalFileName = (period) => {
+  const month = periodMonth(period);
+  return month ? `DriveLog_업무일지_${month.year}-${pad(month.month)}.csv` : `DriveLog_업무일지_${period.from}_${period.to}.csv`;
+};
 
 // ─── 세무서 제출용 ─────────────────────────────────────────────────────
 // 운행기록부는 작성해 보관하다가 세무서가 요구하면 제출한다. 서식은 국세청고시 제2025-8호 별지

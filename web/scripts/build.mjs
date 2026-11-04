@@ -7,9 +7,12 @@ import { privacyPage } from './privacy.mjs';
 const WEB = new URL('../', import.meta.url);
 const DIST = new URL('dist/', WEB);
 // app-version.json: 차량 앱이 하루 한 번 받아 보는 최신 버전 (앱 versionCode를 올려 배포할 때 같이 올린다)
+// index.html = 제품 소개 페이지, app.html = 관리자 웹 (예전 QR 주소 /#share=는 소개 페이지가 app.html로 넘긴다)
 const PUBLIC_FILES = [
-  'index.html', 'vercel.json', 'app-version.json', 'css/tokens.css', 'css/app.css', 'css/policy.css',
-  'js/app.js', 'js/api.js', 'js/logbook.js', 'js/signup.js',
+  'index.html', 'app.html', 'vercel.json', 'app-version.json',
+  'css/tokens.css', 'css/app.css', 'css/policy.css', 'css/landing.css',
+  'js/app.js', 'js/api.js', 'js/logbook.js', 'js/signup.js', 'js/landing.js',
+  'img/hero-cockpit.webp', 'img/screen-driving.webp', 'img/screen-classify.webp', 'img/screen-home.webp', 'img/screen-picker.webp',
 ];
 
 const source = configSource();

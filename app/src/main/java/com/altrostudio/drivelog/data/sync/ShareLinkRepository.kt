@@ -56,6 +56,6 @@ class ShareLinkRepository(
     companion object {
         /** 토큰은 주소의 # 뒤에 둔다. # 뒤는 브라우저가 서버로 보내지 않아 웹 서버 기록에 남지 않는다 */
         fun shareUrl(webUrl: String, token: String, period: LogbookPeriod): String =
-            "${webUrl.trimEnd('/')}/#share=$token&from=${period.start}&to=${period.end}"
+            "${webUrl.trimEnd('/')}/app.html#share=$token&from=${period.start}&to=${period.end}"
     }
 }

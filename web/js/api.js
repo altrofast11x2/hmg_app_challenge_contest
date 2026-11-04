@@ -165,7 +165,28 @@ export const vehicles = (orgId) => authed(
   + `&org_id=${eq(orgId)}&order=created_at`,
 );
 
-export const drivers = (orgId) => authed(`/rest/v1/drivers?select=id,name&org_id=${eq(orgId)}&order=created_at`);
+/** 운전자 명단 (0010: 부서·숨김·맞춤 설정). 직원 계정이 있는 운전자는 user_id가 있다 */
+export const drivers = (orgId) => authed(
+  `/rest/v1/drivers?select=id,name,department,archived,comfort,comfort_updated_at,user_id&org_id=${eq(orgId)}&order=created_at`,
+);
+
+/** 관리자가 계정 없는 운전자를 추가한다 (차의 운전자 명단에 10분 안에 나타난다) */
+export const addDriver = (orgId, name, department) => authed('/rest/v1/drivers', {
+  method: 'POST',
+  body: { org_id: orgId, name, department: department || null },
+});
+
+/** 운전자를 숨긴다(퇴사·휴직). 기록은 그대로 두고 차의 명단에서만 뺀다 */
+export const setDriverArchived = (driverId, archived) => authed(`/rest/v1/drivers?id=${eq(driverId)}`, {
+  method: 'PATCH',
+  body: { archived },
+});
+
+/** 차량마다 운행을 마칠 때 보고한 마지막 상태 (0010) */
+export const vehicleStatus = (orgId) => authed(
+  `/rest/v1/vehicle_status?select=vehicle_id,reported_at_ms,driver_name,odometer_km,soc_percent,open_windows,doors_locked,cabin_light_on,tidied`
+  + `&org_id=${eq(orgId)}`,
+);
 
 // 서버(Supabase)는 한 번에 최대 1000줄만 준다. 그보다 많으면 나눠 받는다 (2026-10-27 점검: 1년치 세무 서식이 잘릴 수 있었다)
 const PAGE_SIZE = 500;
@@ -184,7 +205,7 @@ export async function fetchAllPages(fetchPage, pageSize = PAGE_SIZE) {
 export function trips(orgId, fromMs, toMs, vehicleId) {
   const vehicleFilter = vehicleId ? `&vehicle_id=${eq(vehicleId)}` : '';
   return fetchAllPages((offset, limit) => authed(
-    '/rest/v1/trips?select=id,vehicle_id,driver_id,started_at_ms,ended_at_ms,start_odometer_km,end_odometer_km,visit_note,purpose'
+    '/rest/v1/trips?select=id,vehicle_id,driver_id,driver_name,driver_department,started_at_ms,ended_at_ms,start_odometer_km,end_odometer_km,visit_note,work_note,purpose'
     + `&org_id=${eq(orgId)}&started_at_ms=gte.${fromMs}&started_at_ms=lt.${toMs}${vehicleFilter}`
     + `&order=started_at_ms,id&limit=${limit}&offset=${offset}`,
   ));

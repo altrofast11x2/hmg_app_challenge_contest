@@ -1,9 +1,10 @@
-// 관리자 웹 화면: 로그인 → 운행기록부 / 차량(연결 코드 발급 포함)
+// 관리자 웹 화면: 로그인 → 현황 / 운행기록부 / 업무 일지 / 세무 제출 / 운전자 / 직원 / 차량(연결 코드 발급 포함)
 // 서버에서 온 글자는 항상 textContent로 넣는다 (innerHTML을 쓰지 않아 스크립트 삽입을 막는다).
 import * as api from './api.js';
 import {
   buildLogbook, csvFileName, formDate, km, kstParts, logbookCsv, logbooksByVehicle, monthPeriod, periodFromRange, periodLabel, periodMonth,
-  parseShareHash, periodRange, pickPeriod, PURPOSE_LABELS, statementCsv, statementFileName, taxFormNote, yearPeriod,
+  parseShareHash, periodRange, pickPeriod, PURPOSE_LABELS, statementCsv, statementFileName, taxFormNote, workJournal, workJournalCsv,
+  workJournalFileName, yearPeriod,
 } from './logbook.js';
 import { normalizeJoinCode, SIGN_UP_MESSAGES, signUpProblem } from './signup.js';
 
@@ -11,8 +12,11 @@ const root = document.getElementById('app');
 
 // 연결 코드 발급은 차량 탭 안에 둔다 (앱 연결 화면 안내 "관리자 웹 › 차량 › 연결 코드 발급", design/specs/A02-connect.md)
 const TABS = [
+  { id: 'overview', label: '현황' },
   { id: 'logbook', label: '운행기록부' },
+  { id: 'journal', label: '업무 일지' },
   { id: 'tax', label: '세무 제출' },
+  { id: 'drivers', label: '운전자', adminOnly: true },
   { id: 'members', label: '직원', adminOnly: true },
   { id: 'vehicles', label: '차량', adminOnly: true },
 ];
@@ -23,7 +27,7 @@ const tabsFor = (role) => TABS.filter((tab) => role === 'admin' || !tab.adminOnl
 const state = {
   orgs: [],
   org: null,
-  tab: 'logbook',
+  tab: 'overview',
   role: 'admin', // 'admin' = 기업 관리자, 'member' = 직원
   period: monthPeriod(currentMonth().year, currentMonth().month), // 운행기록부 기간 (한국 날짜, 끝 날짜 포함)
   taxPeriod: yearPeriod(currentMonth().year), // 세무 제출 탭의 사업연도 (기본값: 올해 1월 1일 ~ 12월 31일)
@@ -91,6 +95,7 @@ const driverName = (id) => state.drivers.find((driver) => driver.id === id)?.nam
 function names() {
   return {
     drivers: Object.fromEntries(state.drivers.map((driver) => [driver.id, driver.name])),
+    departments: Object.fromEntries(state.drivers.map((driver) => [driver.id, driver.department ?? ''])),
     vehicles: Object.fromEntries(state.vehicles.map((vehicle) => [vehicle.id, vehicleName(vehicle)])),
   };
 }
@@ -150,7 +155,7 @@ async function boot() {
 /** 로그아웃·세션 만료로 로그인 화면에 오면 이전 계정의 화면 상태를 지운다 (다른 계정이 이어서 로그인해도 필터가 남지 않게) */
 function resetState() {
   Object.assign(state, {
-    orgs: [], org: null, tab: 'logbook', role: 'admin', vehicleId: '', vehicles: [], drivers: [],
+    orgs: [], org: null, tab: 'overview', role: 'admin', vehicleId: '', vehicles: [], drivers: [],
     period: monthPeriod(currentMonth().year, currentMonth().month), taxPeriod: yearPeriod(currentMonth().year),
   });
 }
@@ -209,7 +214,7 @@ async function enter() {
       renderNoAccess(await api.myMemberRequest());
       return;
     }
-    if (!tabsFor(state.role).some((tab) => tab.id === state.tab)) state.tab = 'logbook';
+    if (!tabsFor(state.role).some((tab) => tab.id === state.tab)) state.tab = 'overview';
     state.org = state.orgs.find((org) => org.id === state.org?.id) ?? state.orgs[0];
     await loadOrgData();
     // 고른 차량이 목록에 없으면(연결 해제·배정 해제) 전체 차량으로 돌린다. 안 그러면 "전체 차량"으로 보이면서 빈 표가 나온다
@@ -337,7 +342,10 @@ function renderMain() {
     }, tab.label))),
     el('main', {}, content),
   );
-  ({ logbook: renderLogbook, tax: renderTax, members: renderMembers, vehicles: renderVehicles })[state.tab](content, renderToken);
+  ({
+    overview: renderOverview, logbook: renderLogbook, journal: renderJournal, tax: renderTax,
+    drivers: renderDrivers, members: renderMembers, vehicles: renderVehicles,
+  })[state.tab](content, renderToken);
 }
 
 // ─── 운행기록부 ────────────────────────────────────────────────────────
@@ -445,13 +453,13 @@ function logbookSummary(summary) {
 function logbookTable(logbook, includeVehicle, wholeMonth) {
   if (logbook.rows.length === 0) return message(wholeMonth ? '이 달에 기록된 운행이 없어요.' : '이 기간에 기록된 운행이 없어요.');
   const headers = ['사용일자', includeVehicle && '차량', '사용자', '시간(한국)', '주행 전(km)', '주행 후(km)', '주행거리(km)',
-    '출퇴근용(km)', '일반업무용(km)', '비고(방문처)', '구분'].filter(Boolean);
+    '출퇴근용(km)', '일반업무용(km)', '비고(방문처·업무 내용)', '구분'].filter(Boolean);
   return el('div', { class: 'table-wrap' }, el('table', {},
     el('thead', {}, el('tr', {}, headers.map((header) => el('th', { scope: 'col', class: header.endsWith('(km)') ? 'num' : null }, header)))),
     el('tbody', {}, logbook.rows.map((row) => el('tr', {},
       el('td', {}, `${row.date}(${row.weekday})`),
       includeVehicle && el('td', {}, row.vehicle),
-      el('td', {}, row.driver),
+      el('td', {}, row.department ? `${row.driver} · ${row.department}` : row.driver),
       el('td', {}, row.endTime ? `${row.startTime}–${row.endTime}` : row.startTime),
       el('td', { class: 'num' }, km(row.startOdometerKm) || '-'),
       el('td', { class: 'num' }, km(row.endOdometerKm) || '-'),
@@ -462,6 +470,234 @@ function logbookTable(logbook, includeVehicle, wholeMonth) {
       el('td', {}, el('span', { class: `purpose purpose-${row.purpose.toLowerCase()}` }, PURPOSE_LABELS[row.purpose] ?? row.purpose)),
     ))),
   ));
+}
+
+// ─── 현황 ──────────────────────────────────────────────────────────────
+// 이번 달 요약, 차량마다 운행을 마칠 때 차가 보고한 상태(하차 점검), 최근 업무 일지
+
+const WINDOW_NAMES = { FRONT_LEFT: '운전석', FRONT_RIGHT: '조수석', REAR_LEFT: '뒷좌석 왼쪽', REAR_RIGHT: '뒷좌석 오른쪽' };
+const TIDY_NAMES = { WINDOWS: '창문 닫기', LIGHTS: '실내등 끄기', DOORS: '문 잠그기' };
+const LOW_BATTERY = 20;
+
+async function renderOverview(content, token) {
+  const now = currentMonth();
+  const period = monthPeriod(now.year, now.month);
+  const body = el('div', {}, message('불러오는 중…'));
+  content.replaceChildren(el('div', { class: 'toolbar' }, el('h2', { class: 'month' }, `${now.year}년 ${now.month}월 현황`)), body);
+  try {
+    const [from, to] = periodRange(period);
+    // 0010 전 서버면 차량 현황 표가 없다 (그때는 안내만 한다)
+    const [rows, statuses] = await Promise.all([
+      api.trips(state.org.id, from, to),
+      api.vehicleStatus(state.org.id).catch(() => null),
+    ]);
+    if (token !== renderToken) return;
+    const logbook = buildLogbook(rows, names());
+    const byVehicle = new Map((statuses ?? []).map((status) => [status.vehicle_id, status]));
+    const days = workJournal(logbook).slice(0, 3);
+    body.replaceChildren(
+      logbookSummary(logbook.summary),
+      el('h2', {}, '차량 현황'),
+      el('p', { class: 'muted section-note' }, '운행을 마칠 때 차가 확인한 상태예요. 운전자가 차 화면의 [한 번에 정리]로 정리한 항목도 함께 보여요.'),
+      statuses == null
+        ? message('서버에 차량 현황 기능이 아직 없어요 (0010).')
+        : state.vehicles.length === 0
+          ? message('연결된 차량이 없어요. 차량 탭에서 연결 코드를 발급하세요.')
+          : el('div', { class: 'fleet-grid' }, state.vehicles.map((vehicle) => vehicleStatusCard(vehicle, byVehicle.get(vehicle.id), logbook))),
+      el('h2', {}, '최근 업무 일지'),
+      days.length === 0 ? message('이번 달 일반업무 운행이 아직 없어요.') : journalDays(days),
+    );
+  } catch (error) {
+    if (token === renderToken) body.replaceChildren(failure(error) ?? '');
+  }
+}
+
+function vehicleStatusCard(vehicle, status, logbook) {
+  const monthKm = logbook.rows.filter((row) => row.vehicleId === vehicle.id).reduce((total, row) => total + row.distanceKm, 0);
+  const title = el('div', { class: 'vehicle-card-head' },
+    el('strong', {}, vehicleName(vehicle)),
+    vehicle.plate_number && el('span', { class: 'muted' }, vehicle.plate_number),
+  );
+  if (!status) {
+    return el('article', { class: 'card vehicle-card' }, title,
+      el('p', { class: 'muted' }, '아직 운행을 마친 보고가 없어요.'),
+      el('p', { class: 'muted' }, `이번 달 ${km(monthKm)} km`));
+  }
+  const openWindows = status.open_windows ?? [];
+  const lowBattery = status.soc_percent != null && status.soc_percent < LOW_BATTERY;
+  const issues = [
+    openWindows.length > 0 && `창문 열림: ${openWindows.map((window) => WINDOW_NAMES[window] ?? window).join(', ')}`,
+    status.cabin_light_on === true && '실내등 켜짐',
+    status.doors_locked === false && '문 잠기지 않음',
+    lowBattery && `배터리 ${status.soc_percent}% · 충전 필요`,
+  ].filter(Boolean);
+  const item = (label, value, warn = false) => el('li', { class: warn ? 'warn' : null }, el('span', { class: 'muted' }, label), el('span', {}, value));
+  return el('article', { class: `card vehicle-card${issues.length ? ' vehicle-card-warn' : ''}` },
+    title,
+    el('span', { class: issues.length ? 'chip chip-warn' : 'chip chip-ok' }, issues.length ? `점검 필요 ${issues.length}` : '반납 상태 양호'),
+    el('ul', { class: 'status-list' },
+      item('마지막 반납', `${formatDateTime(new Date(status.reported_at_ms).toISOString())}${status.driver_name ? ` · ${status.driver_name}` : ''}`),
+      item('배터리', status.soc_percent == null ? '-' : `${status.soc_percent}%`, lowBattery),
+      item('창문', openWindows.length ? openWindows.map((window) => WINDOW_NAMES[window] ?? window).join(', ') + ' 열림' : '모두 닫힘', openWindows.length > 0),
+      item('문', status.doors_locked == null ? '확인 못 함' : status.doors_locked ? '잠김' : '열림', status.doors_locked === false),
+      item('실내등', status.cabin_light_on == null ? '확인 못 함' : status.cabin_light_on ? '켜짐' : '꺼짐', status.cabin_light_on === true),
+      item('계기판', status.odometer_km == null ? '-' : `${km(Number(status.odometer_km))} km`),
+      item('이번 달', `${km(monthKm)} km`),
+    ),
+    (status.tidied ?? []).length > 0 && el('p', { class: 'muted' },
+      `운전자가 차 화면에서 정리함: ${Object.keys(TIDY_NAMES).filter((tidy) => status.tidied.includes(tidy)).map((tidy) => TIDY_NAMES[tidy]).join(', ')}`),
+  );
+}
+
+// ─── 업무 일지 ─────────────────────────────────────────────────────────
+// 일반업무 운행을 날짜별로: 언제·누가·어느 차로·어디서·무슨 일 (운전자가 Gleo AI에 말한 업무 내용 포함)
+
+async function renderJournal(content, token) {
+  const { period } = state;
+  const [year, month] = period.from.split('-').map(Number);
+  const now = currentMonth();
+  const csvButton = el('button', { class: 'button-primary', disabled: true }, 'CSV 내려받기');
+  const body = el('div', {}, message('불러오는 중…'));
+  content.replaceChildren(
+    el('div', { class: 'toolbar' },
+      el('h2', { class: 'month' }, periodLabel(period)),
+      el('input', {
+        type: 'month',
+        'aria-label': '달 고르기',
+        value: `${year}-${String(month).padStart(2, '0')}`,
+        max: `${now.year}-${String(now.month).padStart(2, '0')}`,
+        onchange: (event) => {
+          const [pickedYear, pickedMonth] = event.target.value.split('-').map(Number);
+          if (!pickedYear || !pickedMonth) return;
+          state.period = monthPeriod(pickedYear, pickedMonth);
+          renderMain();
+        },
+      }),
+      el('select', {
+        'aria-label': '차량',
+        onchange: (event) => {
+          state.vehicleId = event.target.value;
+          renderMain();
+        },
+      },
+      el('option', { value: '' }, '전체 차량'),
+      state.vehicles.map((vehicle) => el('option', { value: vehicle.id, selected: vehicle.id === state.vehicleId }, vehicleName(vehicle)))),
+      el('span', { class: 'spacer' }),
+      csvButton,
+    ),
+    el('p', { class: 'muted section-note' }, '일반업무로 기록된 운행만 모았어요. 업무 내용은 운전자가 운행 중 Gleo AI에 말한 내용이에요.'),
+    body,
+  );
+  try {
+    const [from, to] = periodRange(period);
+    const rows = await api.trips(state.org.id, from, to, state.vehicleId || undefined);
+    if (token !== renderToken) return;
+    const days = workJournal(buildLogbook(rows, names()));
+    csvButton.disabled = days.length === 0;
+    csvButton.addEventListener('click', () => download(workJournalCsv(days), workJournalFileName(period)));
+    body.replaceChildren(days.length === 0 ? message('이 기간에 일반업무 운행이 없어요.') : journalDays(days));
+  } catch (error) {
+    if (token === renderToken) body.replaceChildren(failure(error) ?? '');
+  }
+}
+
+function journalDays(days) {
+  return el('div', { class: 'journal' }, days.map((day) => el('section', { class: 'journal-day' },
+    el('h3', {}, `${day.date}(${day.weekday})`, el('span', { class: 'muted' }, ` · ${day.entries.length}건 · ${km(day.km)} km`)),
+    el('div', { class: 'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ['시간', '운전자', '차량', '방문처', '업무 내용', '주행거리(km)'].map((header) => el('th', { scope: 'col', class: header.endsWith('(km)') ? 'num' : null }, header)))),
+      el('tbody', {}, [...day.entries].sort((a, b) => a.startTime.localeCompare(b.startTime)).map((row) => el('tr', {},
+        el('td', {}, row.endTime ? `${row.startTime}–${row.endTime}` : row.startTime),
+        el('td', {}, row.department ? `${row.driver} · ${row.department}` : row.driver),
+        el('td', {}, row.vehicle),
+        el('td', {}, row.visitNote ?? '-'),
+        el('td', { class: row.workNote ? 'work-note' : 'muted' }, row.workNote ?? '-'),
+        el('td', { class: 'num' }, km(row.distanceKm)),
+      ))),
+    )),
+  )));
+}
+
+// ─── 운전자 ────────────────────────────────────────────────────────────
+// 공용차 운전자 명단: 승인된 직원은 차가 명단을 받을 때 자동으로 들어가고, 계정이 없는 운전자는 여기서 추가한다.
+// 맞춤 설정(온도·시트 열선·무드등)은 운전자가 차에서 마지막으로 쓴 값을 차가 올린다.
+
+function comfortSummary(comfort) {
+  if (!comfort || Object.keys(comfort).length === 0) return el('span', { class: 'muted' }, '아직 없음');
+  const parts = [];
+  if (comfort.tempC != null) parts.push(`${comfort.tempC}°`);
+  if (comfort.seatHeat != null) parts.push(comfort.seatHeat > 0 ? `열선 ${comfort.seatHeat}` : comfort.seatHeat < 0 ? `통풍 ${-comfort.seatHeat}` : '열선 끔');
+  const node = el('span', { class: 'comfort' }, parts.join(' · '));
+  if (/^#[0-9A-Fa-f]{6}$/.test(comfort.ambientColor ?? '')) {
+    // 운전자가 차에서 고른 무드등 색 그대로 (화면 색 토큰이 아니라 차량 데이터). CSP 때문에 style 속성 대신 CSSOM으로 넣는다
+    const dot = el('span', { class: 'ambient-dot', title: `무드등 ${comfort.ambientColor}` });
+    dot.style.backgroundColor = comfort.ambientColor;
+    node.append(dot);
+  }
+  return node;
+}
+
+function renderDrivers(content, token) {
+  const status = el('div', { class: 'form-status' });
+  // 차량을 연결할 때 차마다 하나씩 생기는 기본 운전자: 어느 차의 것인지 보여 준다
+  const defaults = new Map(state.vehicles.filter((vehicle) => vehicle.default_driver_id).map((vehicle) => [vehicle.default_driver_id, vehicleName(vehicle)]));
+  const form = el('form', { class: 'card driver-form', onsubmit: onAdd },
+    el('h2', {}, '운전자 추가'),
+    el('p', { class: 'muted' }, '로그인 계정이 없는 운전자를 추가해요. 직원 회원가입으로 승인된 직원은 자동으로 들어가요. 차의 운전자 명단에는 10분 안에 나타나요.'),
+    el('div', { class: 'driver-form-row' },
+      el('label', {}, '이름 *', el('input', { name: 'name', required: true, maxlength: '40' })),
+      el('label', {}, '부서', el('input', { name: 'department', maxlength: '40', placeholder: '예: 영업1팀' })),
+      el('button', { type: 'submit', class: 'button-primary' }, '추가'),
+    ),
+    status,
+  );
+  const visible = state.drivers.filter((driver) => !driver.archived);
+  const hidden = state.drivers.filter((driver) => driver.archived);
+  const rowOf = (driver) => el('tr', {},
+    el('td', {}, driver.name),
+    el('td', {}, driver.department ?? '-'),
+    el('td', {}, driver.user_id ? '직원 계정' : defaults.has(driver.id) ? `차량 기본 (${defaults.get(driver.id)})` : '운전자'),
+    el('td', {}, comfortSummary(driver.comfort)),
+    el('td', { class: 'actions' }, el('button', {
+      class: driver.archived ? 'button-text' : 'button-text danger',
+      onclick: () => toggle(driver),
+    }, driver.archived ? '다시 보이기' : '숨기기')),
+  );
+  const table = (drivers) => el('div', { class: 'table-wrap' }, el('table', {},
+    el('thead', {}, el('tr', {}, ['이름', '부서', '구분', '맞춤 설정 (차가 기억한 값)', ''].map((header) => el('th', { scope: 'col' }, header)))),
+    el('tbody', {}, drivers.map(rowOf)),
+  ));
+  content.replaceChildren(...[
+    form,
+    el('h2', {}, `차에서 고를 수 있는 운전자 ${visible.length}명`),
+    visible.length ? table(visible) : message('아직 운전자가 없어요.'),
+    hidden.length > 0 && el('h2', {}, `숨긴 운전자 ${hidden.length}명`),
+    hidden.length > 0 && table(hidden),
+  ].filter(Boolean));
+
+  async function onAdd(event) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const name = data.name.trim();
+    if (!name) return;
+    try {
+      await api.addDriver(state.org.id, name, data.department.trim());
+      await loadOrgData();
+      if (token === renderToken) renderMain();
+    } catch (error) {
+      status.replaceChildren(failure(error) ?? '');
+    }
+  }
+
+  async function toggle(driver) {
+    try {
+      await api.setDriverArchived(driver.id, !driver.archived);
+      await loadOrgData();
+      if (token === renderToken) renderMain();
+    } catch (error) {
+      status.replaceChildren(failure(error) ?? '');
+    }
+  }
 }
 
 // ─── 세무 제출 ─────────────────────────────────────────────────────────
@@ -611,7 +847,7 @@ function taxFormPage({ vehicle, logbook }, period, org) {
       ),
       el('tbody', {}, logbook.rows.map((row) => el('tr', {},
         el('td', {}, `${row.date}(${row.weekday})`),
-        el('td', {}, ''),
+        el('td', {}, row.department ?? ''),
         el('td', {}, row.driver),
         el('td', { class: 'num' }, km(row.startOdometerKm)),
         el('td', { class: 'num' }, km(row.endOdometerKm)),

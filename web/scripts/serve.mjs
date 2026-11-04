@@ -13,6 +13,9 @@ const TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.png': 'image/png',
+  '.json': 'application/json; charset=utf-8',
 };
 
 createServer(async (request, response) => {
@@ -30,4 +33,4 @@ createServer(async (request, response) => {
   } catch {
     response.writeHead(404).end('Not found');
   }
-}).listen(PORT, '127.0.0.1', () => console.log(`관리자 웹: http://127.0.0.1:${PORT}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`소개 페이지: http://127.0.0.1:${PORT}/ · 관리자 웹: http://127.0.0.1:${PORT}/app.html`));

@@ -193,3 +193,33 @@ td.actions { text-align: right; }
 .vehicle-picker input { width: auto; }
 .delete-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--drivelog-spacing-extra-small); white-space: normal; }
 .delete-confirm input { width: 12em; }
+
+/* 현황: 차량별 반납 상태 카드 */
+.section-note { margin: calc(-1 * var(--drivelog-spacing-extra-small)) 0 var(--drivelog-spacing-small); }
+.fleet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--drivelog-spacing-small); }
+.vehicle-card { display: flex; flex-direction: column; gap: var(--drivelog-spacing-small); padding: var(--drivelog-spacing-medium); border: var(--drivelog-border-width) solid transparent; }
+.vehicle-card-warn { border-color: var(--drivelog-status-warning); }
+.vehicle-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--drivelog-spacing-extra-small); font: var(--drivelog-web-title); }
+.vehicle-card-head .muted { font: var(--drivelog-web-label); }
+.vehicle-card p { margin: 0; }
+.chip { align-self: flex-start; padding: calc(var(--drivelog-spacing-extra-small) / 2) var(--drivelog-spacing-small); border-radius: var(--drivelog-radius-full); font: var(--drivelog-web-label); }
+.chip-ok { background: var(--drivelog-status-integrity-container); color: var(--drivelog-status-integrity); }
+.chip-warn { background: var(--drivelog-status-warning-container); color: var(--drivelog-status-warning); }
+.status-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--drivelog-spacing-extra-small); }
+.status-list li { display: flex; justify-content: space-between; gap: var(--drivelog-spacing-small); }
+.status-list li.warn span:last-child { color: var(--drivelog-status-warning); }
+
+/* 업무 일지 */
+.journal { display: flex; flex-direction: column; gap: var(--drivelog-spacing-medium); }
+.journal-day h3 { font: var(--drivelog-web-title); margin: 0 0 var(--drivelog-spacing-extra-small); }
+.journal-day h3 .muted { font: var(--drivelog-web-label); }
+td.work-note { white-space: normal; color: var(--drivelog-text-primary); }
+
+/* 운전자 */
+.driver-form { margin-bottom: var(--drivelog-spacing-medium); }
+.driver-form h2 { margin-top: 0; }
+.driver-form-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--drivelog-spacing-small); }
+.driver-form-row label { margin-bottom: 0; flex: 1 1 200px; }
+.comfort { display: inline-flex; align-items: center; gap: var(--drivelog-spacing-extra-small); }
+.ambient-dot { display: inline-block; width: var(--drivelog-spacing-small); height: var(--drivelog-spacing-small); border-radius: var(--drivelog-radius-full); border: var(--drivelog-border-width) solid var(--drivelog-border-strong); }
+

@@ -3,23 +3,268 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- 이 사이트의 파일, Supabase API, 글꼴(Google Fonts의 Asta Sans)만 쓴다 (외부 스크립트 차단) -->
+  <!-- 이 사이트의 파일과 글꼴(Google Fonts의 Asta Sans)만 쓴다. 외부 스크립트·추적 없음 -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; connect-src 'self' https://*.supabase.co; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+        content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>자동 운행기록부 관리자</title>
+  <meta name="description" content="법인 공용차를 위한 Pleos Connect 차량용 앱. 운전자를 알아보고 차를 맞추고, 계기판 거리로 운행기록부를 쓰고, 내리기 전에 차를 정리합니다.">
+  <title>자동 운행기록부 · DriveLog</title>
   <link rel="icon" href="data:,">
-  <!-- 앱과 같은 글꼴 Asta Sans (SIL Open Font License 1.1) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asta+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/app.css">
-  <script type="module" src="js/app.js"></script>
+  <link rel="stylesheet" href="css/landing.css">
+  <!-- 예전 앱(0.2.0)의 휴대폰 QR 주소(/#share=…)는 관리자 웹(app.html)으로 넘긴다 -->
+  <script src="js/landing.js"></script>
 </head>
 <body>
-  <div id="app">
-    <noscript>이 페이지는 JavaScript가 필요해요.</noscript>
-  </div>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="자동 운행기록부 처음으로">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/><path d="M7.5 19.5h9"/></svg>
+        </span>
+        <span>자동 운행기록부</span>
+      </a>
+      <nav class="nav-links" aria-label="페이지 안내">
+        <a href="#how">작동 방식</a>
+        <a href="#vehicle">차량 연동</a>
+        <a href="#business">기업용</a>
+        <a href="#trust">신뢰</a>
+      </nav>
+      <a class="button button-secondary nav-cta" href="app.html">관리자 웹</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ─── 첫 화면 ─── -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Pleos Connect 차량용 앱 · 법인 공용차</p>
+          <h1>운전만 하세요.<br>기록은 차가 씁니다.</h1>
+          <p class="lead">공용차에 타면 운전자를 알아보고 그분의 온도·시트 열선·무드등으로 차를 맞춥니다.
+            계기판 거리로 운행을 기록하고, 정차하면 한 번 누르거나 말로 용도를 남깁니다.
+            내리기 전에는 열린 창문과 켜진 실내등까지 정리합니다.</p>
+          <div class="actions">
+            <a class="button button-primary" href="#how">운행 한 번 따라가 보기</a>
+            <a class="button button-secondary" href="app.html">관리자 웹 열기</a>
+          </div>
+          <ul class="facts" aria-label="핵심">
+            <li><strong>0번</strong><span>주행 중 화면 조작</span></li>
+            <li><strong>1번</strong><span>정차 후 누름 (또는 음성)</span></li>
+            <li><strong>국세청 서식</strong><span>업무용승용차 운행기록부 칸 그대로</span></li>
+          </ul>
+        </div>
+        <figure class="hero-shot">
+          <div class="ambient" aria-hidden="true"></div>
+          <img src="img/hero-cockpit.webp" width="1600" height="900"
+               alt="차량 화면: 운전하는 분 이서연·기술지원팀을 고르자 '이서연 님 설정으로 맞췄어요. 온도 23도, 시트 열선 2단계, 무드등' 안내가 뜨고, 아래 시스템 바의 운전석 온도가 23.0도, 시트 열선이 켜짐으로 바뀐 모습">
+          <figcaption>Pleos Connect 에뮬레이터에서 실행한 실제 화면. 운전자를 고르자 시스템 바의 운전석 온도(23.0°)와 시트 열선이 바로 바뀝니다.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ─── 문제 ─── -->
+    <section class="section" aria-labelledby="pain-title">
+      <div class="wrap">
+        <p class="eyebrow">왜 필요한가</p>
+        <h2 id="pain-title">운행기록부, 아직 손으로 쓰나요?</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>운전자</h3>
+            <p>매 운행 계기판을 보고 적어야 해서 결국 월말에 몰아서 씁니다. 공용차는 탈 때마다 좌석·온도부터 다시 맞춥니다.</p>
+          </article>
+          <article class="card">
+            <h3>차량 관리자</h3>
+            <p>누가 언제 탔는지, 차가 어떤 상태로 반납됐는지 모릅니다. 창문이 열린 채, 배터리가 바닥난 채 다음 사람에게 넘어갑니다.</p>
+          </article>
+          <article class="card">
+            <h3>회계·세무</h3>
+            <p>몰아서 쓴 기록은 믿기 어렵고, 업무사용비율은 엑셀로 다시 계산합니다. 세무서가 요구하면 서식에 옮겨 적어야 합니다.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 작동 방식 ─── -->
+    <section class="section section-raised" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <p class="eyebrow">작동 방식</p>
+        <h2 id="how-title">운행 한 번, 이렇게 흘러갑니다</h2>
+        <ol class="steps">
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">1 · 탑승</span>
+              <h3>운전자를 확인하고 차를 맞춥니다</h3>
+              <p>지난번 운전자를 기본으로 보여 주고, 한 번 누르거나 “운전자 김민준으로 바꿔”라고 말하면 됩니다.
+                그분이 마지막으로 쓴 공조 온도·시트 열선·무드등으로 차가 바뀌고, 운행기록부의 사용자(부서·성명) 칸에 적힙니다.
+                회사의 다른 공용차를 타도 같은 설정이 따라옵니다.</p>
+            </div>
+            <img class="step-visual screen" src="img/screen-picker.webp" width="1136" height="807" loading="lazy"
+                 alt="운전하는 분을 골라 주세요 대화상자: 김민준·영업1팀(21.5°, 열선 끔, 파란 무드등), 박지훈·구매팀, 이서연·기술지원팀(23°, 열선 2단계, 노란 무드등), 기본 운전자">
+          </li>
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">2 · 출발</span>
+              <h3>기어만 바꾸면 기록이 시작됩니다</h3>
+              <p>기어가 P를 벗어나는 순간 계기판 누적거리·배터리·출발 주소를 차량에서 직접 읽습니다.
+                주행 중 화면에는 누를 것이 없고, 시작은 음성으로 알립니다.</p>
+            </div>
+            <img class="step-visual screen" src="img/screen-driving.webp" width="1136" height="807" loading="lazy"
+                 alt="주행 중 화면: 운행 기록 중, 19.2 km, 17:49 출발, 김민준 님 운행 — 누를 수 있는 요소가 없다">
+          </li>
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">3 · 정차</span>
+              <h3>무드등이 알려 주고, 한 번만 누릅니다</h3>
+              <p>P에 두면 무드등이 노란 신호로 켜지고 거리·시간을 음성으로 알립니다. 출퇴근·일반업무·비업무 중 하나를 누르면
+                무드등이 용도 색으로 잠깐 빛났다가 원래 색으로 돌아옵니다. 같은 목적지는 지난번 용도를 먼저 권합니다.</p>
+            </div>
+            <img class="step-visual screen" src="img/screen-classify.webp" width="1136" height="807" loading="lazy"
+                 alt="정차 후 분류 화면: 이번 운행의 용도를 골라 주세요, 출퇴근·일반업무(지난번 이 목적지)·비업무 버튼">
+          </li>
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">4 · 음성 업무 일지</span>
+              <h3>말하면 업무 내용까지 남습니다</h3>
+              <p>주행 중 Gleo AI에게 “이번 운행 거래처 납품 미팅으로 기록해”라고 말하면, 정차하는 순간 분류 화면 없이
+                일반업무로 기록되고 업무 내용이 운행기록부 비고에 들어갑니다. “이번 달 업무용으로 얼마나 탔어?”도 답합니다.</p>
+            </div>
+            <div class="step-visual quote" aria-hidden="true">
+              <p class="say">“이번 운행 거래처 납품 미팅으로 기록해”</p>
+              <p class="result">비고: 수정구 시흥동 · 거래처 납품 미팅 <span class="purpose purpose-business">일반업무</span></p>
+            </div>
+          </li>
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">5 · 하차</span>
+              <h3>다음 사람을 위해 차를 정리합니다</h3>
+              <p>운행을 마치면 열린 창문·켜진 실내등·배터리 부족을 확인해 알리고, [한 번에 정리]로 창문을 닫고 실내등을 끕니다.
+                창문·문은 정차 중 운전자가 직접 누를 때만 움직입니다. 반납 상태는 관리자 웹 차량 현황에 올라갑니다.</p>
+            </div>
+            <img class="step-visual screen" src="img/screen-home.webp" width="1136" height="807" loading="lazy"
+                 alt="홈 화면: 내리기 전에 확인해 주세요 — 뒷좌석 왼쪽 창문이 열려 있어요, 실내등이 켜져 있어요, 배터리 18% · 한 번에 정리 버튼, 그 아래 운전하는 분 김민준">
+          </li>
+          <li class="step">
+            <div class="step-copy">
+              <span class="step-no">6 · 월말</span>
+              <h3>기록부는 이미 완성되어 있습니다</h3>
+              <p>관리자 웹에서 국세청고시 「업무용승용차 운행기록부」 별지와 같은 칸으로 인쇄·PDF를 만들고,
+                명세서에 옮길 차량별 업무사용비율을 CSV로 받습니다.</p>
+            </div>
+            <div class="step-visual ledger" aria-hidden="true">
+              <div class="ledger-row ledger-head"><span>사용자</span><span>주행거리</span><span>비고</span></div>
+              <div class="ledger-row"><span>이서연 · 기술지원팀</span><span>8.0</span><span>수정구 시흥동</span></div>
+              <div class="ledger-row"><span>김민준 · 영업1팀</span><span>19.2</span><span>거래처 납품 미팅</span></div>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ─── 차량 연동 ─── -->
+    <section class="section" id="vehicle" aria-labelledby="vehicle-title">
+      <div class="wrap">
+        <p class="eyebrow">차량 연동 · Pleos Connect SDK</p>
+        <h2 id="vehicle-title">스마트폰 앱은 적게 하지만, 이 앱은 차가 직접 합니다</h2>
+        <p class="section-lead">모든 제어는 차가 지원하는 범위를 먼저 확인하고, 바꾼 뒤 다시 읽어 실제로 바뀐 것만 성공으로 봅니다.</p>
+        <div class="cards three">
+          <article class="card feature">
+            <h3>운전자 맞춤</h3>
+            <p>고른 운전자의 운전석 온도, 시트 열선·통풍, 무드등 색. 운행이 끝나면 그때 설정을 다시 기억합니다.</p>
+            <p class="apis"><code>HVAC.setHvacTemperature</code> <code>Seat.setHvacSeatTemperature</code> <code>Light.setAmbientLightBrightnessColor</code></p>
+          </article>
+          <article class="card feature">
+            <h3>무드등 신호</h3>
+            <p>분류를 기다리면 노란 신호, 고르면 용도 색. 끝나면 운전자가 쓰던 색·밝기·켜짐 상태 그대로 되돌립니다.</p>
+            <p class="apis"><code>Light.setAmbientLightSwitch</code> <code>Light.setAmbientLightBrightness</code></p>
+          </article>
+          <article class="card feature">
+            <h3>하차 점검</h3>
+            <p>창문 열림·실내등·문 잠김·배터리를 확인하고, 운전자가 누르면 창문을 닫고 실내등을 끄고 문을 잠급니다.</p>
+            <p class="apis"><code>Window.setWindowPosition</code> <code>Light.setCabinLightSwitch</code> <code>Door.setDoorLock</code> <code>EvBattery</code></p>
+          </article>
+          <article class="card feature">
+            <h3>자동 기록</h3>
+            <p>기어로 운행 시작·정차를 알고, 계기판 거리와 출발·도착 주소를 차량과 내비게이션에서 읽습니다.</p>
+            <p class="apis"><code>AAOS GEAR_SELECTION</code> <code>Odometer</code> <code>NaviHelper</code></p>
+          </article>
+          <article class="card feature">
+            <h3>음성</h3>
+            <p>안내는 차 안 음성 엔진으로 읽어 문장이 차 밖으로 나가지 않습니다. Gleo AI가 부르는 함수 세 개를 등록했습니다.</p>
+            <p class="apis"><code>TextToSpeech (ON_DEVICE)</code> <code>Gleo Interface · schema.json</code></p>
+          </article>
+          <article class="card feature">
+            <h3>주행 중 조작 0</h3>
+            <p>주행 중에는 누를 것이 없는 화면만 보여 주고, 차를 움직이는 버튼은 P에서만 열립니다.</p>
+            <p class="apis"><code>CarUxRestrictionsManager</code> <code>distractionOptimized</code></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 기업용 ─── -->
+    <section class="section section-raised" id="business" aria-labelledby="business-title">
+      <div class="wrap two-col">
+        <div>
+          <p class="eyebrow">기업용 관리자 웹</p>
+          <h2 id="business-title">회사는 웹에서 모든 공용차를 봅니다</h2>
+          <p class="section-lead">차량을 6자리 연결 코드로 회사에 연결하면, 기록은 인터넷이 될 때 올라갑니다. 서버가 멈춰도 기록은 차 안에 남습니다.</p>
+          <ul class="checklist">
+            <li><strong>차량 현황</strong> 마지막 운전자, 반납 시각, 배터리, 열린 창문·잠김</li>
+            <li><strong>운행기록부·세무 제출</strong> 국세청 별지 서식 인쇄·PDF, 업무사용비율 CSV</li>
+            <li><strong>업무 일지</strong> 날짜별 방문처와 말로 남긴 업무 내용</li>
+            <li><strong>운전자·직원</strong> 가입 코드로 직원 가입, 승인, 운전자 명단 관리</li>
+            <li><strong>휴대폰으로 받기</strong> 차 화면의 QR로 10분 동안 기록부 열기</li>
+          </ul>
+        </div>
+        <aside class="card fleet">
+          <h3>공용차 운영의 빈칸을 차 안에서 채웁니다</h3>
+          <p>Pleos Fleet API 문서에는 운행 이력(Trip)·운전자(Driver)·정비(Maintenance)가 “지원 예정”으로 올라 있습니다.
+            DriveLog는 그 정보를 차 안에서 만들어 둡니다: 운행마다 운전자와 용도, 해시 체인으로 묶인 거리, 반납 상태.</p>
+          <p class="muted">대상: 법인 공용차 → 렌터카·리스 → 공유차·보험</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ─── 신뢰 ─── -->
+    <section class="section" id="trust" aria-labelledby="trust-title">
+      <div class="wrap">
+        <p class="eyebrow">신뢰와 개인정보</p>
+        <h2 id="trust-title">고칠 수 없는 기록, 감시하지 않는 기록</h2>
+        <div class="cards four">
+          <article class="card"><h3>해시 체인</h3><p>계기판 거리·용도·운전자·업무 내용을 차량별 해시 체인으로 묶어, 나중에 바꾸면 흔적이 남습니다.</p></article>
+          <article class="card"><h3>실시간 위치 없음</h3><p>주소는 출발·도착 두 시점만 읽습니다. 이동 경로와 속도는 저장하지 않습니다.</p></article>
+          <article class="card"><h3>비업무는 거리만</h3><p>비업무로 고르면 주소·방문처·업무 내용을 바로 지우고 거리만 남깁니다.</p></article>
+          <article class="card"><h3>차 안 암호화</h3><p>기록은 SQLCipher, 설정은 Android Keystore로 암호화합니다. 동의를 철회하면 즉시 삭제합니다.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 도입 ─── -->
+    <section class="section section-raised" aria-labelledby="start-title">
+      <div class="wrap">
+        <p class="eyebrow">도입</p>
+        <h2 id="start-title">세 단계면 시작합니다</h2>
+        <ol class="cards three numbered">
+          <li class="card"><h3>기업 등록</h3><p>관리자 웹에서 기업과 관리자 계정을 만듭니다.</p></li>
+          <li class="card"><h3>차량 연결</h3><p>관리자 웹에서 받은 6자리 코드를 차 화면에 입력합니다. 차는 정차 중에만 받습니다.</p></li>
+          <li class="card"><h3>운전자 등록</h3><p>직원은 가입 코드로 가입하고, 관리자가 승인하면 차의 운전자 명단에 나타납니다.</p></li>
+        </ol>
+        <div class="actions center">
+          <a class="button button-primary" href="app.html">관리자 웹 열기</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p><strong>AltroStudio</strong> · 자동 운행기록부(DriveLog) · 현대자동차그룹 차량용 앱 개발 공모전 출품작</p>
+      <p><a href="privacy.html">개인정보 처리방침</a> · <a href="app.html">관리자 웹</a></p>
+    </div>
+  </footer>
 </body>
 </html>

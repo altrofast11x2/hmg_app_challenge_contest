@@ -1,0 +1,209 @@
+/* 소개 페이지. 색·글자·간격·모서리는 tokens.css의 drivelog_ 토큰만 쓴다 (폭·비율 같은 배치 값만 직접 쓴다).
+   앱과 같은 "Quiet Navy" 다크가 기본이다. */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--drivelog-spacing-huge) + var(--drivelog-spacing-small)); }
+
+body {
+  margin: 0;
+  background: var(--drivelog-background);
+  color: var(--drivelog-text-primary);
+  font: var(--drivelog-web-body);
+  -webkit-font-smoothing: antialiased;
+  /* 한글은 단어 중간에서 줄을 바꾸지 않는다 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; }
+h1, h2, h3, p { margin: 0; }
+
+.wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 var(--drivelog-spacing-large); }
+
+/* ─── 버튼 ─── */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--drivelog-spacing-extra-large);
+  padding: 0 var(--drivelog-spacing-medium);
+  border: var(--drivelog-border-width) solid transparent;
+  border-radius: var(--drivelog-radius-small);
+  font: var(--drivelog-web-label);
+  text-decoration: none;
+  transition: transform var(--drivelog-press-duration) ease-out;
+}
+.button:active { transform: scale(var(--drivelog-press-scale)); }
+.button:focus-visible, .nav a:focus-visible { outline: var(--drivelog-border-width) solid var(--drivelog-selection-ring); outline-offset: var(--drivelog-border-width); }
+.button-primary { background: var(--drivelog-button-primary-background); color: var(--drivelog-button-primary-text); }
+.button-primary:hover { background: var(--drivelog-button-primary-background-pressed); }
+.button-secondary { background: var(--drivelog-button-secondary-background); color: var(--drivelog-button-secondary-text); border-color: var(--drivelog-border-strong); }
+.button-secondary:hover { background: var(--drivelog-button-secondary-background-pressed); }
+
+/* ─── 위 막대 ─── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--drivelog-background);
+  border-bottom: var(--drivelog-border-width) solid var(--drivelog-border);
+}
+.nav-inner { display: flex; align-items: center; gap: var(--drivelog-spacing-medium); min-height: var(--drivelog-spacing-huge); }
+.brand { display: inline-flex; align-items: center; gap: var(--drivelog-spacing-extra-small); font: var(--drivelog-web-title); text-decoration: none; }
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--drivelog-spacing-large);
+  height: var(--drivelog-spacing-large);
+  border-radius: var(--drivelog-radius-small);
+  background: var(--drivelog-button-primary-background);
+  color: var(--drivelog-button-primary-text);
+}
+.mark svg { width: var(--drivelog-spacing-medium); height: var(--drivelog-spacing-medium); }
+.nav-links { display: flex; gap: var(--drivelog-spacing-medium); margin-left: auto; }
+.nav-links a { font: var(--drivelog-web-label); color: var(--drivelog-text-secondary); text-decoration: none; }
+.nav-links a:hover { color: var(--drivelog-text-primary); }
+
+/* ─── 공통 글자 ─── */
+.eyebrow { font: var(--drivelog-web-label); color: var(--drivelog-signature); margin-bottom: var(--drivelog-spacing-small); }
+h2 { font: var(--drivelog-web-headline); margin-bottom: var(--drivelog-spacing-large); }
+h3 { font: var(--drivelog-web-title); margin-bottom: var(--drivelog-spacing-extra-small); }
+p { color: var(--drivelog-text-secondary); }
+.section-lead { max-width: 760px; margin: calc(-1 * var(--drivelog-spacing-small)) 0 var(--drivelog-spacing-large); }
+.muted { color: var(--drivelog-text-tertiary); }
+
+/* ─── 첫 화면 ─── */
+.hero { padding: var(--drivelog-spacing-huge) 0; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--drivelog-spacing-extra-large); align-items: center; }
+.hero h1 { font: var(--drivelog-headline); margin-bottom: var(--drivelog-spacing-medium); }
+.lead { margin-bottom: var(--drivelog-spacing-large); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--drivelog-spacing-small); }
+.actions.center { justify-content: center; margin-top: var(--drivelog-spacing-extra-large); }
+
+.facts { list-style: none; display: flex; flex-wrap: wrap; gap: var(--drivelog-spacing-large); margin: var(--drivelog-spacing-extra-large) 0 0; padding: 0; }
+.facts li { display: flex; flex-direction: column; gap: var(--drivelog-spacing-extra-small); }
+.facts strong { font: var(--drivelog-web-title); color: var(--drivelog-text-primary); }
+.facts span { font: var(--drivelog-web-label); color: var(--drivelog-text-tertiary); }
+
+.hero-shot { position: relative; margin: 0; }
+.hero-shot img {
+  position: relative;
+  border-radius: var(--drivelog-radius-medium);
+  border: var(--drivelog-border-width) solid var(--drivelog-border-strong);
+}
+.hero-shot figcaption { margin-top: var(--drivelog-spacing-small); font: var(--drivelog-web-label); color: var(--drivelog-text-tertiary); }
+
+/* 화면 뒤 무드등: 분류 대기(경고색) → 일반업무(블루) → 출퇴근(하늘색). 앱의 무드등 신호와 같은 토큰 색 */
+.ambient {
+  position: absolute;
+  inset: var(--drivelog-spacing-large) var(--drivelog-spacing-extra-large) var(--drivelog-spacing-huge);
+  border-radius: var(--drivelog-radius-large);
+  background: var(--drivelog-status-warning);
+  filter: blur(var(--drivelog-spacing-huge));
+  opacity: 0.35;
+  animation: ambient 9s ease-in-out infinite;
+}
+@keyframes ambient {
+  0%, 30% { background: var(--drivelog-status-warning); }
+  40%, 65% { background: var(--drivelog-purpose-business-background); }
+  75%, 100% { background: var(--drivelog-purpose-commute-background); }
+}
+
+/* ─── 구역 ─── */
+.section { padding: var(--drivelog-spacing-huge) 0; }
+.section-raised { background: var(--drivelog-surface); }
+
+.cards { display: grid; gap: var(--drivelog-spacing-medium); list-style: none; margin: 0; padding: 0; }
+.cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card {
+  background: var(--drivelog-surface-raised);
+  border: var(--drivelog-border-width) solid var(--drivelog-border);
+  border-radius: var(--drivelog-radius-medium);
+  padding: var(--drivelog-spacing-large);
+}
+.section-raised .card { background: var(--drivelog-background); }
+
+.feature { display: flex; flex-direction: column; gap: var(--drivelog-spacing-extra-small); }
+.apis { display: flex; flex-wrap: wrap; gap: var(--drivelog-spacing-extra-small); margin-top: auto; padding-top: var(--drivelog-spacing-small); }
+.apis code {
+  font: var(--drivelog-web-label);
+  color: var(--drivelog-accent);
+  background: var(--drivelog-surface);
+  border: var(--drivelog-border-width) solid var(--drivelog-border);
+  border-radius: var(--drivelog-radius-small);
+  padding: 0 var(--drivelog-spacing-extra-small);
+}
+
+.numbered { counter-reset: step; }
+.numbered li::before {
+  counter-increment: step;
+  content: counter(step);
+  display: inline-grid;
+  place-items: center;
+  width: var(--drivelog-spacing-large);
+  height: var(--drivelog-spacing-large);
+  margin-bottom: var(--drivelog-spacing-small);
+  border-radius: var(--drivelog-radius-full);
+  background: var(--drivelog-signature);
+  color: var(--drivelog-signature-text);
+  font: var(--drivelog-web-label);
+}
+
+/* ─── 작동 방식 ─── */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--drivelog-spacing-huge); }
+.step { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--drivelog-spacing-extra-large); align-items: center; }
+.step:nth-child(even) .step-copy { order: 2; }
+.step-no { display: inline-block; font: var(--drivelog-web-label); color: var(--drivelog-signature); margin-bottom: var(--drivelog-spacing-small); }
+.step-visual.screen { border-radius: var(--drivelog-radius-medium); border: var(--drivelog-border-width) solid var(--drivelog-border-strong); }
+
+
+.quote { padding: var(--drivelog-spacing-large); border-radius: var(--drivelog-radius-medium); background: var(--drivelog-background); border: var(--drivelog-border-width) solid var(--drivelog-border); }
+.say { font: var(--drivelog-web-title); color: var(--drivelog-text-primary); margin-bottom: var(--drivelog-spacing-medium); }
+.result { display: flex; flex-wrap: wrap; align-items: center; gap: var(--drivelog-spacing-small); }
+.purpose { font: var(--drivelog-web-label); border-radius: var(--drivelog-radius-full); padding: 0 var(--drivelog-spacing-small); }
+.purpose-business { background: var(--drivelog-purpose-business-background); color: var(--drivelog-purpose-business-text); }
+
+.ledger { border-radius: var(--drivelog-radius-medium); overflow: hidden; border: var(--drivelog-border-width) solid var(--drivelog-border); background: var(--drivelog-background); }
+.ledger-row { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: var(--drivelog-spacing-small); padding: var(--drivelog-spacing-small) var(--drivelog-spacing-medium); border-top: var(--drivelog-border-width) solid var(--drivelog-border); color: var(--drivelog-text-secondary); }
+.ledger-row span:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; color: var(--drivelog-text-primary); }
+.ledger-head { border-top: 0; font: var(--drivelog-web-label); color: var(--drivelog-text-tertiary); }
+
+/* ─── 기업용 ─── */
+.two-col { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--drivelog-spacing-extra-large); align-items: start; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--drivelog-spacing-small); }
+.checklist li { display: flex; flex-direction: column; padding-left: var(--drivelog-spacing-medium); border-left: var(--drivelog-border-width) solid var(--drivelog-purpose-business-background); color: var(--drivelog-text-secondary); }
+.checklist strong { color: var(--drivelog-text-primary); }
+.fleet { border-color: var(--drivelog-signature); }
+.fleet p + p { margin-top: var(--drivelog-spacing-small); }
+
+/* ─── 아래 ─── */
+.footer { border-top: var(--drivelog-border-width) solid var(--drivelog-border); padding: var(--drivelog-spacing-large) 0; }
+.footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--drivelog-spacing-small); }
+.footer p { font: var(--drivelog-web-label); color: var(--drivelog-text-tertiary); }
+
+/* ─── 좁은 화면 ─── */
+@media (max-width: 960px) {
+  .hero-grid, .step, .two-col { grid-template-columns: minmax(0, 1fr); }
+  .step:nth-child(even) .step-copy { order: 0; }
+  .cards.three, .cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nav-links { display: none; }
+  .nav-cta { margin-left: auto; }
+}
+@media (max-width: 600px) {
+  .wrap { padding: 0 var(--drivelog-spacing-small); }
+  .hero h1 { font: var(--drivelog-web-headline); }
+  .cards.three, .cards.four { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: var(--drivelog-spacing-medium); }
+  .hero, .section { padding: var(--drivelog-spacing-extra-large) 0; }
+  .steps { gap: var(--drivelog-spacing-extra-large); }
+  .ledger-row { grid-template-columns: 3fr 1fr; }
+  .ledger-row span:nth-child(3) { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ambient { animation: none; }
+  .button { transition: none; }
+}

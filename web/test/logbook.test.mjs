@@ -154,3 +154,41 @@ test('운행 중에 계기판이 줄었으면(교체·초기화) 거리를 0으�
   assert.deepEqual(logbook.rows.map((row) => row.distanceKm), [20, 0]);
   assert.equal(logbook.summary.totalKm, 20);
 });
+
+// ─── 공용차 운전자·업무 일지 (0010) ───
+
+test('사용자 칸은 운행 당시 이름·부서를 먼저 쓰고, 비고는 방문처 · 업무 내용', async () => {
+  const { buildLogbook } = await import('../js/logbook.js');
+  const base = { vehicle_id: 'v1', start_odometer_km: 100, end_odometer_km: 108, purpose: 'BUSINESS' };
+  const logbook = buildLogbook([
+    { ...base, id: 't1', started_at_ms: Date.UTC(2026, 10, 4, 1), driver_id: 'd1', driver_name: '이서연', driver_department: '기술지원팀',
+      visit_note: '수정구 시흥동', work_note: '거래처 납품 미팅' },
+    { ...base, id: 't2', started_at_ms: Date.UTC(2026, 10, 4, 2), driver_id: 'd2', visit_note: '판교', work_note: null },
+  ], { drivers: { d1: '이서연(옛 이름)', d2: '김민준' }, departments: { d2: '영업1팀' } });
+  assert.equal(logbook.rows[0].driver, '이서연');
+  assert.equal(logbook.rows[0].department, '기술지원팀');
+  assert.equal(logbook.rows[0].note, '수정구 시흥동 · 거래처 납품 미팅');
+  assert.equal(logbook.rows[1].driver, '김민준');
+  assert.equal(logbook.rows[1].department, '영업1팀');
+  assert.equal(logbook.rows[1].note, '판교');
+});
+
+test('업무 일지는 일반업무 운행만 날짜별로 모으고 최근 날짜가 위', async () => {
+  const { buildLogbook, workJournal, workJournalCsv } = await import('../js/logbook.js');
+  const trip = (id, day, purpose, km, note) => ({
+    id, vehicle_id: 'v1', started_at_ms: Date.UTC(2026, 10, day, 1), start_odometer_km: 0, end_odometer_km: km, purpose,
+    driver_name: '김민준', driver_department: '영업1팀', visit_note: '판교', work_note: note,
+  });
+  const days = workJournal(buildLogbook([
+    trip('a', 3, 'BUSINESS', 10, '견적 상담'),
+    trip('b', 3, 'PERSONAL', 5, null),
+    trip('c', 4, 'BUSINESS', 7.5, '납품'),
+    trip('d', 4, 'COMMUTE', 12, null),
+  ], { vehicles: { v1: '1호차' } }));
+  assert.deepEqual(days.map((day) => day.date), ['2026-11-04', '2026-11-03']);
+  assert.equal(days[0].entries.length, 1);
+  assert.equal(days[1].km, 10);
+  const csv = workJournalCsv(days);
+  assert.ok(csv.startsWith('\uFEFF날짜,시간,차량,운전자,부서,방문처,업무 내용,주행거리(km)'));
+  assert.ok(csv.includes('1호차,김민준,영업1팀,판교,납품,7.5'));
+});

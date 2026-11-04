@@ -34,7 +34,7 @@ class ShareLinkRepositoryTest {
         assertEquals(LocalDate.of(2026, 11, 1).atStartOfDay(zone).toInstant().toEpochMilli(), api.lastShareRequest?.toMs)
         val ready = result as ShareLinkResult.Ready
         // 휴대폰 화면도 차와 같은 기간 이름을 보이도록 (차와 휴대폰의 시간대가 달라도)
-        assertEquals("https://example.test/#share=token-1&from=2026-10-01&to=2026-10-31", ready.url)
+        assertEquals("https://example.test/app.html#share=token-1&from=2026-10-01&to=2026-10-31", ready.url)
         assertEquals(OffsetDateTime.parse("2026-10-27T05:34:12.123456+00:00").toInstant().toEpochMilli(), ready.expiresAtMs)
     }
 

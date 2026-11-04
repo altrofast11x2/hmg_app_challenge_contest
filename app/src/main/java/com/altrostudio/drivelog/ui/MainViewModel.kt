@@ -10,6 +10,7 @@ import com.altrostudio.drivelog.DriveLogApp
 import com.altrostudio.drivelog.data.sync.Pairing
 import com.altrostudio.drivelog.data.sync.SyncOutcome
 import com.altrostudio.drivelog.data.trip.TripEntity
+import com.altrostudio.drivelog.data.trip.TripLedger
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.domain.voice.VoiceInputState
@@ -256,7 +257,28 @@ class MainViewModel(
 
     fun agree() = container.consent.agree()
 
-    fun classify(purpose: TripPurpose) = container.recorder.classify(purpose)
+    /** 말로 기록을 확인하는 중이면 그 업무 내용을 살려 고른 용도로 기록한다 */
+    fun classify(purpose: TripPurpose) {
+        if (!container.voiceJournal.confirm(purpose)) container.recorder.classify(purpose)
+    }
+
+    /** 직접 입력한 용도·업무 내용으로 기록한다 (운전자가 손으로 적었으므로 수정 이력은 운전자, 안내는 용도만 읽음) */
+    fun recordTyped(purpose: TripPurpose, note: String?) {
+        container.voiceJournal.cancel()
+        viewModelScope.launch {
+            container.recorder.recordByVoice(
+                purpose,
+                note,
+                TripLedger.driverActor(container.drivers.current.value?.id),
+                readBackNote = false
+            )
+        }
+    }
+
+    /** 말로 기록 확인의 [맞아요] */
+    fun confirmVoice() {
+        container.voiceJournal.confirm()
+    }
 
     /** 미분류로 끝난 지난 운행을 분류한다 (홈의 [지금 분류하기]) */
     fun classifyPast(tripId: String, purpose: TripPurpose) {

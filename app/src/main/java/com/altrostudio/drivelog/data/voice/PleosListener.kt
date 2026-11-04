@@ -29,7 +29,11 @@ import kotlin.coroutines.resume
  * 앱은 녹음을 받지 않고 받아 적은 글자만 받는다. 받아 적은 글자는 로그에 남기지 않는다 (Pleos 앱 보안 가이드).
  *
  * 듣는 동안은 음성 인식 용도로 잠깐 혼자 쓰는 오디오 포커스(GAIN_TRANSIENT_EXCLUSIVE)를 받아 음악을 멈춘다.
- * 받지 못하면(통화 중 등) 듣지 않는다. SDK 호출과 상태는 메인 스레드에서만 다룬다
+ * 받지 못하면(통화 중 등) 듣지 않는다. SDK 호출과 상태는 메인 스레드에서만 다룬다.
+ *
+ * 이어 듣기: 차 안 엔진은 말 사이가 조금만 비어도 끝난 것으로 본다 (2026-11-04 사람 목소리 실측: "업무 거래처 | 납품 미팅"이
+ * "업무 거래처"에서 끊김). 공개 SDK에는 끝 판정 시간을 바꾸는 방법이 없어서(AmbientAi API는 시스템 앱 전용),
+ * 한 구간이 끝나면 바로 다시 듣고 [CONTINUE_WINDOW_MS] 안에 말이 이어지면 붙인다 (1.5초는 끝나고 기다리는 게 길다는 사용자 의견으로 1초). 이어지지 않으면 들은 데까지로 끝낸다
  */
 class PleosListener(private val context: Context) : Listener {
 
@@ -51,8 +55,21 @@ class PleosListener(private val context: Context) : Listener {
     private var lastInitError: String? = null
     private var initErrorPermanent = false
 
-    private class Request(val continuation: CancellableContinuation<Hearing>, val onPartial: (String) -> Unit) {
+    private class Request(
+        val continuation: CancellableContinuation<Hearing>,
+        val onPartial: (String) -> Unit,
+        /** 마이크로 들을 때만 이어 듣는다 (시험용 소리 넣기는 한 번에 끝) */
+        val continuous: Boolean
+    ) {
+        /** 끝난 구간들 */
+        var committed = ""
+
+        /** 지금 구간에서 받아 적는 중인 글자 */
         var text = ""
+        var segments = 1
+        var timer: Runnable? = null
+
+        val full: String get() = listOf(committed, text).filter { it.isNotBlank() }.joinToString(" ")
     }
 
     private val results = object : ResultListener {
@@ -61,20 +78,20 @@ class PleosListener(private val context: Context) : Listener {
         override fun onUpdated(stt: String, completed: Boolean) = onMain {
             val current = request ?: return@onMain
             current.text = stt
-            current.onPartial(stt)
-            if (completed) finish(current, heard(stt))
+            current.onPartial(current.full)
+            if (completed) segmentDone(current)
         }
         override fun onUpdatedEpdData(on: Long, off: Long) = Unit
         override fun onUpdatedRms(rms: Double) = Unit
-        override fun onEndedRecognition() = onMain {
-            val current = request ?: return@onMain
-            // 마지막 결과가 끝 신호 바로 뒤에 올 수 있어 잠깐 기다린다
-            main.postDelayed({ if (request === current) finish(current, heard(current.text)) }, FINAL_RESULT_GRACE_MS)
-        }
+
+        // 끝 신호는 쓰지 않는다: 이어 듣기에서 앞 구간의 끝 신호가 다음 구간을 연 뒤에 올 수 있다.
+        // 말이 있으면 완료 결과(completed)가 오고, 말이 없으면 엔진이 끝내지 않아 앱의 시간 제한으로 끝난다 (에뮬레이터 실측)
+        override fun onEndedRecognition() = Unit
+
         override fun onError(errorType: ErrorType) = onMain {
             Log.i(TAG, "음성 인식 오류: $errorType")
             val current = request ?: return@onMain
-            finish(current, hearingFor(errorType, current.text))
+            finish(current, hearingFor(errorType, current.full))
         }
     }
 
@@ -86,9 +103,10 @@ class PleosListener(private val context: Context) : Listener {
             }
             var started: Request? = null
             try {
-                withTimeoutOrNull(maxMs) {
+                // 말하는 중에 끊지 않도록 전체 상한은 넉넉히 두고, 첫 말을 기다리는 시간([maxMs])은 따로 잰다
+                withTimeoutOrNull(maxMs + MAX_UTTERANCE_EXTRA_MS) {
                     suspendCancellableCoroutine { continuation ->
-                        val current = Request(continuation, onPartial)
+                        val current = Request(continuation, onPartial, continuous = audio == null)
                         started = current
                         request = current
                         try {
@@ -98,18 +116,48 @@ class PleosListener(private val context: Context) : Listener {
                                 stt.sendAudio(audio)
                                 stt.completeAudioSend()
                             }
+                            waitForSpeech(current, maxMs)
                         } catch (e: Exception) {
                             Log.w(TAG, "음성 인식 요청 실패: ${e.message}")
                             finish(current, Hearing.Unavailable("request", permanent = false))
                         }
                     }
-                } ?: heard(started?.text.orEmpty())
+                } ?: heard(started?.full.orEmpty())
             } finally {
+                started?.timer?.let(main::removeCallbacks)
                 if (request === started) request = null
                 runCatching { stt.stop() }
                 if (audio == null) audioManager.abandonAudioFocusRequest(focusRequest)
             }
         }
+
+    /** [ms] 안에 이번 구간의 말이 시작되지 않으면 들은 데까지로 끝낸다. 말하는 중이면 완료 결과를 기다린다 */
+    private fun waitForSpeech(current: Request, ms: Long) {
+        current.timer?.let(main::removeCallbacks)
+        val check = Runnable { if (request === current && current.text.isBlank()) finish(current, heard(current.committed)) }
+        current.timer = check
+        main.postDelayed(check, ms)
+    }
+
+    /** 한 구간이 끝났다. 마이크로 듣는 중이면 바로 다시 들어 이어지는 말을 기다린다 */
+    private fun segmentDone(current: Request) {
+        current.committed = current.full
+        current.text = ""
+        val stt = engine
+        if (!current.continuous || stt == null || current.segments >= MAX_SEGMENTS) {
+            finish(current, heard(current.committed))
+            return
+        }
+        current.segments++
+        try {
+            stt.stop()
+            stt.request()
+            waitForSpeech(current, CONTINUE_WINDOW_MS)
+        } catch (e: Exception) {
+            Log.w(TAG, "이어 듣기 실패: ${e.message}")
+            finish(current, heard(current.committed))
+        }
+    }
 
     override fun cancel() = onMain {
         val current = request ?: return@onMain
@@ -176,6 +224,7 @@ class PleosListener(private val context: Context) : Listener {
     }
 
     private fun finish(current: Request, hearing: Hearing) {
+        current.timer?.let(main::removeCallbacks)
         if (request === current) request = null
         if (current.continuation.isActive) current.continuation.resume(hearing)
     }
@@ -216,7 +265,15 @@ class PleosListener(private val context: Context) : Listener {
     private companion object {
         const val TAG = "DriveLog/Listen"
         const val CONNECT_TIMEOUT_MS = 10_000L
-        const val FINAL_RESULT_GRACE_MS = 400L
+
+        /** 한 구간이 끝난 뒤 말이 이어지기를 기다리는 시간 */
+        const val CONTINUE_WINDOW_MS = 1_000L
+
+        /** 첫 말을 기다리는 시간 뒤에 말하는 중이면 더 들을 수 있는 시간 */
+        const val MAX_UTTERANCE_EXTRA_MS = 12_000L
+
+        /** 한 번에 이어 붙이는 구간 수 */
+        const val MAX_SEGMENTS = 4
         val PERMANENT_ERRORS = setOf(ErrorType.PERMISSION_DENIED, ErrorType.NOT_SUPPORTED_API, ErrorType.UNAVAILABLE_LANGUAGE)
     }
 }

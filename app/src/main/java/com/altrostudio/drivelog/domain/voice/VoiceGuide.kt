@@ -66,6 +66,28 @@ object VoicePhrases {
     /** 일반업무인데 업무 내용을 말하지 않았을 때 한 번 더 묻는다 */
     const val ASK_NOTE = "어떤 업무였는지 말씀해 주세요."
 
+    /** 확인에서 "아니"라고 했을 때 */
+    const val SAY_AGAIN = "다시 말씀해 주세요."
+
+    /** 확인 대답을 알아듣지 못했을 때 */
+    const val CONFIRM_AGAIN = "맞으면 맞아, 다르면 아니라고 말씀해 주세요."
+
+    /** 기록하기 전에 들은 용도와 업무 내용을 되읽고 맞는지 묻는다 */
+    fun confirm(purpose: TripPurpose, workNote: String?): String = buildString {
+        append(
+            when (purpose) {
+                TripPurpose.COMMUTE -> "출퇴근"
+                TripPurpose.BUSINESS -> "일반업무"
+                TripPurpose.PERSONAL -> "비업무"
+                TripPurpose.UNCLASSIFIED -> "미분류"
+            }
+        )
+        workNote?.takeIf { it.isNotBlank() && purpose != TripPurpose.PERSONAL }?.let {
+            append(", 업무 내용 ").append(it.take(NOTE_READ_MAX))
+        }
+        append(". 맞으면 맞아, 다르면 다시 말씀해 주세요.")
+    }
+
     /** [asking]이면 정차 안내 끝에 용도를 말로 묻는다 (말로 기록) */
     fun of(announcement: TripAnnouncement, asking: Boolean = false): String = when (announcement) {
         TripAnnouncement.Started -> "운행 기록을 시작합니다."

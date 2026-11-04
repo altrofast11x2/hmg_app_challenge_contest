@@ -110,6 +110,57 @@ class SpokenTripParserTest {
     }
 
     @Test
+    fun `맞는지 물었을 때 맞다는 대답을 여러 말로 받는다`() {
+        for (yes in listOf("맞아", "맞아요", "네 맞습니다", "마자", "다음", "넘어가", "확인", "좋아요", "응", "넵", "그래")) {
+            assertEquals(yes, SpokenReply.Yes, SpokenTripParser.reply(yes, TripPurpose.BUSINESS))
+        }
+    }
+
+    @Test
+    fun `그렇죠처럼 말해도 맞다로 받고 같은 용도 낱말이 섞여도 맞다로 본다`() {
+        assertEquals(SpokenReply.Yes, SpokenTripParser.reply("그렇죠", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.Yes, SpokenTripParser.reply("어 사실 어 업무 거래 업무 그렇죠", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.Yes, SpokenTripParser.reply("정확해요", TripPurpose.COMMUTE))
+    }
+
+    @Test
+    fun `겹쳐 받아 적은 업무 낱말은 업무 내용에서 뺀다`() {
+        assertEquals(SpokenTrip(TripPurpose.BUSINESS, "거래처 미팅"), parse("업무 업무 거래처 미팅"))
+        assertEquals(SpokenTrip(TripPurpose.BUSINESS, "업무협약 체결"), parse("업무 업무협약 체결"))
+    }
+
+    @Test
+    fun `아니라는 대답과 고쳐 말한 내용을 구분한다`() {
+        assertEquals(SpokenReply.No, SpokenTripParser.reply("아니", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.No, SpokenTripParser.reply("틀렸어", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.No, SpokenTripParser.reply("다시", TripPurpose.BUSINESS))
+        assertEquals(
+            SpokenReply.Correction(SpokenTrip(TripPurpose.COMMUTE, null)),
+            SpokenTripParser.reply("아니 출근", TripPurpose.BUSINESS)
+        )
+        assertEquals(
+            SpokenReply.Correction(SpokenTrip(TripPurpose.BUSINESS, "본사 회의")),
+            SpokenTripParser.reply("업무 본사 회의", TripPurpose.BUSINESS)
+        )
+    }
+
+    @Test
+    fun `맞다고 하면서 같은 용도를 말하면 맞다로 본다`() {
+        assertEquals(SpokenReply.Yes, SpokenTripParser.reply("네 업무 맞아요", TripPurpose.BUSINESS))
+        assertEquals(
+            SpokenReply.Correction(SpokenTrip(TripPurpose.PERSONAL, null)),
+            SpokenTripParser.reply("네 비업무요", TripPurpose.BUSINESS)
+        )
+    }
+
+    @Test
+    fun `알아들을 수 없는 대답과 취소`() {
+        assertEquals(SpokenReply.Unclear, SpokenTripParser.reply("음", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.Unclear, SpokenTripParser.reply("", TripPurpose.BUSINESS))
+        assertEquals(SpokenReply.Cancel, SpokenTripParser.reply("취소", TripPurpose.BUSINESS))
+    }
+
+    @Test
     fun `빈 말은 아무것도 정하지 않는다`() {
         assertEquals(SpokenTrip(null, null), parse(""))
         assertEquals(SpokenTrip(null, null), parse("  . "))

@@ -12,6 +12,23 @@ data class SpokenTrip(
     val cancelled: Boolean = false
 )
 
+/** 들은 내용이 맞는지 물었을 때의 대답 */
+sealed interface SpokenReply {
+    /** "맞아", "네", "다음" */
+    data object Yes : SpokenReply
+
+    /** "아니", "틀려", "다시" */
+    data object No : SpokenReply
+
+    /** "아니 출근", "업무 본사 회의"처럼 다른 내용을 말했다 */
+    data class Correction(val spoken: SpokenTrip) : SpokenReply
+
+    /** "취소", "나중에" */
+    data object Cancel : SpokenReply
+
+    data object Unclear : SpokenReply
+}
+
 /**
  * 받아 적은 한국어 문장에서 운행 용도와 업무 내용을 뽑는다 (Gleo AI 없이 앱이 직접 듣는 경우).
  * 예: "업무, 거래처 납품 미팅" → 일반업무 + "거래처 납품 미팅". "출근" → 출퇴근. "개인 용무" → 비업무.
@@ -46,6 +63,29 @@ object SpokenTripParser {
             return SpokenTrip(TripPurpose.BUSINESS, note(scope, TripPurpose.BUSINESS))
         }
         return SpokenTrip(null, null, cancelled = "취소" in compact)
+    }
+
+    /**
+     * "맞으면 맞아, 다르면 다시 말씀해 주세요"에 대한 대답. [current]는 확인 중인 용도.
+     * 한 음절 대답("네")은 잘못 들릴 수 있어 "맞아", "다음", "확인"처럼 긴 말도 받는다. 모르면 [SpokenReply.Unclear]
+     */
+    fun reply(text: String, current: TripPurpose? = null): SpokenReply {
+        val cleaned = clean(text)
+        val compact = cleaned.replace(" ", "")
+        if (compact.isEmpty()) return SpokenReply.Unclear
+        if (NEGATIVE.containsMatchIn(compact)) {
+            val corrected = parse(cleaned)
+            return if (corrected.purpose != null) SpokenReply.Correction(corrected) else SpokenReply.No
+        }
+        val explicit = explicitPurpose(compact)
+        val yes = YES_WORDS.any { it in compact } || YES_SHORT.matches(compact)
+        if (yes && (explicit == null || explicit.purpose == current)) return SpokenReply.Yes
+        val parsed = parse(cleaned)
+        return when {
+            parsed.cancelled -> SpokenReply.Cancel
+            parsed.purpose != null -> SpokenReply.Correction(parsed)
+            else -> SpokenReply.Unclear
+        }
     }
 
     /** "어떤 업무였는지" 다시 물었을 때의 대답을 업무 내용으로 바꾼다. "없어", "됐어"면 null */
@@ -85,6 +125,8 @@ object SpokenTripParser {
         for (filler in FILLERS) note = filler.replace(note, " ")
         note = note.replace(SPACES, " ").trim()
         repeat(2) { note = LEADING.replace(note, "").trim() }
+        // 음성 인식이 용도 낱말을 겹쳐 받아 적은 경우 ("업무 업무 거래처 미팅")
+        if (purpose == TripPurpose.BUSINESS) note = LEADING_BUSINESS.replace(note, "").trim()
         note = TRAILING.replace(note, "").trim()
         return note.takeIf { it.length >= MIN_NOTE_LENGTH }
     }
@@ -95,6 +137,12 @@ object SpokenTripParser {
     private val SPACES = Regex("\\s+")
     private val CORRECTION = Regex("(아니고|아니라|말고)")
     private val CANCEL = Regex("^(취소|취소해|취소해줘|취소해주세요|그만|그만해|됐어|됐어요|됐습니다|나중에|나중에할게|나중에할게요|안해|안할게|안할게요|괜찮아|괜찮아요)$")
+    private val NEGATIVE = Regex("^(아니|아뇨|아녀|틀려|틀렸|틀린|다시|안맞|노노|노우)")
+    private val YES_WORDS = listOf(
+        "맞아", "맞어", "맞습니다", "맞다", "맞죠", "맞네", "맞음", "마자", "마저", "다음", "넘어가", "확인", "좋아", "좋습니다",
+        "그래", "그렇", "정확", "오케이", "오키", "기록해", "저장해", "그걸로"
+    )
+    private val YES_SHORT = Regex("^(네|넵|넹|예|응|어|어어|웅|ok|okay|yes)(요)?$", RegexOption.IGNORE_CASE)
     private val NO_NOTE = Regex("^(없어|없어요|없음|없습니다|없다|딱히없어|딱히없어요|됐어|됐어요|아니요|아니|패스|그냥|그냥기록해|그냥기록해줘|괜찮아|괜찮아요|취소|몰라|나중에)$")
     private val AFFIRMATIVE = Regex("^(네|예|응|맞아요|맞아|맞습니다|그래요|그래|좋아요|좋아|오케이|지난번처럼|똑같이|같은\\s?걸로)(?=\\s|$)")
 
@@ -137,6 +185,9 @@ object SpokenTripParser {
 
     /** 업무 내용 앞의 군말과 이어 주는 말 */
     private val LEADING = Regex("^(음+|어+|그+|저기|그리고|그냥|네|예|응|아니요|아니|은|는|이|가|으로|로|에|에서|하고|해서)(\\s+|$)")
+
+    /** 업무 내용 앞에 겹친 "업무" ("업무협약"처럼 붙은 낱말은 남긴다) */
+    private val LEADING_BUSINESS = Regex("^((일반\\s*)?업무(로|요|이고)?(\\s+|$))+")
 
     /** 업무 내용 끝의 말투 ("거래처 미팅이요" → "거래처 미팅") */
     private val TRAILING = Regex("(이었어요|였어요|이에요|예요|입니다|이요|요|이야|했어요|했어|했습니다)$")

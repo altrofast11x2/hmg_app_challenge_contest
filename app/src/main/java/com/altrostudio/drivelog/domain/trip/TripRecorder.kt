@@ -68,6 +68,9 @@ class TripRecorder(
     // 앱이 주행 중에 죽었다가 다시 켜졌다면, 마지막으로 주행을 확인한 시각을 종료 시각으로 쓴다
     private var restoredLastSeenAt: Long? = null
 
+    // 말로 기록에서 기록 전에 이미 되읽고 확인받은 운행: 분류 안내에서 업무 내용을 다시 읽지 않는다
+    private var noteConfirmedTripId: String? = null
+
     fun start() {
         if (!started.compareAndSet(false, true)) return
         job = scope.launch {
@@ -114,9 +117,9 @@ class TripRecorder(
      * - 정차 중: 지금 운행을 그 용도로 마친다
      * - 운행이 없으면: 최근 [RECENT_TRIP_MS] 안에 마친 운행을 그 용도로 고친다
      */
-    suspend fun recordByVoice(purpose: TripPurpose, workNote: String?, actor: String): VoiceRecord {
+    suspend fun recordByVoice(purpose: TripPurpose, workNote: String?, actor: String, readBackNote: Boolean = true): VoiceRecord {
         val result = CompletableDeferred<VoiceRecord>()
-        inputs.send(Input.Voice(purpose, workNote, actor, result))
+        inputs.send(Input.Voice(purpose, workNote, actor, result, readBackNote))
         return result.await()
     }
 
@@ -208,8 +211,9 @@ class TripRecorder(
             }
             is TripEffect.CompleteTrip -> {
                 // 말로 남긴 업무 내용은 분류 안내 때 되읽어 준다 (음성 인식이 잘못 받아 적었는지 운전자가 듣고 안다)
-                val note = effect.purpose?.takeIf { it != TripPurpose.PERSONAL }
+                val note = effect.purpose?.takeIf { it != TripPurpose.PERSONAL && effect.tripId != noteConfirmedTripId }
                     ?.let { trips.activeTrip()?.takeIf { trip -> trip.id == effect.tripId }?.workNote }
+                noteConfirmedTripId = null
                 trips.completeTrip(effect.tripId, effect.at)
                 effect.purpose?.let {
                     trips.classify(effect.tripId, it, effect.actor, effect.at)
@@ -250,6 +254,7 @@ class TripRecorder(
         }
         is TripState.Parked -> {
             trips.setPlan(current.tripId, input.purpose, input.workNote)
+            noteConfirmedTripId = current.tripId.takeIf { !input.readBackNote }
             inputs.trySend(Input.Event(TripEvent.Classified(input.purpose, now(), input.actor)))
             VoiceRecord.Completed(current.tripId)
         }
@@ -261,7 +266,7 @@ class TripRecorder(
                 trips.classify(last.id, input.purpose, input.actor, now())
                 val note = input.workNote?.takeIf { input.purpose != TripPurpose.PERSONAL }
                 note?.let { trips.setWorkNote(last.id, it, input.actor, now()) }
-                announce(TripAnnouncement.Classified(input.purpose, note))
+                announce(TripAnnouncement.Classified(input.purpose, note.takeIf { input.readBackNote }))
                 VoiceRecord.Corrected(last.id)
             }
         }
@@ -320,7 +325,8 @@ class TripRecorder(
             val purpose: TripPurpose,
             val workNote: String?,
             val actor: String,
-            val result: CompletableDeferred<VoiceRecord>
+            val result: CompletableDeferred<VoiceRecord>,
+            val readBackNote: Boolean
         ) : Input
         data class Odometer(val km: Float?) : Input
         data class Arrival(val arrival: NaviArrival) : Input

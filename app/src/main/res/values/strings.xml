@@ -48,7 +48,16 @@
     <string name="voice_input_listening_text">듣고 있어요 · “%1$s”</string>
     <string name="voice_input_listening_note">일반업무 · 어떤 업무였는지 듣고 있어요…</string>
     <string name="voice_input_listening_note_text">일반업무 · 업무 내용 “%1$s”</string>
-    <string name="voice_input_recording">“%1$s” 기록하는 중</string>
+    <string name="voice_input_recording">%1$s 기록하는 중</string>
+    <string name="voice_input_confirm">%1$s — 맞나요? “맞아”라고 말하거나 [맞아요]를 누르세요. 용도만 틀렸으면 위에서 고르세요</string>
+    <string name="voice_input_confirm_heard">%1$s — 맞나요? · 대답 “%2$s”</string>
+    <string name="voice_input_confirm_button">맞아요</string>
+    <string name="voice_input_type">직접 입력</string>
+    <string name="note_dialog_title">용도와 업무 내용 입력</string>
+    <string name="note_dialog_label">업무 내용 (방문처·한 일)</string>
+    <string name="note_dialog_placeholder">예: 거래처 납품 미팅</string>
+    <string name="note_dialog_personal">비업무는 업무 내용을 남기지 않아요</string>
+    <string name="note_dialog_save">기록</string>
     <string name="voice_input_not_understood">“%1$s” — 용도를 알아듣지 못했어요. 출퇴근, 업무, 비업무 중에 말씀하시거나 위에서 골라 주세요</string>
     <string name="voice_input_no_speech">말씀을 듣지 못했어요. 다시 말하거나 위에서 골라 주세요</string>
     <string name="voice_input_unavailable">지금은 음성 인식을 쓸 수 없어요 (통화 중이거나 마이크를 쓸 수 없음). 위에서 골라 주세요</string>

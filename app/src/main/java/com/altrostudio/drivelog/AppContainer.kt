@@ -133,7 +133,10 @@ class AppContainer(context: Context) {
             awaitQuiet = speaker::awaitQuiet,
             stopSpeaking = speaker::stop,
             suggestion = { tripId -> trips.activeTrip()?.takeIf { it.id == tripId }?.endAddress?.let { trips.suggestPurpose(it) } },
-            record = { purpose, note -> recorder.recordByVoice(purpose, note, TripLedger.voiceActor(drivers.current.value?.id)) },
+            // 기록 전에 확인 질문으로 되읽었으므로 분류 안내는 용도만 읽는다
+            record = { purpose, note ->
+                recorder.recordByVoice(purpose, note, TripLedger.voiceActor(drivers.current.value?.id), readBackNote = false)
+            },
             scope = appScope
         )
     }

@@ -85,6 +85,9 @@ object DriveLogIcons {
         lineIcon("mic", "M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5v3")
     }
 
+    /** 직접 입력 (연필) */
+    val Edit by lazy { lineIcon("edit", "M4.5 19.5h4l10-10-4-4-10 10z", "M13 7l4 4") }
+
     /** 원(cx, cy, r)을 path 문자열로 */
     private fun circle(cx: Float, cy: Float, r: Float) = "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0z"
 

@@ -119,7 +119,9 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             modifier = modifier,
             voice = voiceInput,
             onVoice = viewModel::listenNow,
-            onVoiceStop = viewModel::stopListening
+            onVoiceStop = viewModel::stopListening,
+            onVoiceConfirm = viewModel::confirmVoice,
+            onTyped = viewModel::recordTyped
         )
 
         queueTrip != null -> ClassificationScreen(

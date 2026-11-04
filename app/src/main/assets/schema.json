@@ -19,7 +19,7 @@
             },
             "workNote": {
               "type": "string",
-              "description": "Short note about the work done on the trip, such as the client visited or the task performed."
+              "description": "Short note describing the work done during the trip."
             }
           },
           "required": ["purpose"]

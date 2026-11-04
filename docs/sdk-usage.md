@@ -31,7 +31,7 @@
 
 - 에뮬레이터 Virtual Console 화면(`/vehicle/state`)은 앱이 바꾼 공조·창문·잠금·무드등을 다시 그리지 않는다. 앱의 다시 읽기와 Pleos 시스템 바로 확인한다. 반대로 Virtual Console에서 바꾼 창문·실내등·잠금·공조는 앱이 읽는다.
 - 좌석 위치(`getCurrentSeatForeAftPosition` 등)는 에뮬레이터에서 늘 0이라(Virtual Console에서 바꿔도, 앱이 `moveSeatForeAft`로 움직여도) 좌석 위치로 운전자를 알아보거나 좌석을 맞추는 기능은 넣지 않았다.
-- Pleos Playground 문서(create-my-project, 2026-11-03)는 Vehicle Control SDK를 "준비 중"으로 적는다. 개발 단계에서는 manifest 선언만으로 쓸 수 있고(온라인 설명회 10/28), App Market에 올릴 때 승인이 필요하다.
+- Pleos Playground 문서(create-my-project, 2026-11-03)는 Vehicle Control SDK를 "준비 중"으로 적는다. 개발 단계에서는 manifest 선언만으로 쓸 수 있고(온라인 설명회 10/28), App Market에 올릴 때 승인이 필요하다. 팀은 법인이 없어 App Market 등록은 법인 설립 뒤로 미뤘고(2026-11-04), 공모전 제출·시연(에뮬레이터)에는 승인이 필요 없다.
 - 타이어 공기압은 Pleos `getTirePressure`가 `PRIVATE_CAR_SAFETY`, AAOS `TIRE_PRESSURE`가 signature 권한이라 쓰지 않는다.
 
 ## 음성 명령 (Gleo Interface, 0.3.0)
@@ -44,7 +44,7 @@
 | `SET_DRIVER` | `driverName`(필수) | 이름(공백·"님"·성 생략 허용)으로 운전자를 찾아 맞춤 설정 적용. 못 찾으면 asking + 명단 |
 | `GET_DRIVING_SUMMARY` | `period`(TODAY·THIS_MONTH·LAST_MONTH) | 운행 수, 총거리, 업무용 거리, 업무사용비율 |
 
-에뮬레이터 Gleo AI(`ai.umos.ambientai`)가 설치 때 스키마를 읽는 것을 로그(`[GAA] [Schema] Loaded schema.json from com.altrostudio.drivelog`)로 확인했고, 세 함수는 Gleo와 같은 방송을 adb로 보내 확인했다. Pleos 문서상 스키마는 Pleos 검토·승인 뒤 활성화된다.
+에뮬레이터 Gleo AI(`ai.umos.ambientai`)가 설치 때 스키마를 읽는 것을 로그(`[GAA] [Schema] Loaded schema.json from com.altrostudio.drivelog`)로 확인했고, 세 함수는 Gleo와 같은 방송을 adb로 보내 확인했다. Pleos 문서상 스키마는 Pleos 검토·승인 뒤 활성화된다. 팀이 신청한다 ([gleo-schema-request.md](gleo-schema-request.md)).
 
 ## Pleos SDK가 아닌 AAOS 표준 API
 

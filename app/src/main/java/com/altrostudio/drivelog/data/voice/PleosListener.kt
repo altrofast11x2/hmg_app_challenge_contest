@@ -159,6 +159,17 @@ class PleosListener(private val context: Context) : Listener {
         }
     }
 
+    /**
+     * 앱이 켜질 때 한 번: 지난 실행에서 듣던 중 앱이 죽었으면 음성 서비스가 그 듣기를 이어 가며 마이크를 계속 연다
+     * (2026-11-05 실측: 듣는 중 앱을 다시 설치했더니 서비스가 73초 동안 녹음하다 스스로 끝냄). 그래서 연결하자마자 멈춘다
+     */
+    suspend fun stopLeftover() = withContext(Dispatchers.Main.immediate) {
+        if (request != null) return@withContext
+        val stt = connect() ?: return@withContext
+        runCatching { stt.stop() }
+        Unit
+    }
+
     override fun cancel() = onMain {
         val current = request ?: return@onMain
         finish(current, Hearing.Silence)

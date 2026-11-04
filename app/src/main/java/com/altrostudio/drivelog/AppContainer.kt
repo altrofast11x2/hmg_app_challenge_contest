@@ -123,9 +123,11 @@ class AppContainer(context: Context) {
      * 말로 용도·업무 내용 기록. Gleo AI 스키마 승인이 없어도 앱이 Pleos SpeechToText(차 안 엔진)로 직접 듣는다.
      * 승인되면 Gleo 명령([gleoActions])과 함께 쓴다
      */
+    private val voiceListener by lazy { PleosListener(appContext) }
+
     val voiceJournal: VoiceJournal by lazy {
         VoiceJournal(
-            listener = PleosListener(appContext),
+            listener = voiceListener,
             tripState = recorder.state,
             settings = preferences,
             guidanceOn = { voiceGuide.enabled },
@@ -212,6 +214,8 @@ class AppContainer(context: Context) {
 
     /** 동의한 뒤 기록 서비스가 부른다: 운행 감지와 차 안 연동을 함께 시작한다 */
     fun startRecording() {
+        // 지난 실행에서 듣던 중 앱이 죽었으면 음성 서비스가 마이크를 계속 열고 있을 수 있다
+        if (voiceJournal.enabled) appScope.launch { voiceListener.stopLeftover() }
         recorder.start()
         cabinAssistant.start(recorder.moments) { trips.activeTrip()?.status == TripStatus.PARKED }
     }

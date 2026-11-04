@@ -80,6 +80,11 @@ object DriveLogIcons {
         lineIcon("calendar", "M6.5 5.5h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z", "M4.5 10h15", "M8.5 3.5v4", "M15.5 3.5v4")
     }
 
+    /** 말로 기록 (마이크) */
+    val Mic by lazy {
+        lineIcon("mic", "M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5v3")
+    }
+
     /** 원(cx, cy, r)을 path 문자열로 */
     private fun circle(cx: Float, cy: Float, r: Float) = "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0z"
 

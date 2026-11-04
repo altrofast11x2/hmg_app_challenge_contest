@@ -32,8 +32,10 @@ import com.altrostudio.drivelog.R
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.distanceKm
+import com.altrostudio.drivelog.domain.voice.VoiceInputState
 import com.altrostudio.drivelog.ui.components.ButtonKind
 import com.altrostudio.drivelog.ui.components.DriveLogButton
+import com.altrostudio.drivelog.ui.components.DriveLogIcons
 import com.altrostudio.drivelog.ui.components.ScreenFrame
 import com.altrostudio.drivelog.ui.components.TopBar
 import com.altrostudio.drivelog.ui.components.formatKm
@@ -48,6 +50,7 @@ import com.altrostudio.drivelog.ui.theme.DriveLogTheme
 /**
  * 정차 후 원탭 분류. 같은 목적지에서 지난번에 고른 용도를 선택 링으로 강조해 제안한다.
  * [timeoutLabel]: 방금 끝난 운행이면 "N분 뒤 미분류로 저장" 안내에 쓰고, 지난 운행을 분류할 때는 null
+ * [voice]가 있으면(방금 정차한 운행) 말로 기록 상태와 [말로 기록] 버튼을 보여 준다. 지난 운행에는 없다.
  * A05 명세가 나오면 이 화면을 명세대로 바꾼다 (지금은 토큰의 용도 색·아이콘·선택 링만 적용).
  */
 @Composable
@@ -57,7 +60,10 @@ fun ClassificationScreen(
     timeoutLabel: String?,
     onSelect: (TripPurpose) -> Unit,
     onLater: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    voice: VoiceInputState? = null,
+    onVoice: () -> Unit = {},
+    onVoiceStop: () -> Unit = {}
 ) {
     val dimens = DriveLogTheme.dimens
     val colors = DriveLogTheme.colors
@@ -71,6 +77,7 @@ fun ClassificationScreen(
             TopBar(title = stringResource(R.string.classify_title), portrait = portrait)
             TripSummary(trip)
             PurposeButtons(suggestion, onSelect, vertical = portrait, modifier = Modifier.fillMaxWidth())
+            if (voice != null) VoiceInputPanel(voice, portrait, onVoice, onVoiceStop)
             if (timeoutLabel != null) {
                 Text(stringResource(R.string.classify_timeout_note, timeoutLabel), style = DriveLogTheme.typography.label, color = colors.textTertiary)
             }
@@ -80,6 +87,79 @@ fun ClassificationScreen(
                 kind = ButtonKind.Secondary,
                 modifier = if (portrait) Modifier.fillMaxWidth() else Modifier
             )
+        }
+    }
+}
+
+/** 말로 기록: 듣는 중 받아 적은 글자와 [말로 기록]/[그만 듣기] 버튼 */
+@Composable
+private fun VoiceInputPanel(state: VoiceInputState, portrait: Boolean, onVoice: () -> Unit, onStop: () -> Unit) {
+    val colors = DriveLogTheme.colors
+    val dimens = DriveLogTheme.dimens
+    val typography = DriveLogTheme.typography
+    val active = state is VoiceInputState.Preparing || state is VoiceInputState.Listening
+    val message = when (state) {
+        VoiceInputState.Idle -> stringResource(R.string.voice_input_hint)
+        VoiceInputState.Preparing -> stringResource(R.string.voice_input_preparing)
+        is VoiceInputState.Listening -> when {
+            state.forNote && state.partial.isBlank() -> stringResource(R.string.voice_input_listening_note)
+            state.forNote -> stringResource(R.string.voice_input_listening_note_text, state.partial)
+            state.partial.isBlank() -> stringResource(R.string.voice_input_listening)
+            else -> stringResource(R.string.voice_input_listening_text, state.partial)
+        }
+        is VoiceInputState.Recording -> stringResource(R.string.voice_input_recording, state.heard)
+        is VoiceInputState.NotUnderstood -> stringResource(R.string.voice_input_not_understood, state.heard)
+        VoiceInputState.NoSpeech -> stringResource(R.string.voice_input_no_speech)
+        VoiceInputState.Unavailable -> stringResource(R.string.voice_input_unavailable)
+    }
+    val attention = state is VoiceInputState.NotUnderstood || state is VoiceInputState.Unavailable
+    val button: @Composable (Modifier) -> Unit = { buttonModifier ->
+        DriveLogButton(
+            text = stringResource(
+                when {
+                    active -> R.string.voice_input_stop
+                    state == VoiceInputState.Idle -> R.string.voice_input_button
+                    else -> R.string.voice_input_retry
+                }
+            ),
+            onClick = if (active) onStop else onVoice,
+            kind = if (active) ButtonKind.Secondary else ButtonKind.Primary,
+            enabled = state !is VoiceInputState.Recording,
+            icon = DriveLogIcons.Mic,
+            modifier = buttonModifier
+        )
+    }
+    val text: @Composable (Modifier) -> Unit = { textModifier ->
+        Row(modifier = textModifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall)) {
+            Icon(
+                DriveLogIcons.Mic,
+                contentDescription = null,
+                tint = when {
+                    active -> colors.accent
+                    attention -> colors.statusWarning
+                    else -> colors.textTertiary
+                },
+                modifier = Modifier.size(dimens.iconSizeMedium)
+            )
+            Text(message, style = typography.body, color = if (active) colors.textPrimary else colors.textSecondary)
+        }
+    }
+    val shape = RoundedCornerShape(dimens.radiusLarge)
+    val frame = Modifier
+        .fillMaxWidth()
+        .clip(shape)
+        .background(colors.surface)
+        .border(dimens.borderWidth, if (active) colors.accent else colors.border, shape)
+        .padding(dimens.spacingMedium)
+    if (portrait) {
+        Column(modifier = frame, verticalArrangement = Arrangement.spacedBy(dimens.spacingMedium)) {
+            text(Modifier.fillMaxWidth())
+            button(Modifier.fillMaxWidth())
+        }
+    } else {
+        Row(modifier = frame, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dimens.spacingMedium)) {
+            text(Modifier.weight(1f))
+            button(Modifier)
         }
     }
 }

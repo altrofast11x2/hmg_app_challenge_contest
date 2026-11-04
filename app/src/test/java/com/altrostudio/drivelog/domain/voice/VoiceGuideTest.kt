@@ -61,6 +61,35 @@ class VoiceGuideTest {
     }
 
     @Test
+    fun `말로 기록이 켜져 있으면 정차 안내 끝에 용도를 말로 묻는다`() {
+        assertEquals(
+            "운행을 마쳤습니다. 2분 운행했습니다. 용도와 업무 내용을 말씀해 주세요.",
+            VoicePhrases.of(TripAnnouncement.Parked(null, 2 * 60_000L, suggestion = null), asking = true)
+        )
+        assertEquals(
+            "운행을 마쳤습니다. 2분 운행했습니다. 이곳은 지난번에 일반업무로 기록했습니다. 맞으면 네, 아니면 용도를 말씀해 주세요.",
+            VoicePhrases.of(TripAnnouncement.Parked(null, 2 * 60_000L, suggestion = TripPurpose.BUSINESS), asking = true)
+        )
+    }
+
+    @Test
+    fun `말로 남긴 업무 내용은 분류 안내 때 되읽어 준다`() {
+        assertEquals(
+            "일반업무로 기록했습니다. 업무 내용, 거래처 납품 미팅.",
+            VoicePhrases.of(TripAnnouncement.Classified(TripPurpose.BUSINESS, "거래처 납품 미팅"))
+        )
+        assertEquals("비업무로 기록했습니다.", VoicePhrases.of(TripAnnouncement.Classified(TripPurpose.PERSONAL, "병원")))
+        assertEquals("출퇴근으로 기록했습니다.", VoicePhrases.of(TripAnnouncement.Classified(TripPurpose.COMMUTE)))
+    }
+
+    @Test
+    fun `안내 장치가 묻는지 여부를 정차 안내에 반영한다`() {
+        val asking = VoiceGuide(speaker, settings, asksAfterParking = { true })
+        asking.announce(TripAnnouncement.Parked(null, 2 * 60_000L, suggestion = null))
+        assertEquals(listOf("운행을 마쳤습니다. 2분 운행했습니다. 용도와 업무 내용을 말씀해 주세요."), speaker.spoken)
+    }
+
+    @Test
     fun `설정에서 끄면 읽던 안내를 멈추고 다음 안내부터 읽지 않는다`() {
         guide.announce(TripAnnouncement.Started)
         guide.setEnabled(false)

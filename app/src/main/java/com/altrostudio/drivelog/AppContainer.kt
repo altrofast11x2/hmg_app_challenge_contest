@@ -19,6 +19,7 @@ import com.altrostudio.drivelog.data.sync.ShareLinkRepository
 import com.altrostudio.drivelog.data.sync.SyncRepository
 import com.altrostudio.drivelog.data.sync.SyncScheduler
 import com.altrostudio.drivelog.data.trip.RoomTripRepository
+import com.altrostudio.drivelog.data.trip.TripLedger
 import com.altrostudio.drivelog.data.trip.TripRepository
 import com.altrostudio.drivelog.data.trip.TripStatus
 import com.altrostudio.drivelog.data.update.WebLatestVersionSource
@@ -27,6 +28,7 @@ import com.altrostudio.drivelog.data.vehicle.NoCabinControl
 import com.altrostudio.drivelog.data.vehicle.PleosCabinControl
 import com.altrostudio.drivelog.data.vehicle.PleosVehicleDataSource
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
+import com.altrostudio.drivelog.data.voice.PleosListener
 import com.altrostudio.drivelog.data.voice.PleosSpeaker
 import com.altrostudio.drivelog.domain.cabin.AmbientPalette
 import com.altrostudio.drivelog.domain.cabin.CabinAssistant
@@ -36,7 +38,9 @@ import com.altrostudio.drivelog.domain.driver.DriverProfiles
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.domain.update.UpdateChecker
 import com.altrostudio.drivelog.domain.voice.GleoActions
+import com.altrostudio.drivelog.domain.voice.TripAnnouncement
 import com.altrostudio.drivelog.domain.voice.VoiceGuide
+import com.altrostudio.drivelog.domain.voice.VoiceJournal
 import com.altrostudio.drivelog.ui.theme.DriveLogDarkColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,7 +115,28 @@ class AppContainer(context: Context) {
 
     val csvSaver by lazy { CsvFileSaver(appContext) }
 
-    val voiceGuide by lazy { VoiceGuide(PleosSpeaker(appContext), preferences) }
+    private val speaker by lazy { PleosSpeaker(appContext) }
+
+    val voiceGuide: VoiceGuide by lazy { VoiceGuide(speaker, preferences, asksAfterParking = { voiceJournal.asksAfterParking }) }
+
+    /**
+     * 말로 용도·업무 내용 기록. Gleo AI 스키마 승인이 없어도 앱이 Pleos SpeechToText(차 안 엔진)로 직접 듣는다.
+     * 승인되면 Gleo 명령([gleoActions])과 함께 쓴다
+     */
+    val voiceJournal: VoiceJournal by lazy {
+        VoiceJournal(
+            listener = PleosListener(appContext),
+            tripState = recorder.state,
+            settings = preferences,
+            guidanceOn = { voiceGuide.enabled },
+            say = voiceGuide::say,
+            awaitQuiet = speaker::awaitQuiet,
+            stopSpeaking = speaker::stop,
+            suggestion = { tripId -> trips.activeTrip()?.takeIf { it.id == tripId }?.endAddress?.let { trips.suggestPurpose(it) } },
+            record = { purpose, note -> recorder.recordByVoice(purpose, note, TripLedger.voiceActor(drivers.current.value?.id)) },
+            scope = appScope
+        )
+    }
 
     val updateChecker by lazy {
         val installed = appContext.packageManager.getPackageInfo(appContext.packageName, 0).longVersionCode.toInt()
@@ -149,7 +174,7 @@ class AppContainer(context: Context) {
     /** Gleo AI 음성 명령 (운행 용도·업무 내용 기록, 운전자 바꾸기, 운행 요약) */
     val gleoActions by lazy { GleoActions(appContext, recorder, trips, drivers, consent.consentGiven) }
 
-    val recorder by lazy {
+    val recorder: TripRecorder by lazy {
         TripRecorder(
             vehicle = vehicle,
             navi = navi,
@@ -157,7 +182,11 @@ class AppContainer(context: Context) {
             vehicleId = vehicleIdentity::vehicleId,
             parkedTimeoutMs = { preferences.parkedTimeoutMs },
             scope = appScope,
-            announce = voiceGuide::announce,
+            announce = { announcement ->
+                voiceGuide.announce(announcement)
+                // 정차 안내 끝에 용도를 물었으면 안내가 끝난 뒤 듣는다
+                if (announcement is TripAnnouncement.Parked) voiceJournal.onParkedAnnounced()
+            },
             currentDriver = { drivers.currentRef() },
             driverNeedsConfirmation = { drivers.needsConfirmation() }
         )

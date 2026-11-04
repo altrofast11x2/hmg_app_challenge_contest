@@ -12,6 +12,7 @@ import com.altrostudio.drivelog.data.sync.SyncOutcome
 import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
+import com.altrostudio.drivelog.domain.voice.VoiceInputState
 import com.altrostudio.drivelog.domain.cabin.CabinPhrases
 import com.altrostudio.drivelog.domain.cabin.ExitCheck
 import com.altrostudio.drivelog.domain.cabin.TidyItem
@@ -241,6 +242,17 @@ class MainViewModel(
     val voiceGuidance: Boolean get() = container.voiceGuide.enabled
 
     fun setVoiceGuidance(on: Boolean) = container.voiceGuide.setEnabled(on)
+
+    /** 말로 용도·업무 내용 기록 (분류 화면) */
+    val voiceInput: StateFlow<VoiceInputState> get() = container.voiceJournal.state
+
+    fun listenNow() = container.voiceJournal.listenNow()
+
+    fun stopListening() = container.voiceJournal.cancel()
+
+    val voiceJournal: Boolean get() = container.voiceJournal.enabled
+
+    fun setVoiceJournal(on: Boolean) = container.voiceJournal.setEnabled(on)
 
     fun agree() = container.consent.agree()
 

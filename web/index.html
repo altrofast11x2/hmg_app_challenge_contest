@@ -118,9 +118,9 @@
           <li class="step">
             <div class="step-copy">
               <span class="step-no">3 · 정차</span>
-              <h3>무드등이 알려 주고, 한 번만 누릅니다</h3>
-              <p>P에 두면 무드등이 노란 신호로 켜지고 거리·시간을 음성으로 알립니다. 출퇴근·일반업무·비업무 중 하나를 누르면
-                무드등이 용도 색으로 잠깐 빛났다가 원래 색으로 돌아옵니다. 같은 목적지는 지난번 용도를 먼저 권합니다.</p>
+              <h3>무드등이 알려 주고, 한 번 누르거나 말합니다</h3>
+              <p>P에 두면 무드등이 노란 신호로 켜지고 거리·시간을 음성으로 알린 뒤 용도를 묻습니다. 출퇴근·일반업무·비업무 중 하나를
+                누르거나 말하면 무드등이 용도 색으로 잠깐 빛났다가 원래 색으로 돌아옵니다. 같은 목적지는 지난번 용도를 먼저 권합니다.</p>
             </div>
             <img class="step-visual screen" src="img/screen-classify.webp" width="1136" height="807" loading="lazy"
                  alt="정차 후 분류 화면: 이번 운행의 용도를 골라 주세요, 출퇴근·일반업무(지난번 이 목적지)·비업무 버튼">
@@ -129,11 +129,12 @@
             <div class="step-copy">
               <span class="step-no">4 · 음성 업무 일지</span>
               <h3>말하면 업무 내용까지 남습니다</h3>
-              <p>주행 중 Gleo AI에게 “이번 운행 거래처 납품 미팅으로 기록해”라고 말하면, 정차하는 순간 분류 화면 없이
-                일반업무로 기록되고 업무 내용이 운행기록부 비고에 들어갑니다. “이번 달 업무용으로 얼마나 탔어?”도 답합니다.</p>
+              <p>차가 “용도와 업무 내용을 말씀해 주세요”라고 물으면 “업무, 거래처 납품 미팅”이라고 답하면 됩니다.
+                일반업무로 기록되고 업무 내용이 운행기록부 비고에 들어가며, 차가 되읽어 확인시킵니다. 차 안 음성 인식으로 듣고 녹음은 남기지 않습니다.
+                Gleo AI에서는 주행 중에도 “이번 운행 거래처 납품 미팅으로 기록해”, “이번 달 업무용으로 얼마나 탔어?”라고 말할 수 있습니다.</p>
             </div>
             <div class="step-visual quote" aria-hidden="true">
-              <p class="say">“이번 운행 거래처 납품 미팅으로 기록해”</p>
+              <p class="say">“업무, 거래처 납품 미팅”</p>
               <p class="result">비고: 수정구 시흥동 · 거래처 납품 미팅 <span class="purpose purpose-business">일반업무</span></p>
             </div>
           </li>
@@ -193,8 +194,8 @@
           </article>
           <article class="card feature">
             <h3>음성</h3>
-            <p>안내는 차 안 음성 엔진으로 읽어 문장이 차 밖으로 나가지 않습니다. Gleo AI가 부르는 함수 세 개를 등록했습니다.</p>
-            <p class="apis"><code>TextToSpeech (ON_DEVICE)</code> <code>Gleo Interface · schema.json</code></p>
+            <p>안내와 듣기 모두 차 안 음성 엔진으로 처리해 목소리와 문장이 차 밖으로 나가지 않습니다. Gleo AI가 부르는 함수 세 개도 등록했습니다.</p>
+            <p class="apis"><code>TextToSpeech (ON_DEVICE)</code> <code>SpeechToText (ON_DEVICE)</code> <code>Gleo Interface · schema.json</code></p>
           </article>
           <article class="card feature">
             <h3>주행 중 조작 0</h3>

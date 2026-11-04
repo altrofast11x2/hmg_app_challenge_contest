@@ -14,6 +14,7 @@ import com.altrostudio.drivelog.data.vehicle.AmbientLight
 import com.altrostudio.drivelog.domain.cabin.CabinSettings
 import com.altrostudio.drivelog.domain.driver.DriverSettings
 import com.altrostudio.drivelog.domain.update.UpdateSettings
+import com.altrostudio.drivelog.domain.voice.VoiceJournalSettings
 import com.altrostudio.drivelog.domain.voice.VoiceSettings
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -25,7 +26,7 @@ import java.security.SecureRandom
  * 차량 ID·VIN·기기 계정 토큰·조직 연결·DB 키는 Keystore 키로 암호화해 저장한다 (Pleos 앱 보안 가이드)
  */
 class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) :
-    SyncSettings, VoiceSettings, UpdateSettings, DriverSettings, CabinSettings, CabinSyncPrefs {
+    SyncSettings, VoiceSettings, VoiceJournalSettings, UpdateSettings, DriverSettings, CabinSettings, CabinSyncPrefs {
 
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     private val secrets = SecretStore(cipher, read = { prefs.getString(it, null) }, write = { key, value -> prefs.edit { putString(key, value) } })
@@ -61,6 +62,11 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
     override var voiceGuidance: Boolean
         get() = prefs.getBoolean(KEY_VOICE_GUIDANCE, true)
         set(value) = prefs.edit { putBoolean(KEY_VOICE_GUIDANCE, value) }
+
+    /** 정차하면 용도와 업무 내용을 말로 묻고 듣는다. 처음에는 켜져 있다 */
+    override var voiceJournal: Boolean
+        get() = prefs.getBoolean(KEY_VOICE_JOURNAL, true)
+        set(value) = prefs.edit { putBoolean(KEY_VOICE_JOURNAL, value) }
 
     override var lastUpdateCheckAt: Long
         get() = prefs.getLong(KEY_UPDATE_CHECK_AT, 0L)
@@ -155,6 +161,7 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
         private const val KEY_VIN = "vin"
         private const val KEY_PARKED_TIMEOUT = "parked_timeout_ms"
         private const val KEY_VOICE_GUIDANCE = "voice_guidance"
+        private const val KEY_VOICE_JOURNAL = "voice_journal"
         private const val KEY_DB_KEY = "database_key"
         private const val KEY_UPDATE_CHECK_AT = "update_check_at"
         private const val DB_KEY_BYTES = 32

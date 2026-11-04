@@ -30,8 +30,8 @@ android {
         minSdk = 28
         targetSdk = 35
         // 앱에 영향을 주는 변경을 배포·제출할 때마다 올린다 (Pleos 앱 버전 관리 정책, docs/app-market.md)
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -100,6 +100,7 @@ dependencies {
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
     implementation(libs.pleos.texttospeech)
+    implementation(libs.pleos.speechtotext)
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.room.runtime)

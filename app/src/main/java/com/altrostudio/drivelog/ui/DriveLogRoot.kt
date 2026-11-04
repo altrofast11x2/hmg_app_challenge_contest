@@ -70,6 +70,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
     val connectViewModel: ConnectViewModel = viewModel(factory = ConnectViewModel.Factory)
     val driverCard by viewModel.driverCard.collectAsStateWithLifecycle()
     val exitCheck by viewModel.exitCheck.collectAsStateWithLifecycle()
+    val voiceInput by viewModel.voiceInput.collectAsStateWithLifecycle()
     var pickingDriver by rememberSaveable { mutableStateOf(false) }
     val activity = LocalActivity.current
 
@@ -111,8 +112,14 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             suggestion = state.suggestion,
             timeoutLabel = durationLabel(viewModel.parkedTimeoutMs),
             onSelect = viewModel::classify,
-            onLater = { dismissedTripId = parkedTrip.id },
-            modifier = modifier
+            onLater = {
+                viewModel.stopListening()
+                dismissedTripId = parkedTrip.id
+            },
+            modifier = modifier,
+            voice = voiceInput,
+            onVoice = viewModel::listenNow,
+            onVoiceStop = viewModel::stopListening
         )
 
         queueTrip != null -> ClassificationScreen(
@@ -190,6 +197,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             }
             Destination.SETTINGS -> {
                 var voiceGuidance by rememberSaveable { mutableStateOf(viewModel.voiceGuidance) }
+                var voiceJournal by rememberSaveable { mutableStateOf(viewModel.voiceJournal) }
                 var autoComfort by rememberSaveable { mutableStateOf(viewModel.autoComfort) }
                 var ambientCue by rememberSaveable { mutableStateOf(viewModel.ambientCue) }
                 var exitCheckOn by rememberSaveable { mutableStateOf(viewModel.exitCheckEnabled) }
@@ -201,6 +209,11 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     onVoiceGuidanceChange = {
                         voiceGuidance = it
                         viewModel.setVoiceGuidance(it)
+                    },
+                    voiceJournal = voiceJournal,
+                    onVoiceJournalChange = {
+                        voiceJournal = it
+                        viewModel.setVoiceJournal(it)
                     },
                     cabin = CabinToggles(
                         autoComfort = autoComfort,

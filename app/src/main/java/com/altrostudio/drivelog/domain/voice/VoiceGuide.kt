@@ -14,8 +14,8 @@ sealed interface TripAnnouncement {
     /** P로 정차했다. 분류를 기다린다. [suggestion]은 같은 곳에서 지난번에 고른 용도 */
     data class Parked(val distanceKm: Double?, val durationMs: Long, val suggestion: TripPurpose?) : TripAnnouncement
 
-    /** 정차 후 운전자가 용도를 골랐다 */
-    data class Classified(val purpose: TripPurpose) : TripAnnouncement
+    /** 정차 후 운전자가 용도를 골랐다. [workNote]는 말로 남긴 업무 내용 (되읽어 확인시킨다) */
+    data class Classified(val purpose: TripPurpose, val workNote: String? = null) : TripAnnouncement
 }
 
 /** 소리로 읽어 주는 장치 (차량에서는 Pleos TextToSpeech) */
@@ -29,7 +29,12 @@ interface VoiceSettings {
 }
 
 /** 운행 순간을 한국어 문장으로 바꿔 읽어 준다. 설정에서 끄면 읽지 않는다 */
-class VoiceGuide(private val speaker: Speaker, private val settings: VoiceSettings) {
+class VoiceGuide(
+    private val speaker: Speaker,
+    private val settings: VoiceSettings,
+    /** 정차 안내 끝에 용도를 말로 물을지 ([VoiceJournal]) */
+    private val asksAfterParking: () -> Boolean = { false }
+) {
 
     val enabled: Boolean get() = settings.voiceGuidance
 
@@ -39,7 +44,7 @@ class VoiceGuide(private val speaker: Speaker, private val settings: VoiceSettin
     }
 
     fun announce(announcement: TripAnnouncement) {
-        if (settings.voiceGuidance) speaker.speak(VoicePhrases.of(announcement))
+        if (settings.voiceGuidance) speaker.speak(VoicePhrases.of(announcement, asking = asksAfterParking()))
     }
 
     /** 운행 밖의 안내 (운전자 맞춤, 하차 점검). 설정에서 끄면 읽지 않는다 */
@@ -53,7 +58,16 @@ object VoicePhrases {
 
     const val ENABLED = "음성 안내를 켰습니다. 운행을 시작하고 마칠 때 알려 드립니다."
 
-    fun of(announcement: TripAnnouncement): String = when (announcement) {
+    /** 말로 들은 용도를 알아듣지 못했을 때 한 번 다시 묻는다 */
+    const val ASK_AGAIN = "출퇴근, 업무, 비업무 중에 말씀해 주세요."
+
+    const val PICK_ON_SCREEN = "알아듣지 못했습니다. 화면에서 용도를 골라 주세요."
+
+    /** 일반업무인데 업무 내용을 말하지 않았을 때 한 번 더 묻는다 */
+    const val ASK_NOTE = "어떤 업무였는지 말씀해 주세요."
+
+    /** [asking]이면 정차 안내 끝에 용도를 말로 묻는다 (말로 기록) */
+    fun of(announcement: TripAnnouncement, asking: Boolean = false): String = when (announcement) {
         TripAnnouncement.Started -> "운행 기록을 시작합니다."
         is TripAnnouncement.StartedBy ->
             if (announcement.confirm) {
@@ -66,11 +80,26 @@ object VoicePhrases {
             val distance = distance(announcement.distanceKm)
             append(if (distance != null) "$distance, " else "")
             append(duration(announcement.durationMs)).append(" 운행했습니다. ")
-            announcement.suggestion?.let(::withParticle)?.let { append("이곳은 지난번에 ").append(it).append(" 기록했습니다. ") }
-            append("화면에서 용도를 골라 주세요.")
+            val suggested = announcement.suggestion?.let(::withParticle)
+            suggested?.let { append("이곳은 지난번에 ").append(it).append(" 기록했습니다. ") }
+            append(
+                when {
+                    !asking -> "화면에서 용도를 골라 주세요."
+                    suggested != null -> "맞으면 네, 아니면 용도를 말씀해 주세요."
+                    else -> "용도와 업무 내용을 말씀해 주세요."
+                }
+            )
         }
-        is TripAnnouncement.Classified -> "${withParticle(announcement.purpose) ?: "미분류로"} 기록했습니다."
+        is TripAnnouncement.Classified -> buildString {
+            append(withParticle(announcement.purpose) ?: "미분류로").append(" 기록했습니다.")
+            announcement.workNote?.takeIf { it.isNotBlank() && announcement.purpose != TripPurpose.PERSONAL }?.let {
+                append(" 업무 내용, ").append(it.take(NOTE_READ_MAX)).append('.')
+            }
+        }
     }
+
+    /** 되읽는 업무 내용 최대 글자 수 (운전 중에 듣기 길지 않게) */
+    private const val NOTE_READ_MAX = 60
 
     /** 0.1 km 단위. 움직이지 않았으면 말하지 않는다 */
     private fun distance(km: Double?): String? {

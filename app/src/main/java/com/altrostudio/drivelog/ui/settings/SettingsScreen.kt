@@ -36,6 +36,8 @@ fun SettingsScreen(
     canConnect: Boolean,
     voiceGuidance: Boolean,
     onVoiceGuidanceChange: (Boolean) -> Unit,
+    voiceJournal: Boolean,
+    onVoiceJournalChange: (Boolean) -> Unit,
     cabin: CabinToggles,
     onBack: () -> Unit,
     onConnect: () -> Unit,
@@ -78,6 +80,12 @@ fun SettingsScreen(
                 }
             }
             ToggleCard(stringResource(R.string.settings_voice), stringResource(R.string.settings_voice_description), voiceGuidance, onVoiceGuidanceChange)
+            ToggleCard(
+                stringResource(R.string.settings_voice_journal),
+                stringResource(R.string.settings_voice_journal_description),
+                voiceJournal,
+                onVoiceJournalChange
+            )
             Text(stringResource(R.string.settings_cabin), style = typography.label, color = colors.textSecondary)
             ToggleCard(
                 stringResource(R.string.settings_auto_comfort),

@@ -1,7 +1,7 @@
 # Pleos SDK 활용 매핑
 
 > **상태 (2026-10-26)**: 아래 API로 운행 자동 기록·분류·월별 기록부를 구현했고 Pleos Connect 에뮬레이터 + Virtual Console에서 검증했습니다. 기능별 상태는 `docs/status.md`에 있습니다.
-> 시그니처는 공식 Maven 저장소의 소스 jar(Vehicle 2.3.2, NaviHelper 3.0.5), TextToSpeech 3.3.1 AAR의 클래스(`javap`), Pleos 공식 문서에서 확인했습니다.
+> 시그니처는 공식 Maven 저장소의 소스 jar(Vehicle 2.3.2, NaviHelper 3.0.5), TextToSpeech·SpeechToText 3.3.1 AAR의 클래스(`javap`), Pleos 공식 문서에서 확인했습니다.
 
 ## 기능별 사용 API
 
@@ -45,6 +45,31 @@
 | `GET_DRIVING_SUMMARY` | `period`(TODAY·THIS_MONTH·LAST_MONTH) | 운행 수, 총거리, 업무용 거리, 업무사용비율 |
 
 에뮬레이터 Gleo AI(`ai.umos.ambientai`)가 설치 때 스키마를 읽는 것을 로그(`[GAA] [Schema] Loaded schema.json from com.altrostudio.drivelog`)로 확인했고, 세 함수는 Gleo와 같은 방송을 adb로 보내 확인했다. Pleos 문서상 스키마는 Pleos 검토·승인 뒤 활성화된다. 팀이 신청한다 ([gleo-schema-request.md](gleo-schema-request.md)).
+승인되지 않아도 말로 용도·업무 내용을 기록하는 기능은 아래 SpeechToText로 동작한다.
+
+## 말로 기록 (SpeechToText, 0.3.1 — Gleo 승인 없이 동작)
+
+Gleo 스키마 승인을 기다리지 않도록, 정차하면 앱이 직접 묻고 듣는다. 구현: `data/voice/PleosListener.kt`(SDK), `domain/voice/VoiceJournal.kt`(대화), `domain/voice/SpokenTrip.kt`(받아 적은 글자 해석).
+
+| 순서 | 동작 |
+|---|---|
+| 1. 묻기 | 정차 안내 끝에 "용도와 업무 내용을 말씀해 주세요"(지난번 이곳의 용도가 있으면 "맞으면 네, 아니면 용도를 말씀해 주세요") — 음성 안내와 [말로 용도 기록] 설정이 켜져 있을 때 |
+| 2. 듣기 | 안내가 끝나고(`PleosSpeaker.busy`) 0.3초 뒤 최대 8초. 분류 화면의 [말로 기록]으로 언제든 다시 듣는다 |
+| 3. 해석 | "업무, 거래처 납품 미팅" → 일반업무 + 업무 내용. "출근"·"퇴근길에 …" → 출퇴근. "비업무"·"개인 …" → 비업무(업무 내용 버림). "출근 아니고 업무"처럼 고쳐 말하면 뒤의 말. 용도 낱말 없이 거래처·미팅·납품 등이면 일반업무. "취소"·"나중에"면 그만 |
+| 4. 되묻기 | 일반업무인데 업무 내용이 없으면 "어떤 업무였는지 말씀해 주세요" 한 번. 용도를 못 알아들으면 "출퇴근, 업무, 비업무 중에 말씀해 주세요" 한 번, 그래도 모르면 화면에서 고르게 한다 |
+| 5. 기록 | Gleo와 같은 `TripRecorder.recordByVoice` (수정 이력 `voice:`). 분류 안내가 "일반업무로 기록했습니다. 업무 내용, 거래처 납품 미팅."처럼 되읽어 잘못 받아 적었는지 운전자가 듣고 안다 |
+
+- SDK: `SpeechToText(context, Mode.ON_DEVICE)` → `initialize(OnInitializeListener)` → `addListener(ResultListener)` → `setLocale(Locale.KOREA)` → `request()` / `stop()`. 결과는 `onUpdated(stt, completed)`, 끝은 `onEndedRecognition()`, 오류는 `onError(ErrorType)`. 권한 `pleos.car.permission.STT_SERVICE`(normal, 설치 시 허용 확인). 서버 모드(`HYBRID`·`SERVER`)는 `registerApp(Client ID, Client Secret)`이 필요해 쓰지 않는다 (비밀값은 APK에 넣지 않는 규칙). 차 안 엔진은 목소리가 차 밖으로 나가지 않는다.
+- 듣는 동안 `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE`(`USAGE_ASSISTANT`) 포커스를 받는다. 못 받으면(통화 중) 듣지 않는다. 앱은 녹음을 받지 않고 받아 적은 글자만 받으며, 그 글자를 로그에 남기지 않는다.
+- 듣는 중 운전자가 화면에서 고르거나 다시 출발하면 바로 멈춘다(`VoiceJournal`이 운행 상태를 지켜본다). 자동으로 물었는데 말이 없으면 조용히 끝낸다.
+- `PERMISSION_DENIED`·`NOT_SUPPORTED_API`·`UNAVAILABLE_LANGUAGE`면 앱을 다시 켤 때까지 자동으로 묻지 않는다([말로 기록] 버튼은 다시 시도). 엔진 오류면 다음에 처음부터 다시 연결한다.
+
+에뮬레이터 실측 (2026-11-04, CAAS·GAAS 4.2.10):
+- ✅ `ON_DEVICE` 엔진이 동작한다 (`inferenceSource: on_device`). 마이크 경로: `request()` → 차량 마이크(Built-In Mic) 열림, 시스템 바에 마이크 표시 → 말이 없으면 엔진은 스스로 끝내지 않아 앱의 8초 제한으로 끝남.
+- ✅ 사람이 말할 수 없어서 Windows 한국어 음성(Heami)으로 만든 16 kHz·16비트·모노 PCM을 `sendAudio()` + `completeAudioSend()`로 넣어 시험했다 (debug 빌드의 `debug/VoiceFeedReceiver`, release에는 없음). "거래처 납품 미팅"은 그대로 받아 적었다.
+- ⚠️ 음성 구간 검출(EPD)이 말 사이 약 1초 쉼에서 끝난 것으로 본다: "업무, 거래처 납품 미팅"이 "업무"만 왔다 → 그래서 업무 내용을 한 번 더 묻는 4단계를 넣었다.
+- ⚠️ 합성 음성의 짧은 "네"를 "근데"로 받아 적었다 → 다시 묻기로 이어져 두 번째 대답으로 기록됐다. 한 음절 대답은 잘못 들을 수 있어 되읽기와 다시 묻기를 둔다.
+- ✅ 끝에서 끝: 운행 → 정차 → 안내(질문 포함) → 0.3초 뒤 듣기 → "업무" → "어떤 업무였는지…" → "거래처 납품 미팅" → 일반업무 + 비고 "거래처 납품 미팅", 해시 체인 검증 통과. release 0.3.1에서 듣는 중 [일반업무]를 누르면 마이크가 바로 닫힌다.
 
 ## Pleos SDK가 아닌 AAOS 표준 API
 
@@ -69,7 +94,8 @@
 | Vehicle · Safety 경고등 (`getTelltalesInfo`, `registerTelltales`) | `CAR_SAFETY`만으로는 `SecurityException`이 나고, 리스너는 일반 앱이 쓸 수 없는 `PRIVATE_CAR_SAFETY` 권한이 필요하다. 주차 브레이크는 AAOS `PARKING_BRAKE_ON`으로 읽는다 |
 | AAOS `EV_BATTERY_LEVEL` (배터리 에너지 kWh) | `android.car.permission.CAR_ENERGY`가 실행 중 허용이 필요한 권한이다. 배터리 잔량(%)으로 대신한다 |
 | `android.car.permission.CAR_SPEED` | 실행 중 허용이 필요한 권한이다. 주행 판단은 기어와 UX 제한으로 대신한다 |
-| FusedLocation, SpeechToText | 위치는 두 시점 주소만(NaviHelper), 음성 입력은 Gleo Interface로 받아 쓰지 않음 |
+| FusedLocation | 위치는 두 시점 주소만(NaviHelper) |
+| SpeechToText 서버 모드(`HYBRID`, `SERVER`) | `registerApp`에 Client Secret이 필요해 쓰지 않는다. 차 안 엔진(`ON_DEVICE`)만 쓴다 |
 | Vehicle 제어 중 좌석 이동(`moveSeat*`)·창문 열기·문 열기·트렁크 | 사람이 타 있는 좌석·창문을 앱이 먼저 움직이지 않는다. 창문은 닫기만, 문은 잠그기만 운전자가 누를 때 한다 |
 | TextToSpeech 서버 모드(`HYBRID`, `SERVER`) | Pleos Playground My Project의 Client Secret을 APK에 넣어야 해서 쓰지 않는다(비밀값은 APK에 넣지 않는 규칙). 차량 안 엔진(`ON_DEVICE`)은 네트워크와 앱 등록이 필요 없고, 읽는 문장이 차 밖으로 나가지 않는다 |
 | 실시간 위치 추적 | 주소는 운행 시작과 종료 두 시점에만 조회한다 |

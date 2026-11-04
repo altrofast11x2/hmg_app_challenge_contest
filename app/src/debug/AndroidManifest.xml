@@ -35,6 +35,11 @@
             android:name=".debug.ControlProbeActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- 말로 기록 시험: PCM 파일을 마이크 대신 음성 인식에 넣는다. adb am broadcast로만 부른다 -->
+        <receiver
+            android:name=".debug.VoiceFeedReceiver"
+            android:exported="true" />
     </application>
 
 </manifest>

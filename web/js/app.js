@@ -550,7 +550,7 @@ function vehicleStatusCard(vehicle, status, logbook) {
 }
 
 // ─── 업무 일지 ─────────────────────────────────────────────────────────
-// 일반업무 운행을 날짜별로: 언제·누가·어느 차로·어디서·무슨 일 (운전자가 Gleo AI에 말한 업무 내용 포함)
+// 일반업무 운행을 날짜별로: 언제·누가·어느 차로·어디서·무슨 일 (운전자가 차에서 말로 남긴 업무 내용 포함)
 
 async function renderJournal(content, token) {
   const { period } = state;
@@ -585,7 +585,7 @@ async function renderJournal(content, token) {
       el('span', { class: 'spacer' }),
       csvButton,
     ),
-    el('p', { class: 'muted section-note' }, '일반업무로 기록된 운행만 모았어요. 업무 내용은 운전자가 운행 중 Gleo AI에 말한 내용이에요.'),
+    el('p', { class: 'muted section-note' }, '일반업무로 기록된 운행만 모았어요. 업무 내용은 운전자가 정차 후 차에 말하거나 Gleo AI에 말한 내용이에요.'),
     body,
   );
   try {

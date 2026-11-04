@@ -3,6 +3,9 @@
 > 2026-11-04 작성. Pleos 앱 연동 가이드(Gleo Interface)는 "App Schema를 전달받으면 가이드라인 준수를 검토하고, 승인 후 통합이 자동으로 활성화된다"고만 적고, 보내는 곳은 정하지 않았다("추가 안내는 문서 작성자에게 문의").
 > 그래서 Pleos 문의처 **partnership@pleos.ai**로 보내고, 필요하면 공모전 문의처 **appdevchallenge@hyundai-partners.com**을 참조(CC)에 넣는다. 보내는 사람은 팀 대표 메일.
 
+> 승인되지 않아도 앱의 말로 기록은 동작한다 (0.3.1, Pleos SpeechToText 차 안 엔진으로 정차 후 직접 묻고 듣기, [sdk-usage.md](sdk-usage.md)). 승인되면 Gleo로 아무 때나 말하는 길이 하나 더 생긴다.
+> 스키마 파일은 0.3.0 때와 같다 (`version` "0.3.0" 그대로, 앱만 0.3.1).
+
 ## 보낼 것
 
 | 항목 | 값 |

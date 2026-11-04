@@ -108,7 +108,8 @@ class TripRecorder(
     }
 
     /**
-     * 음성(Gleo AI)으로 용도·업무 내용을 기록한다. 화면을 누르지 않아도 된다.
+     * 음성(Gleo AI 명령 또는 앱이 직접 듣는 [com.altrostudio.drivelog.domain.voice.VoiceJournal])으로
+     * 용도·업무 내용을 기록한다. 화면을 누르지 않아도 된다.
      * - 주행 중: 이번 운행에 미리 적어 두고, 정차하면 그 용도로 바로 마친다
      * - 정차 중: 지금 운행을 그 용도로 마친다
      * - 운행이 없으면: 최근 [RECENT_TRIP_MS] 안에 마친 운행을 그 용도로 고친다
@@ -206,10 +207,13 @@ class TripRecorder(
                 _moments.tryEmit(TripMoment.Resumed(effect.tripId))
             }
             is TripEffect.CompleteTrip -> {
+                // 말로 남긴 업무 내용은 분류 안내 때 되읽어 준다 (음성 인식이 잘못 받아 적었는지 운전자가 듣고 안다)
+                val note = effect.purpose?.takeIf { it != TripPurpose.PERSONAL }
+                    ?.let { trips.activeTrip()?.takeIf { trip -> trip.id == effect.tripId }?.workNote }
                 trips.completeTrip(effect.tripId, effect.at)
                 effect.purpose?.let {
                     trips.classify(effect.tripId, it, effect.actor, effect.at)
-                    announce(TripAnnouncement.Classified(it))
+                    announce(TripAnnouncement.Classified(it, note))
                 }
                 _moments.tryEmit(TripMoment.Completed(effect.tripId, effect.purpose))
             }
@@ -255,8 +259,9 @@ class TripRecorder(
                 VoiceRecord.NoTrip
             } else {
                 trips.classify(last.id, input.purpose, input.actor, now())
-                if (input.purpose != TripPurpose.PERSONAL) input.workNote?.let { trips.setWorkNote(last.id, it, input.actor, now()) }
-                announce(TripAnnouncement.Classified(input.purpose))
+                val note = input.workNote?.takeIf { input.purpose != TripPurpose.PERSONAL }
+                note?.let { trips.setWorkNote(last.id, it, input.actor, now()) }
+                announce(TripAnnouncement.Classified(input.purpose, note))
                 VoiceRecord.Corrected(last.id)
             }
         }

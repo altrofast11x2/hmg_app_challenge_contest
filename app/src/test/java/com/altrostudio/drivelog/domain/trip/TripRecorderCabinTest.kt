@@ -133,7 +133,7 @@ class TripRecorderCabinTest {
         val noteChange = trips.changes.single { it.field == ChangeField.WORK_NOTE }
         assertEquals("삼성전자 납품 미팅", noteChange.newValue)
         assertTrue("분류를 묻는 정차 안내를 하지 않는다", announcements.none { it is TripAnnouncement.Parked })
-        assertEquals(TripAnnouncement.Classified(TripPurpose.BUSINESS), announcements.last())
+        assertEquals(TripAnnouncement.Classified(TripPurpose.BUSINESS, "삼성전자 납품 미팅"), announcements.last())
         assertEquals(ChainVerification.Valid(4), trips.verifyChain(VEHICLE_ID))
     }
 

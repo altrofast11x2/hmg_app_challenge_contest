@@ -234,6 +234,72 @@ class CabinAssistantTest {
     }
 
     @Test
+    fun `차 상태 보기는 배터리·계기판·창문·문·실내등·맞춤 설정을 한 번에 읽는다`() = runTest {
+        val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.REAR_RIGHT), doorsLocked = false, cabinLightOn = true)
+        val h = harness(cabin)
+        h.vehicle.socPercent = 77
+        h.vehicle.odometer.value = 426f
+
+        val status = h.assistant.readStatus()
+
+        assertEquals(77, status.socPercent)
+        assertEquals(426f, status.odometerKm)
+        assertEquals(setOf(CabinWindow.REAR_RIGHT), status.openWindows)
+        assertEquals(false, status.doorsLocked)
+        assertEquals(true, status.cabinLightOn)
+        assertEquals(22f, status.comfort.tempC)
+        assertTrue(status.canControl)
+        assertEquals(setOf(TidyItem.WINDOWS, TidyItem.DOORS, TidyItem.LIGHTS), status.actions)
+        assertTrue(h.spoken.isEmpty())
+    }
+
+    @Test
+    fun `차 상태 보기에서 누르면 P에서만 바꾸고 다시 읽어 보여 준다`() = runTest {
+        val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.FRONT_LEFT), doorsLocked = false)
+        val h = harness(cabin)
+
+        h.vehicle.gearPosition.value = GearPosition.DRIVE
+        val blocked = h.assistant.control(setOf(TidyItem.WINDOWS))
+        assertFalse(blocked.canControl)
+        assertEquals(setOf(CabinWindow.FRONT_LEFT), cabin.openWindows)
+
+        h.vehicle.gearPosition.value = GearPosition.PARK
+        val done = h.assistant.control(setOf(TidyItem.WINDOWS, TidyItem.DOORS))
+        assertEquals(emptySet<CabinWindow>(), done.openWindows)
+        assertEquals(true, done.doorsLocked)
+        assertTrue(done.actions.isEmpty())
+        assertEquals("창문을 닫고 문을 잠갔습니다.", h.spoken.last())
+    }
+
+    @Test
+    fun `차 상태 보기에서 정리하면 떠 있는 하차 점검 카드도 고친다`() = runTest {
+        val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.FRONT_LEFT))
+        val h = harness(cabin)
+        emit(h, TripMoment.Completed("t1", purpose = null))
+
+        h.assistant.control(setOf(TidyItem.WINDOWS))
+
+        val check = h.assistant.exitCheck.value!!
+        assertTrue(check.openWindows.isEmpty())
+        assertEquals(setOf(TidyItem.WINDOWS), check.tidied)
+    }
+
+    @Test
+    fun `차 상태를 소리로 읽는 문장`() {
+        val base = CarStatus(
+            readAt = 0, socPercent = 77, odometerKm = 426.4f, openWindows = emptySet(), doorsLocked = true, cabinLightOn = false,
+            comfort = com.altrostudio.drivelog.data.vehicle.Comfort(), canControl = true
+        )
+        assertEquals("배터리 77퍼센트, 계기판 426킬로미터입니다. 창문은 모두 닫혀 있고, 문은 잠겨 있고, 실내등은 꺼져 있어요.", CabinPhrases.status(base))
+        assertEquals(
+            "배터리 77퍼센트, 계기판 426킬로미터입니다. 운전석 창문이 열려 있고, 문은 잠겨 있고, 실내등은 꺼져 있어요. 차 상태 화면에서 바로 정리할 수 있어요.",
+            CabinPhrases.status(base.copy(openWindows = setOf(CabinWindow.FRONT_LEFT)))
+        )
+        assertEquals("배터리 77퍼센트입니다. 문은 잠겨 있어요.", CabinPhrases.status(base.copy(odometerKm = null, openWindows = null, cabinLightOn = null)))
+        assertEquals("차 상태를 읽지 못했어요.", CabinPhrases.status(base.copy(socPercent = null, odometerKm = null, openWindows = null, doorsLocked = null, cabinLightOn = null)))
+    }
+
+    @Test
     fun `정리 결과 문장과 창문 주어`() {
         assertEquals("창문을 닫았습니다.", CabinPhrases.tidied(setOf(TidyItem.WINDOWS)))
         assertEquals("실내등을 껐습니다.", CabinPhrases.tidied(setOf(TidyItem.LIGHTS)))

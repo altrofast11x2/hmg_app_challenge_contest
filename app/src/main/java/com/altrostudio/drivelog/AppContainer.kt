@@ -37,7 +37,13 @@ import com.altrostudio.drivelog.domain.consent.ConsentManager
 import com.altrostudio.drivelog.domain.driver.DriverProfiles
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.domain.update.UpdateChecker
+import com.altrostudio.drivelog.domain.cabin.CabinPhrases
+import com.altrostudio.drivelog.domain.logbook.LogbookBuilder
+import com.altrostudio.drivelog.domain.logbook.LogbookPeriod
 import com.altrostudio.drivelog.domain.voice.GleoActions
+import com.altrostudio.drivelog.domain.voice.HelpAssistant
+import com.altrostudio.drivelog.domain.voice.HelpPhrases
+import com.altrostudio.drivelog.domain.voice.HelpTopic
 import com.altrostudio.drivelog.domain.voice.TripAnnouncement
 import com.altrostudio.drivelog.domain.voice.VoiceGuide
 import com.altrostudio.drivelog.domain.voice.VoiceJournal
@@ -46,6 +52,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -174,6 +181,37 @@ class AppContainer(context: Context) {
             onComfortChanged = { syncScheduler.requestSync() },
             scope = appScope
         )
+    }
+
+    /**
+     * 음성 도움 비서 (홈의 [도움]). 처음 쓰는 운전자가 "차 상태 알려 줘"처럼 물으면 답하고 그 화면으로 데려다준다.
+     * 차 안 음성 엔진만 쓰고 정해 둔 일 안에서 답한다 (인터넷·생성형 AI 서버 없음)
+     */
+    val helpAssistant: HelpAssistant by lazy {
+        HelpAssistant(
+            listener = voiceListener,
+            say = voiceGuide::say,
+            awaitQuiet = speaker::awaitQuiet,
+            stopSpeaking = speaker::stop,
+            answer = { topic -> helpAnswer(topic) },
+            scope = appScope
+        )
+    }
+
+    private suspend fun helpAnswer(topic: HelpTopic): String = when (topic) {
+        HelpTopic.CAR_STATUS -> CabinPhrases.status(cabinAssistant.readStatus())
+        HelpTopic.LOGBOOK -> {
+            val zone = java.time.ZoneId.systemDefault()
+            val period = LogbookPeriod.ofMonth(java.time.YearMonth.now(zone))
+            val (from, to) = period.range(zone)
+            val summary = LogbookBuilder.build(period, trips.observeCompletedTrips(from, to).first(), zone, driverName = "").summary
+            HelpPhrases.logbook(summary.tripCount, summary.totalKm, summary.workRatioPercent)
+        }
+        HelpTopic.SHARE -> if (pairing.pairing.value != null) HelpPhrases.SHARE else HelpPhrases.SHARE_UNPAIRED
+        HelpTopic.DRIVER -> if (drivers.enabled.value) HelpPhrases.DRIVER else HelpPhrases.DRIVER_UNPAIRED
+        HelpTopic.VOICE_RECORD -> HelpPhrases.VOICE_RECORD
+        HelpTopic.TUTORIAL -> HelpPhrases.TUTORIAL
+        HelpTopic.SETTINGS -> HelpPhrases.SETTINGS
     }
 
     /** Gleo AI 음성 명령 (운행 용도·업무 내용 기록, 운전자 바꾸기, 운행 요약) */

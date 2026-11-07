@@ -1,4 +1,4 @@
-# 자동 운행기록부 (DriveLog)
+# 차곡 (Chagok) — 차가 쓰는 운행기록부
 
 AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (Pleos Connect 앱)
 
@@ -12,7 +12,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 |---|---|---|
 | ![운행기록부 화면](docs/images/a06-logbook.png) | ![휴대폰으로 받기 QR 코드](docs/images/a07-share-qr.png) | ![휴대폰에서 연 운행기록부](docs/images/m01-phone-logbook.png) |
 
-> **0.3.1 (2026-11-07)**: 차량 앱(자동 기록, 정차 후 분류·말로 기록, 운전자 맞춤·무드등·하차 점검, 운행기록부), 서버(Supabase), 관리자 웹이 모두 동작하고, Pleos Connect 에뮬레이터와 실서버로 확인했습니다. 기능별 상태와 확인 내용은 [docs/status.md](docs/status.md), 제출 점검표는 [docs/submission-checklist.md](docs/submission-checklist.md)에 있습니다.
+> **0.4.0 (2026-11-08)**: 차량 앱(자동 기록, 정차 후 분류·말로 기록, 운전자 맞춤·무드등·하차 점검, 차 상태 보기, 사용법·음성 도움 비서, 운행기록부), 서버(Supabase), 관리자 웹이 모두 동작하고, Pleos Connect 에뮬레이터와 실서버로 확인했습니다. 기능별 상태와 확인 내용은 [docs/status.md](docs/status.md), 제출 점검표는 [docs/submission-checklist.md](docs/submission-checklist.md)에 있습니다.
 
 **시연 영상**: [docs/video/DriveLog_demo_0.3.1.mp4](docs/video/DriveLog_demo_0.3.1.mp4) (2분 54초, 에뮬레이터 화면 녹화 + 자막. 차가 하는 말은 자막으로 넣었습니다. 말로 기록 장면은 에뮬레이터가 사람 목소리를 들을 수 없어 녹음한 목소리 파일을 넣어 시연했습니다)
 
@@ -20,12 +20,12 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 
 ## 앱 이름 및 한 줄 소개
 
-- **앱 이름**: 자동 운행기록부 (영문명 DriveLog, 임시)
+- **앱 이름**: 차곡 (Chagok) — 차가 쓰는 운행기록부. "차곡차곡 쌓이는 운행 기록"이라는 뜻 (패키지 이름은 `com.altrostudio.drivelog` 그대로)
 - **한 줄 소개**: 법인·관공서의 공용차를 위한 차량용 앱. 운전자를 알아보고 그분의 온도·시트·무드등으로 차를 맞추고, 계기판 거리로 운행기록부를 차가 직접 쓰며, 정차 후 한 번 누르거나 말로 용도를 남기고, 내리기 전에는 창문과 실내등까지 정리합니다.
 
 ## APK 파일 위치
 
-- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 0.3.1, 약 54 MB)
+- [`apk/AltroStudio_Chagok_release.apk`](apk/AltroStudio_Chagok_release.apk) (release 서명 빌드, 0.4.0, 약 54 MB)
 - 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
 - APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
 
@@ -33,7 +33,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 
 ### 1. APK로 바로 해 보기 (심사용)
 
-1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 APK를 설치합니다: `adb install apk/AltroStudio_DriveLog_release.apk`
+1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 APK를 설치합니다: `adb install apk/AltroStudio_Chagok_release.apk`
 2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
 3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결됩니다. [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
 4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜨고, 차가 "용도와 업무 내용을 말씀해 주세요"라고 묻습니다. 용도를 한 번 누르면 운행기록부에 들어갑니다. 말로 해 보려면 에뮬레이터의 PC 마이크를 켜고(아래 [말로 기록 시험](#말로-기록-시험)) "업무, 거래처 미팅"이라고 답한 뒤, 차가 되읽으면 "맞아"라고 하거나 [맞아요]를 누릅니다. [직접 입력]으로 적어도 됩니다.
@@ -127,6 +127,8 @@ adb forward tcp:8088 tcp:8088
 - **공용차 운전자 맞춤 (차를 직접 움직임)**: 조직에 연결한 차는 홈에서 운전자를 고릅니다(지난번 운전자가 기본, 2시간 넘게 쉬었다 타면 다시 확인). 고르면 운행기록부 ④사용자(이름·부서)에 적히고, 그분이 마지막으로 쓴 운전석 공조 온도·시트 열선·무드등 색으로 차가 바뀝니다(Vehicle SDK `HVAC`·`Seat`·`Light`). 운행이 끝나면 그때 설정을 기억해 서버에 올려, 회사의 다른 공용차에서도 같은 설정이 됩니다.
 - **무드등 신호**: 정차 후 용도를 기다리면 무드등이 노란 신호로 켜지고, 고르면 용도 색으로 잠깐 빛난 뒤 원래 색·밝기로 돌아옵니다. 화면을 보지 않아도 압니다.
 - **하차 점검**: 운행을 마치면 열린 창문·켜진 실내등·문 잠김·배터리 부족을 화면과 음성으로 알리고, 정차 중 [한 번에 정리]를 누르면 창문을 닫고 실내등을 끕니다([문 잠그기] 따로). 반납 상태는 관리자 웹 현황에 올라갑니다.
+- **차 상태 보기**: 홈 위쪽 [차 상태]. 위에서 본 차 그림에 열린 창문을 표시하고 배터리·계기판·문 잠김·실내등·공조 온도·시트 열선·무드등을 보여 줍니다. P에 두면 [창문 닫기]·[문 잠그기]·[실내등 끄기]를 바로 누를 수 있습니다(Vehicle SDK).
+- **처음 쓰는 분을 위한 사용법·음성 도움 비서**: 처음 열면 네 장짜리 사용법을 음성과 함께 보여 줍니다(설정에서 다시 보기). 홈 위쪽 [도움]을 누르고 "차 상태 알려 줘", "휴대폰으로 받는 법"처럼 말하면 답을 읽고 그 화면으로 데려다줍니다. 차 안 음성 엔진만 쓰고 인터넷·생성형 AI 서버는 쓰지 않습니다.
 - **말로 기록 (Gleo 승인 없이 동작)**: 차를 세우면 "용도와 업무 내용을 말씀해 주세요"라고 묻고, "업무, 거래처 납품 미팅"이라고 답하면 일반업무로 기록하고 업무 내용을 비고에 넣은 뒤 되읽어 줍니다. Pleos SpeechToText의 차 안 엔진(ON_DEVICE)으로 듣고, 녹음은 앱이 받지 않습니다. 분류 화면 [말로 기록] 버튼, 설정에서 끄기.
 - **음성 업무 일지 (Gleo AI)**: Pleos 스키마 승인 뒤에는 "이번 운행 거래처 납품 미팅으로 기록해"처럼 아무 때나 말해도 됩니다. 운전자 바꾸기·이번 달 요약도 음성으로 됩니다(`assets/schema.json`, Gleo Interface).
 - **자동 기록**: 기어가 P를 벗어나면 운행 시작, P에서 끝. 주행 전·후 계기판 거리를 Pleos Vehicle SDK에서 직접 읽어 넣습니다.
@@ -148,7 +150,7 @@ adb forward tcp:8088 tcp:8088
 
 | 항목 | 위치 |
 |---|---|
-| release APK | [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) |
+| release APK | [`apk/AltroStudio_Chagok_release.apk`](apk/AltroStudio_Chagok_release.apk) |
 | 제품 소개 페이지 | https://altrostudio-drivelog.vercel.app |
 | 관리자 웹 | https://altrostudio-drivelog.vercel.app/app.html |
 | 구현 현황 | [docs/status.md](docs/status.md) |

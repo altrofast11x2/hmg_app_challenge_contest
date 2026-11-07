@@ -5,6 +5,7 @@ import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.vehicle.AmbientLight
 import com.altrostudio.drivelog.data.vehicle.CabinControl
 import com.altrostudio.drivelog.data.vehicle.CabinWindow
+import com.altrostudio.drivelog.data.vehicle.Comfort
 import com.altrostudio.drivelog.data.vehicle.GearPosition
 import com.altrostudio.drivelog.data.vehicle.VehicleDataSource
 import com.altrostudio.drivelog.domain.driver.DriverProfiles
@@ -48,6 +49,34 @@ data class AmbientPalette(val pending: Int, val commute: Int, val business: Int,
 
 /** [한 번에 정리]로 처리하는 항목 */
 enum class TidyItem { WINDOWS, LIGHTS, DOORS }
+
+/**
+ * 차 상태 보기 화면에 보여 줄 지금 차 상태. 읽지 못한(지원하지 않는) 값은 null.
+ * [canControl]이면 P이고 주행 제한이 없어 창문 닫기·문 잠그기·실내등 끄기를 할 수 있다
+ */
+data class CarStatus(
+    val readAt: Long,
+    val socPercent: Int?,
+    val odometerKm: Float?,
+    val openWindows: Set<CabinWindow>?,
+    val doorsLocked: Boolean?,
+    val cabinLightOn: Boolean?,
+    val comfort: Comfort,
+    val canControl: Boolean,
+    val busy: Boolean = false,
+    /** 마지막으로 눌렀는데 차가 바꾸지 못한 항목 */
+    val failed: Set<TidyItem> = emptySet()
+) {
+    val windowsOpen: Boolean get() = !openWindows.isNullOrEmpty()
+
+    /** 지금 할 수 있는 정리 */
+    val actions: Set<TidyItem>
+        get() = buildSet {
+            if (windowsOpen) add(TidyItem.WINDOWS)
+            if (doorsLocked == false) add(TidyItem.DOORS)
+            if (cabinLightOn == true) add(TidyItem.LIGHTS)
+        }
+}
 
 /** 운행을 마친 뒤의 차 상태 (하차 전 확인 카드, 관리자 웹 차량 현황) */
 data class ExitCheck(
@@ -180,6 +209,56 @@ class CabinAssistant(
             send(updated)
             updated
         }
+    }
+
+    /** 차 상태 보기: 배터리·계기판·창문·문·실내등·온도·열선·무드등을 한 번에 읽는다 (읽기만, 차를 바꾸지 않는다) */
+    suspend fun readStatus(): CarStatus {
+        val state = runCatching { cabin.readCabin() }.getOrNull()
+        return CarStatus(
+            readAt = now(),
+            socPercent = runCatching { vehicle.readBatterySocPercent() }.getOrNull(),
+            odometerKm = runCatching { vehicle.readOdometerKm() }.getOrNull(),
+            openWindows = state?.openWindows,
+            doorsLocked = state?.doorsLocked,
+            cabinLightOn = state?.cabinLightOn,
+            comfort = runCatching { cabin.readComfort() }.getOrNull() ?: Comfort(),
+            canControl = safeToControl()
+        )
+    }
+
+    /**
+     * 차 상태 보기의 [창문 닫기]·[문 잠그기]·[실내등 끄기]. 하차 점검과 같은 안전 조건(P, 주행 제한 없음)에서만 바꾸고,
+     * 바꾼 뒤 다시 읽어 확인한다. 하차 점검 카드가 떠 있으면 그 카드도 고친다
+     */
+    suspend fun control(items: Set<TidyItem>): CarStatus {
+        if (!safeToControl()) return readStatus()
+        val done = mutableSetOf<TidyItem>()
+        val failed = mutableSetOf<TidyItem>()
+        mutex.withLock {
+            val state = cabin.readCabin()
+            if (TidyItem.WINDOWS in items && !state.openWindows.isNullOrEmpty()) {
+                if (cabin.closeWindows()) done += TidyItem.WINDOWS else failed += TidyItem.WINDOWS
+            }
+            if (TidyItem.LIGHTS in items && state.cabinLightOn == true) {
+                if (cabin.turnOffCabinLight()) done += TidyItem.LIGHTS else failed += TidyItem.LIGHTS
+            }
+            if (TidyItem.DOORS in items && state.doorsLocked == false) {
+                if (cabin.lockDoors()) done += TidyItem.DOORS else failed += TidyItem.DOORS
+            }
+        }
+        val status = readStatus().copy(failed = failed)
+        _exitCheck.value?.let { check ->
+            val updated = check.copy(
+                openWindows = status.openWindows ?: check.openWindows,
+                cabinLightOn = status.cabinLightOn ?: check.cabinLightOn,
+                doorsLocked = status.doorsLocked ?: check.doorsLocked,
+                tidied = check.tidied + done
+            )
+            _exitCheck.value = updated
+            if (done.isNotEmpty()) send(updated)
+        }
+        if (done.isNotEmpty()) say(CabinPhrases.tidied(done))
+        return status
     }
 
     private suspend fun handle(moment: TripMoment) {
@@ -325,6 +404,30 @@ object CabinPhrases {
         if (check.lowBattery) append("배터리가 ${check.socPercent}퍼센트예요. 다음 분을 위해 충전해 주세요. ")
         if (check.needsTidy) append("화면에서 한 번에 정리할 수 있어요.")
     }.trim()
+
+    /**
+     * 차 상태를 소리로 읽을 문장 (도움 비서의 "차 상태 알려 줘").
+     * 예: "배터리 77퍼센트, 계기판 426킬로미터입니다. 창문은 모두 닫혀 있고, 문은 잠겨 있고, 실내등은 꺼져 있어요."
+     */
+    fun status(status: CarStatus): String {
+        val numbers = buildList {
+            status.socPercent?.let { add("배터리 ${it}퍼센트") }
+            status.odometerKm?.let { add("계기판 ${Math.round(it)}킬로미터") }
+        }
+        val cabin = buildList {
+            status.openWindows?.let { open -> add(if (open.isEmpty()) "창문은 모두 닫혀 있고" else "${windowsSubject(open)} 열려 있고") }
+            status.doorsLocked?.let { add(if (it) "문은 잠겨 있고" else "문은 열려 있고") }
+            status.cabinLightOn?.let { add(if (it) "실내등은 켜져 있어요" else "실내등은 꺼져 있어요") }
+        }
+        val first = if (numbers.isEmpty()) "" else numbers.joinToString(", ") + "입니다. "
+        val second = when {
+            cabin.isEmpty() -> ""
+            cabin.last().endsWith("고") -> cabin.joinToString(", ").removeSuffix("고") + "어요."
+            else -> cabin.joinToString(", ") + "."
+        }
+        val tail = if (status.actions.isNotEmpty() && status.canControl) " 차 상태 화면에서 바로 정리할 수 있어요." else ""
+        return (first + second + tail).trim().ifEmpty { "차 상태를 읽지 못했어요." }
+    }
 
     /** 예: "창문을 닫고 실내등을 껐습니다." */
     fun tidied(items: Set<TidyItem>): String {

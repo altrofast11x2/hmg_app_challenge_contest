@@ -9,14 +9,14 @@
 |---|---|---|
 | 새 저장소를 만들거나 기존 개발 저장소를 쓴다 | ✅ | `altrofast11x2/hmg_app_challenge_contest` (main) |
 | 프로젝트 소스 코드를 업로드한다 | ✅ | `app/`(차량 앱), `web/`(관리자 웹), `backend/`(서버) |
-| APK는 저장소 안 `apk/` 폴더에, 파일명 `팀명_앱이름_release.apk` | ✅ | `apk/AltroStudio_DriveLog_release.apk` |
+| APK는 저장소 안 `apk/` 폴더에, 파일명 `팀명_앱이름_release.apk` | ✅ | `apk/AltroStudio_Chagok_release.apk` |
 | 실행 가능한 release 버전 | ✅ | v2 서명, debuggable 아님. 새로 만든 AVD에 설치해 동의 → 연결 → 주행 → 분류 → 서버 반영까지 확인 |
 | GitHub 업로드 용량을 넘으면 Releases에 올리고 그 주소를 제출 | ➖ | 0.2.0은 약 53 MB(DB 암호화·TTS SDK 포함). GitHub 한도 100 MB 안이라 저장소에 그대로 둔다 (push 때 50 MB 권장 경고만 나옴). 설명회도 `apk/` 폴더나 Releases 둘 다 된다고 안내 |
 | README.md: 앱 이름 및 한 줄 소개 | ✅ | [README](../README.md#앱-이름-및-한-줄-소개) |
 | README.md: 실행 방법 | ✅ | [README](../README.md#실행-방법) (APK로 바로 해 보기 / 소스에서 빌드 / 관리자 웹) |
 | README.md: 테스트 환경 및 필요한 설정 | ✅ | [README](../README.md#테스트-환경-및-필요한-설정) (버전, 에뮬레이터, Virtual Console, 데모 계정) |
 | README.md: APK 파일 위치 또는 Release 링크 | ✅ | [README](../README.md#apk-파일-위치) |
-| 저장소 주소와 APK 파일 경로를 제출 페이지(접수양식)에 적는다 | ⏳ | 저장소 `https://github.com/altrofast11x2/hmg_app_challenge_contest`, APK 경로 `apk/AltroStudio_DriveLog_release.apk` ([기획 요약](plan-summary.md#제출-정보)) |
+| 저장소 주소와 APK 파일 경로를 제출 페이지(접수양식)에 적는다 | ⏳ | 저장소 `https://github.com/altrofast11x2/hmg_app_challenge_contest`, APK 경로 `apk/AltroStudio_Chagok_release.apk` ([기획 요약](plan-summary.md#제출-정보)) |
 | 비공개 저장소는 공지된 심사용 계정을 Collaborator로 초대 | ⏳ | 비공개로 두고 초대하기로 결정(2026-10-27). 심사용 계정은 아직 공지되지 않음 → 공지가 나오면 초대 |
 | 마감 전에 심사용 계정이 접근되는지 반드시 확인 | ⏳ | 초대 후 확인 |
 | 개인 계정의 비공개 저장소는 쓰기 권한도 주어지므로 미리 확인 | ⏳ | 초대 전 확인 |

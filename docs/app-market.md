@@ -10,7 +10,7 @@
 | 앱 관리명 (마켓에 안 보임) | DriveLog |
 | 버전명 / 버전 코드 | 0.2.0 / 2 (`app/build.gradle.kts`) |
 | 국가/지역 | 대한민국 (국세청 업무용승용차 운행기록부 서식) |
-| 패키지 파일 | `apk/AltroStudio_DriveLog_release.apk` (약 53 MB, 한도 600 MB) |
+| 패키지 파일 | `apk/AltroStudio_Chagok_release.apk` (약 53 MB, 한도 600 MB) |
 | 대상 플랫폼 | Connect |
 | 카테고리 | Business (업무 및 생산성 지원) |
 | 연령 등급 | 전체 이용가 예정. IARC 등급 분류를 받아 증적을 함께 제출 (남음) |

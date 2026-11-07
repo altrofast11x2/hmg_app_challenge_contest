@@ -13,6 +13,9 @@ import com.altrostudio.drivelog.data.trip.TripEntity
 import com.altrostudio.drivelog.data.trip.TripLedger
 import com.altrostudio.drivelog.data.trip.TripPurpose
 import com.altrostudio.drivelog.data.trip.TripStatus
+import com.altrostudio.drivelog.domain.cabin.CarStatus
+import com.altrostudio.drivelog.domain.voice.HelpState
+import com.altrostudio.drivelog.domain.voice.HelpTopic
 import com.altrostudio.drivelog.domain.voice.VoiceInputState
 import com.altrostudio.drivelog.domain.cabin.CabinPhrases
 import com.altrostudio.drivelog.domain.cabin.ExitCheck
@@ -274,6 +277,45 @@ class MainViewModel(
             )
         }
     }
+
+    private val _carStatus = MutableStateFlow<CarStatus?>(null)
+
+    /** 차 상태 보기 화면의 값 (열려 있는 동안 5초마다 새로 읽는다) */
+    val carStatus: StateFlow<CarStatus?> = _carStatus.asStateFlow()
+
+    fun refreshCarStatus() {
+        viewModelScope.launch {
+            val busy = _carStatus.value?.busy == true
+            if (!busy) _carStatus.value = container.cabinAssistant.readStatus()
+        }
+    }
+
+    /** 차 상태 보기의 [창문 닫기]·[문 잠그기]·[실내등 끄기] */
+    fun controlCar(items: Set<TidyItem>) {
+        viewModelScope.launch {
+            _carStatus.value = _carStatus.value?.copy(busy = true, failed = emptySet())
+            _carStatus.value = container.cabinAssistant.control(items)
+        }
+    }
+
+    /** 음성 도움 비서 */
+    val helpState: StateFlow<HelpState> get() = container.helpAssistant.state
+
+    fun startHelp() = container.helpAssistant.start()
+
+    fun chooseHelp(topic: HelpTopic) = container.helpAssistant.choose(topic)
+
+    fun closeHelp() = container.helpAssistant.cancel()
+
+    /** 동의·연결 뒤 처음이면 사용법을 보여 준다 */
+    val tutorialPending: Boolean get() = !container.preferences.tutorialSeen
+
+    fun finishTutorial() {
+        container.preferences.tutorialSeen = true
+    }
+
+    /** 사용법을 읽어 준다 (음성 안내를 껐으면 읽지 않는다) */
+    fun speak(text: String) = container.voiceGuide.say(text)
 
     /** 말로 기록 확인의 [맞아요] */
     fun confirmVoice() {

@@ -43,6 +43,7 @@ fun SettingsScreen(
     onConnect: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenTutorial: () -> Unit = {},
     onWithdraw: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -105,6 +106,7 @@ fun SettingsScreen(
                 cabin.exitCheck,
                 cabin.onExitCheckChange
             )
+            DriveLogButton(stringResource(R.string.settings_tutorial), onOpenTutorial, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
             DriveLogButton(stringResource(R.string.settings_privacy), onOpenPrivacy, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
             DriveLogButton(stringResource(R.string.settings_licenses), onOpenLicenses, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)
             DriveLogButton(stringResource(R.string.settings_withdraw), { confirmingWithdraw = true }, Modifier.fillMaxWidth(), kind = ButtonKind.Secondary)

@@ -38,7 +38,7 @@ export function privacyPage(stringsXml = readFileSync(STRINGS_XML, 'utf8')) {
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>자동 운행기록부 개인정보 처리방침</title>
+  <title>차곡 개인정보 처리방침</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asta+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/tokens.css">
@@ -46,7 +46,7 @@ export function privacyPage(stringsXml = readFileSync(STRINGS_XML, 'utf8')) {
 </head>
 <body>
   <main class="policy">
-    <h1>자동 운행기록부 개인정보 처리방침</h1>
+    <h1>차곡 개인정보 처리방침</h1>
     <p class="policy-meta">차량 앱(Pleos Connect)에 적용 · 시행일 2026년 10월 28일</p>
 ${content}
   </main>

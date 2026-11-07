@@ -63,6 +63,11 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
         get() = prefs.getBoolean(KEY_VOICE_GUIDANCE, true)
         set(value) = prefs.edit { putBoolean(KEY_VOICE_GUIDANCE, value) }
 
+    /** 사용법(튜토리얼)을 끝까지 보거나 건너뛰었다 */
+    var tutorialSeen: Boolean
+        get() = prefs.getBoolean(KEY_TUTORIAL_SEEN, false)
+        set(value) = prefs.edit { putBoolean(KEY_TUTORIAL_SEEN, value) }
+
     /** 정차하면 용도와 업무 내용을 말로 묻고 듣는다. 처음에는 켜져 있다 */
     override var voiceJournal: Boolean
         get() = prefs.getBoolean(KEY_VOICE_JOURNAL, true)
@@ -162,6 +167,7 @@ class AppPreferences(context: Context, cipher: StringCipher = KeystoreCipher()) 
         private const val KEY_PARKED_TIMEOUT = "parked_timeout_ms"
         private const val KEY_VOICE_GUIDANCE = "voice_guidance"
         private const val KEY_VOICE_JOURNAL = "voice_journal"
+        private const val KEY_TUTORIAL_SEEN = "tutorial_seen"
         private const val KEY_DB_KEY = "database_key"
         private const val KEY_UPDATE_CHECK_AT = "update_check_at"
         private const val DB_KEY_BYTES = 32

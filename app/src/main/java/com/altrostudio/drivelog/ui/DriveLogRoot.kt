@@ -9,6 +9,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -37,6 +38,11 @@ import com.altrostudio.drivelog.ui.logbook.LogbookScreen
 import com.altrostudio.drivelog.ui.logbook.LogbookViewModel
 import com.altrostudio.drivelog.ui.settings.LicensesScreen
 import com.altrostudio.drivelog.ui.settings.PrivacyPolicyScreen
+import com.altrostudio.drivelog.domain.voice.HelpState
+import com.altrostudio.drivelog.domain.voice.HelpTopic
+import com.altrostudio.drivelog.ui.cabin.CarStatusScreen
+import com.altrostudio.drivelog.ui.help.HelpDialog
+import com.altrostudio.drivelog.ui.help.TutorialScreen
 import com.altrostudio.drivelog.ui.settings.CabinToggles
 import com.altrostudio.drivelog.ui.settings.SettingsScreen
 import com.altrostudio.drivelog.ui.theme.DriveLogTheme
@@ -46,6 +52,7 @@ enum class Destination(val parent: Destination?) {
     HOME(null),
     LOGBOOK(HOME),
     SETTINGS(HOME),
+    CAR_STATUS(HOME),
     CONNECT(SETTINGS),
     PRIVACY(SETTINGS),
     LICENSES(SETTINGS)
@@ -71,6 +78,10 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
     val driverCard by viewModel.driverCard.collectAsStateWithLifecycle()
     val exitCheck by viewModel.exitCheck.collectAsStateWithLifecycle()
     val voiceInput by viewModel.voiceInput.collectAsStateWithLifecycle()
+    val carStatus by viewModel.carStatus.collectAsStateWithLifecycle()
+    val helpState by viewModel.helpState.collectAsStateWithLifecycle()
+    var helpOpen by rememberSaveable { mutableStateOf(false) }
+    var showTutorial by rememberSaveable { mutableStateOf(viewModel.tutorialPending) }
     var pickingDriver by rememberSaveable { mutableStateOf(false) }
     val activity = LocalActivity.current
 
@@ -161,7 +172,23 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             )
         }
 
+        showTutorial && !onboardingConnect && destination == Destination.HOME -> TutorialScreen(
+            onSpeak = viewModel::speak,
+            onFinish = {
+                viewModel.finishTutorial()
+                showTutorial = false
+            },
+            modifier = modifier
+        )
+
         else -> when (destination) {
+            Destination.CAR_STATUS -> CarStatusScreen(
+                status = carStatus,
+                onBack = { destination = Destination.HOME },
+                onRefresh = viewModel::refreshCarStatus,
+                onControl = viewModel::controlCar,
+                modifier = modifier
+            )
             Destination.HOME -> HomeScreen(
                 month = state.month,
                 summary = state.monthSummary,
@@ -177,6 +204,11 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                 onOpenLogbook = { destination = Destination.LOGBOOK },
                 onOpenSettings = { destination = Destination.SETTINGS },
                 modifier = modifier,
+                onOpenCarStatus = { destination = Destination.CAR_STATUS },
+                onOpenHelp = {
+                    helpOpen = true
+                    viewModel.startHelp()
+                },
                 driverCard = driverCard,
                 exitCheck = exitCheck,
                 onConfirmDriver = viewModel::confirmDriver,
@@ -243,6 +275,10 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                     onConnect = { destination = Destination.CONNECT },
                     onOpenPrivacy = { destination = Destination.PRIVACY },
                     onOpenLicenses = { destination = Destination.LICENSES },
+                    onOpenTutorial = {
+                        destination = Destination.HOME
+                        showTutorial = true
+                    },
                     onWithdraw = {
                         viewModel.withdraw()
                         destination = Destination.HOME
@@ -268,6 +304,38 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             },
             onDismiss = { pickingDriver = false }
         )
+    }
+
+    // 음성 도움 비서 (홈의 [도움]). 답을 읽으면 그 일의 화면으로 데려다준다
+    if (helpOpen && !state.drivingRestricted) {
+        HelpDialog(
+            state = helpState,
+            onTopic = viewModel::chooseHelp,
+            onListen = viewModel::startHelp,
+            onDismiss = {
+                helpOpen = false
+                viewModel.closeHelp()
+            }
+        )
+    }
+    val answered = helpState as? HelpState.Answered
+    LaunchedEffect(answered) {
+        if (answered == null || !helpOpen) return@LaunchedEffect
+        helpOpen = false
+        when (answered.topic) {
+            HelpTopic.CAR_STATUS -> destination = Destination.CAR_STATUS
+            HelpTopic.LOGBOOK, HelpTopic.SHARE -> destination = Destination.LOGBOOK
+            HelpTopic.DRIVER -> {
+                destination = Destination.HOME
+                if (driverCard != null) pickingDriver = true
+            }
+            HelpTopic.VOICE_RECORD -> destination = Destination.HOME
+            HelpTopic.TUTORIAL -> {
+                destination = Destination.HOME
+                showTutorial = true
+            }
+            HelpTopic.SETTINGS -> destination = Destination.SETTINGS
+        }
     }
 
     // 새 버전 안내는 정차 중 홈에서만 띄운다 (분류·연결 중에는 끼어들지 않는다)

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">자동 운행기록부</string>
+    <string name="app_name">차곡</string>
     <string name="recording_channel_name">운행 기록</string>
     <string name="recording_notification_text">운행을 자동으로 기록하고 있습니다</string>
 
@@ -169,7 +169,7 @@
 
     <!-- 개인정보 처리방침 -->
     <string name="privacy_title">개인정보 처리방침</string>
-    <string name="privacy_body">AltroStudio(이하 개발사)는 자동 운행기록부 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도. 조직에 연결한 차량에서는 운전자의 이름·부서, 운전자별 차량 맞춤 설정(공조 온도, 시트 열선·통풍, 무드등 색), 운행을 마칠 때의 차 안 상태(창문 열림, 실내등, 문 잠김, 배터리 잔량), 말로 남긴 업무 내용(정차 후 앱에 말하거나 Gleo AI에 말한 글자)도 처리합니다.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 운전자 명단은 조직 서버에서 받습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람. 공용차를 쓰는 운전자별 차량 맞춤, 다음 운전자를 위한 차량 상태 확인.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 차량 안의 기록과 설정(차량 식별번호, 로그인 정보 포함)은 이 차량의 보안 저장소(Android Keystore) 키로 암호화해 보관합니다. 비업무로 분류한 운행은 분류하는 즉시 주소, 도착 정보, 업무 내용을 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다. 조직에 연결한 차량이면 서버와의 연결도 끊어 그 뒤로는 기록을 보내지 않습니다. 이미 서버에 올라간 기록은 5항에 따릅니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)과 운전자별 맞춤 설정, 운행을 마칠 때의 차 안 상태가 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 맞춤 설정은 같은 조직의 다른 공용차에서 그 운전자를 고를 때도 쓰입니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n조직에 연결한 차량에서 운행기록부의 [휴대폰으로 받기]를 누르면, 고른 기간의 운행 기록을 10분 동안 열 수 있는 주소(QR 코드)를 만듭니다. 그 10분 동안은 주소를 아는 사람 누구나 그 기록을 볼 수 있으니 다른 사람에게 보여 주지 마세요.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람할 수 있습니다. 조직에 연결하지 않은 차량은 CSV로 내보내고, 연결한 차량은 [휴대폰으로 받기]로 휴대폰에서 받을 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 음성 안내, 말로 기록, 업데이트 확인\n음성 안내는 차량 안의 음성 엔진(Pleos TextToSpeech)으로 읽어, 읽는 문장이 차 밖으로 나가지 않습니다. 정차하면 앱이 용도와 업무 내용을 말로 묻고, 차량 안의 음성 인식 엔진(Pleos SpeechToText, 차량 안에서 처리)으로 한 번 듣습니다. 분류 화면의 [말로 기록]을 눌러도 듣습니다. 듣는 동안 받아 적는 글자가 화면에 보이고, 화면에서 고르거나 다시 출발하면 바로 멈춥니다. Gleo AI 음성 명령으로도 운행 용도·업무 내용·운전자를 기록할 수 있습니다. 어느 쪽이든 이 앱은 녹음을 받지 않고 받아 적은 글자(용도, 업무 내용, 이름)만 받으며, 그 가운데 업무 내용과 운전자만 기록에 남깁니다. 설정의 [말로 용도 기록]에서 끌 수 있습니다. 새 버전 안내를 위해 하루에 한 번 개발사 웹사이트에서 최신 버전 번호만 받아 오며, 이때 운행 기록이나 차량 정보는 보내지 않습니다.\n\n9. 차량 제어\n운전자를 고르면 그분의 설정으로 공조 온도·시트 열선·무드등을 맞추고, 정차 후 용도를 기다릴 때와 고른 뒤 잠깐 무드등 색을 바꿨다가 원래대로 되돌립니다. 창문 닫기·실내등 끄기·문 잠그기는 정차 중 운전자가 화면에서 직접 누를 때만 합니다. 설정에서 각각 끌 수 있습니다.\n\n10. 문의\nAltroStudio · kazinobel9807@gmail.com</string>
+    <string name="privacy_body">AltroStudio(이하 개발사)는 차곡(자동 운행기록부) 앱에서 다음과 같이 개인정보를 처리합니다.\n\n1. 수집 항목\n운행 시작·종료 시각, 주행 전·후 계기판 누적 거리, 배터리 잔량(전기차), 운행 시작·종료 지점의 주소, 내비게이션 목적지·경유지 도착 정보(이름, 주소), 차량 식별번호(VIN) 또는 앱이 만든 기기 ID, 운전자가 고른 운행 용도. 조직에 연결한 차량에서는 운전자의 이름·부서, 운전자별 차량 맞춤 설정(공조 온도, 시트 열선·통풍, 무드등 색), 운행을 마칠 때의 차 안 상태(창문 열림, 실내등, 문 잠김, 배터리 잔량), 말로 남긴 업무 내용(정차 후 앱에 말하거나 Gleo AI에 말한 글자)도 처리합니다.\n\n2. 수집 방법\n차량 시스템(Pleos Connect SDK)과 내비게이션에서 자동으로 읽습니다. 운전자 명단은 조직 서버에서 받습니다. 위치는 운행 시작과 종료 두 시점의 주소만 조회하며, 실시간 위치 추적은 하지 않습니다.\n\n3. 이용 목적\n업무용 승용차 운행기록부 작성과 열람. 공용차를 쓰는 운전자별 차량 맞춤, 다음 운전자를 위한 차량 상태 확인.\n\n4. 보유 기간과 파기\n기록은 먼저 이 차량 안에 저장됩니다. 차량 안의 기록과 설정(차량 식별번호, 로그인 정보 포함)은 이 차량의 보안 저장소(Android Keystore) 키로 암호화해 보관합니다. 비업무로 분류한 운행은 분류하는 즉시 주소, 도착 정보, 업무 내용을 지우고 거리만 남깁니다. 설정에서 동의를 철회하면 이 차량에 저장된 모든 기록과 설정을 즉시 삭제합니다. 조직에 연결한 차량이면 서버와의 연결도 끊어 그 뒤로는 기록을 보내지 않습니다. 이미 서버에 올라간 기록은 5항에 따릅니다.\n\n5. 제공\n관리자가 준 연결 코드로 차량을 조직(회사)에 연결한 경우에만, 운행 기록(위 수집 항목)과 운전자별 맞춤 설정, 운행을 마칠 때의 차 안 상태가 그 조직의 서버로 전송되어 조직 관리자에게 제공됩니다. 맞춤 설정은 같은 조직의 다른 공용차에서 그 운전자를 고를 때도 쓰입니다. 서버에 올라간 기록은 조직의 보관 정책에 따르며, 삭제는 조직 관리자에게 요청할 수 있습니다. 그 밖의 제3자에게는 제공하지 않습니다.\n조직에 연결한 차량에서 운행기록부의 [휴대폰으로 받기]를 누르면, 고른 기간의 운행 기록을 10분 동안 열 수 있는 주소(QR 코드)를 만듭니다. 그 10분 동안은 주소를 아는 사람 누구나 그 기록을 볼 수 있으니 다른 사람에게 보여 주지 마세요.\n\n6. 이용자의 권리\n운전자는 앱의 월별 운행기록부에서 자신의 기록을 언제든 열람할 수 있습니다. 조직에 연결하지 않은 차량은 CSV로 내보내고, 연결한 차량은 [휴대폰으로 받기]로 휴대폰에서 받을 수 있습니다. 동의를 철회해 기록 삭제를 요청할 수 있습니다.\n\n7. 기록의 무결성\n계기판 거리와 운행 용도는 고칠 수 없도록 해시 체인으로 묶어 보관합니다. 값을 바꾸면 기록부 화면에 흔적이 표시됩니다.\n\n8. 음성 안내, 말로 기록, 업데이트 확인\n음성 안내는 차량 안의 음성 엔진(Pleos TextToSpeech)으로 읽어, 읽는 문장이 차 밖으로 나가지 않습니다. 정차하면 앱이 용도와 업무 내용을 말로 묻고, 차량 안의 음성 인식 엔진(Pleos SpeechToText, 차량 안에서 처리)으로 한 번 듣습니다. 분류 화면의 [말로 기록]을 눌러도 듣습니다. 듣는 동안 받아 적는 글자가 화면에 보이고, 화면에서 고르거나 다시 출발하면 바로 멈춥니다. Gleo AI 음성 명령으로도 운행 용도·업무 내용·운전자를 기록할 수 있습니다. 어느 쪽이든 이 앱은 녹음을 받지 않고 받아 적은 글자(용도, 업무 내용, 이름)만 받으며, 그 가운데 업무 내용과 운전자만 기록에 남깁니다. 설정의 [말로 용도 기록]에서 끌 수 있습니다. 홈의 [도움]으로 물을 때도 같은 차량 안 엔진으로 듣고, 받아 적은 글자는 알맞은 안내를 고르는 데만 쓰고 저장하지 않습니다. 새 버전 안내를 위해 하루에 한 번 개발사 웹사이트에서 최신 버전 번호만 받아 오며, 이때 운행 기록이나 차량 정보는 보내지 않습니다.\n\n9. 차량 제어\n운전자를 고르면 그분의 설정으로 공조 온도·시트 열선·무드등을 맞추고, 정차 후 용도를 기다릴 때와 고른 뒤 잠깐 무드등 색을 바꿨다가 원래대로 되돌립니다. 창문 닫기·실내등 끄기·문 잠그기는 정차 중 운전자가 화면에서 직접 누를 때만 합니다. 설정에서 각각 끌 수 있습니다.\n\n10. 문의\nAltroStudio · kazinobel9807@gmail.com</string>
 
     <!-- 오픈소스 라이선스 -->
     <string name="licenses_title">오픈소스 라이선스</string>
@@ -327,4 +327,62 @@
     <string name="settings_ambient_cue_description">정차 후 용도를 기다릴 때와 고른 뒤에 무드등 색으로 알려요. 끝나면 원래 색으로 돌아가요</string>
     <string name="settings_exit_check">하차 점검</string>
     <string name="settings_exit_check_description">운행을 마치면 열린 창문·켜진 실내등·배터리를 확인해 알려요</string>
+    <string name="home_open_help">도움</string>
+    <string name="home_open_car_status">차 상태</string>
+    <string name="car_status_title">차 상태</string>
+    <string name="car_status_loading">차 상태를 읽는 중…</string>
+    <string name="car_status_front">앞</string>
+    <string name="car_status_legend_open">열린 창문</string>
+    <string name="car_status_unknown">알 수 없음</string>
+    <string name="car_status_battery">배터리</string>
+    <string name="car_status_odometer">계기판</string>
+    <string name="car_status_windows">창문</string>
+    <string name="car_status_windows_closed">모두 닫힘</string>
+    <string name="car_status_open_suffix">열림</string>
+    <string name="car_status_doors">문</string>
+    <string name="car_status_locked">잠김</string>
+    <string name="car_status_unlocked">열림</string>
+    <string name="car_status_cabin_light">실내등</string>
+    <string name="car_status_on">켜짐</string>
+    <string name="car_status_off">꺼짐</string>
+    <string name="car_status_temperature">공조 온도</string>
+    <string name="car_status_seat">시트</string>
+    <string name="car_status_seat_heat">열선 %1$d단계</string>
+    <string name="car_status_seat_vent">통풍 %1$d단계</string>
+    <string name="car_status_ambient">무드등</string>
+    <string name="car_status_refresh_note">5초마다 차에서 다시 읽어요</string>
+    <string name="car_status_control_parked_only">창문 닫기·문 잠그기·실내등 끄기는 P에 두고 주행 제한이 없을 때만 할 수 있어요</string>
+    <string name="car_status_nothing_to_tidy">정리할 것이 없어요. 창문·문·실내등 모두 괜찮아요</string>
+    <string name="car_status_close_windows">창문 닫기</string>
+    <string name="car_status_lock_doors">문 잠그기</string>
+    <string name="car_status_light_off">실내등 끄기</string>
+    <string name="help_title">무엇을 도와드릴까요?</string>
+    <string name="help_hint">“차 상태 알려 줘”처럼 말하거나 아래에서 고르세요</string>
+    <string name="help_asking">안내가 끝나면 들을게요</string>
+    <string name="help_answered">알려 드렸어요. 그 화면으로 이동할게요</string>
+    <string name="help_not_understood">“%1$s” — 잘 모르겠어요. 아래에서 골라 주세요</string>
+    <string name="help_no_speech">말씀을 듣지 못했어요. 다시 말하거나 아래에서 고르세요</string>
+    <string name="help_unavailable">지금은 음성 인식을 쓸 수 없어요. 아래에서 골라 주세요</string>
+    <string name="help_close">닫기</string>
+    <string name="help_topic_car_status">차 상태</string>
+    <string name="help_topic_logbook">운행기록부</string>
+    <string name="help_topic_share">휴대폰으로 받기</string>
+    <string name="help_topic_driver">운전자 바꾸기</string>
+    <string name="help_topic_voice">말로 기록하는 법</string>
+    <string name="help_topic_tutorial">사용법 다시 보기</string>
+    <string name="help_topic_settings">설정</string>
+    <string name="tutorial_title">사용법 %1$d / %2$d</string>
+    <string name="tutorial_skip">건너뛰기</string>
+    <string name="tutorial_prev">이전</string>
+    <string name="tutorial_next">다음</string>
+    <string name="tutorial_start">시작하기</string>
+    <string name="tutorial_1_title">차가 알아서 기록해요</string>
+    <string name="tutorial_1_body">기어를 D로 넣으면 운행 기록이 시작되고 P에 두면 끝나요. 주행 전·후 계기판 거리는 차에서 직접 읽고, 주행 중에는 누를 것이 없어요.</string>
+    <string name="tutorial_2_title">세우면 용도만 알려 주세요</string>
+    <string name="tutorial_2_body">차가 용도와 업무 내용을 물어봐요. “업무, 거래처 미팅”처럼 말하거나 화면에서 한 번 누르세요. 차가 되읽으면 “맞아”라고 하면 기록돼요.</string>
+    <string name="tutorial_3_title">공용차라면 운전자를 고르세요</string>
+    <string name="tutorial_3_body">고르면 그분의 온도·시트 열선·무드등으로 차를 맞추고 운행기록부 사용자 칸에 적어요. 내리기 전에는 열린 창문과 켜진 실내등을 알려 줘요.</string>
+    <string name="tutorial_4_title">궁금하면 도움 비서에게 물어보세요</string>
+    <string name="tutorial_4_body">홈 위쪽의 [도움]을 누르고 “차 상태 알려 줘”, “휴대폰으로 받는 법”처럼 말하면 답하고 그 화면으로 데려다줘요. [차 상태]에서는 창문·문·배터리를 한눈에 봐요.</string>
+    <string name="settings_tutorial">사용법 다시 보기</string>
 </resources>

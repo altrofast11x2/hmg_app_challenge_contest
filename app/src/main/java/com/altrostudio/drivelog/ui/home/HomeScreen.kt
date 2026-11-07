@@ -90,6 +90,8 @@ fun HomeScreen(
     onOpenLogbook: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenCarStatus: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
     driverCard: DriverCardState? = null,
     exitCheck: ExitCheck? = null,
     onConfirmDriver: () -> Unit = {},
@@ -102,6 +104,8 @@ fun HomeScreen(
         val topBar: @Composable () -> Unit = {
             TopBar(title = stringResource(R.string.app_name), portrait = portrait) {
                 SyncChip(sync, iconOnly = portrait)
+                IconCircleButton(DriveLogIcons.Help, stringResource(R.string.home_open_help), onOpenHelp)
+                IconCircleButton(DriveLogIcons.Car, stringResource(R.string.home_open_car_status), onOpenCarStatus)
                 IconCircleButton(DriveLogIcons.Gear, stringResource(R.string.home_open_settings), onOpenSettings)
             }
         }

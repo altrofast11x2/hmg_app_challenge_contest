@@ -165,7 +165,7 @@ function renderLogin(notice) {
   const status = el('div', { class: 'form-status' }, notice ? message(notice, 'error') : null);
   const button = el('button', { type: 'submit', class: 'button-primary' }, '로그인');
   const form = el('form', { class: 'card login', onsubmit: onSubmit },
-    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '자동 운행기록부')),
+    el('div', { class: 'brand-mark' }, appMark(), el('h1', {}, '차곡')),
     el('label', {}, '아이디 또는 이메일', el('input', {
       name: 'id', type: 'text', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false', required: true,
     })),
@@ -325,7 +325,7 @@ function renderMain() {
   setScreen(
     el('header', { class: 'topbar' },
       appMark(),
-      el('strong', { class: 'brand' }, '자동 운행기록부'),
+      el('strong', { class: 'brand' }, '차곡'),
       orgPicker,
       el('span', { class: 'spacer' }),
       el('span', { class: 'user' }, api.displayName(api.currentUser())),
@@ -866,7 +866,7 @@ function taxFormPage({ vehicle, logbook }, period, org) {
         ),
       ),
     ),
-    el('p', { class: 'tax-source' }, '국세청고시 제2025-8호 별지 서식과 같은 칸 · 자동 운행기록부(DriveLog)가 차량 계기판 거리로 작성'),
+    el('p', { class: 'tax-source' }, '국세청고시 제2025-8호 별지 서식과 같은 칸 · 차곡(자동 운행기록부)가 차량 계기판 거리로 작성'),
   );
 }
 
@@ -875,7 +875,7 @@ function taxFormPage({ vehicle, logbook }, period, org) {
 
 async function renderShare({ token, period: carPeriod }) {
   const content = el('section', { class: 'content share' }, message('운행기록부를 불러오는 중…'));
-  setScreen(el('header', { class: 'topbar' }, appMark(), el('strong', { class: 'brand' }, '자동 운행기록부')), el('main', {}, content));
+  setScreen(el('header', { class: 'topbar' }, appMark(), el('strong', { class: 'brand' }, '차곡')), el('main', {}, content));
   try {
     const shared = await api.sharedLogbook(token);
     if (shared.status !== 'OK') {
@@ -1212,7 +1212,7 @@ function renderDeveloper() {
   setScreen(
     el('header', { class: 'topbar' },
       appMark(),
-      el('strong', { class: 'brand' }, '자동 운행기록부'),
+      el('strong', { class: 'brand' }, '차곡'),
       el('span', { class: 'badge badge-developer' }, '개발자'),
       el('span', { class: 'spacer' }),
       el('span', { class: 'user' }, api.displayName(api.currentUser())),

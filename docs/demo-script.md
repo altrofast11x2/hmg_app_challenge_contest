@@ -51,7 +51,7 @@ curl -X PUT "http://127.0.0.1:8088/vehicle/gear?gear=Park"
 - [ ] AVD **Cold boot** (Quick boot면 차량 데이터를 쓸 수 없다)
 - [ ] 인터넷 확인. 안 되면 Wi-Fi를 껐다 켠다 (README)
 - [ ] 에뮬레이터 시간대가 Asia/Seoul인지 확인 (`adb shell settings put global auto_time_zone 0` → `adb shell service call alarm 3 s16 Asia/Seoul`)
-- [ ] release APK 새로 설치 (`apk/AltroStudio_DriveLog_release.apk`, 이전 앱은 지우고)
+- [ ] release APK 새로 설치 (`apk/AltroStudio_Chagok_release.apk`, 이전 앱은 지우고)
 - [ ] 데모 계정 준비: 관리자 웹(https://altrostudio-drivelog.vercel.app/app.html) 로그인, 시연용 연결 코드 또는 새로 발급한 코드
 - [ ] 데모 기업에 운전자 3명(김민준·이서연·박지훈, `backend/seed/demo_drivers.sql`)이 있는지 관리자 웹 › 운전자에서 확인
 - [ ] 차량 화면 설정의 차 안 연동(운전자 맞춤 설정·무드등 신호·하차 점검)이 켜져 있는지 확인

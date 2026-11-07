@@ -10,7 +10,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 첨부 | `app/src/main/assets/schema.json` (APK에도 같은 파일이 들어 있음: `apk/AltroStudio_DriveLog_release.apk`) |
+| 첨부 | `app/src/main/assets/schema.json` (APK에도 같은 파일이 들어 있음: `apk/AltroStudio_Chagok_release.apk`) |
 | 앱 이름 / 패키지 | 자동 운행기록부 (DriveLog) / `com.altrostudio.drivelog` |
 | 개발사 | AltroStudio (현대자동차그룹 차량용 앱 개발 공모전 참가팀) |
 | Pleos Playground 프로젝트 ID | `d2e82bc9-88ab-43b4-90a4-7fc6fa4975ef` |

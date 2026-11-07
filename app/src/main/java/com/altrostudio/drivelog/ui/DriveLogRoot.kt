@@ -166,9 +166,14 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
                 month = state.month,
                 summary = state.monthSummary,
                 recentTrips = state.recentTrips,
-                unclassifiedTrips = state.unclassifiedTrips,
+                // [나중에]로 넘긴 방금 운행도 미분류 배너에 넣는다 (넣지 않으면 5분 뒤 미분류로 끝날 때까지 홈에 아무것도 안 보인다)
+                // 배너는 오래된 운행부터라 방금 운행은 맨 뒤에 둔다. 지난 미분류를 다 고르면 방금 운행의 분류 화면을 다시 연다
+                unclassifiedTrips = state.unclassifiedTrips + listOfNotNull(parkedTrip?.takeIf { it.id == dismissedTripId }),
                 sync = syncChipState(state, viewModel.backendConfigured),
-                onClassifyNow = { classifyingTripId = state.unclassifiedTrips.firstOrNull()?.id },
+                onClassifyNow = {
+                    val oldest = state.unclassifiedTrips.firstOrNull()
+                    if (oldest != null) classifyingTripId = oldest.id else dismissedTripId = null
+                },
                 onOpenLogbook = { destination = Destination.LOGBOOK },
                 onOpenSettings = { destination = Destination.SETTINGS },
                 modifier = modifier,

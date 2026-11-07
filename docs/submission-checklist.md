@@ -53,8 +53,8 @@
 
 | 일 | 누가 | 기한 |
 |---|---|---|
-| 4절 결정과 반영(사본 저장소, 문의 이메일) | 팀 결정 → Claude | 11/12 |
-| `business.md` 예상 MAU·Retention 빈칸 채우기 (출처 표기) | Claude 조사 → 팀 확인 | 11/12 |
+| ✅ 깨끗한 사본 저장소 `altrofast11x2/AltroStudio_DriveLog`(비공개, 커밋 1개, 작성자 AltroStudio) — 제출 전 `bash tools/submission-copy.sh`로 다시 올림. 문의 이메일은 그대로 두기로 함(2026-11-07) | 완료 | — |
+| ✅ `business.md` 시장 규모·MAU·Retention 채움 (출처, 가정 표시) → 팀 확인 후 접수양식 6번에 옮김 | 팀 확인 | 11/12 |
 | 시연 영상 녹화 | 팀 (Claude가 화면 자동 녹화 도움 가능) | 11/14 |
 | 접수양식 작성·전원 서명 | 팀 | 11/14 |
 | 새 AVD에 release APK 새로 설치해 처음부터 시험 (심사위원과 같은 조건) | Claude | 제출 직전 |

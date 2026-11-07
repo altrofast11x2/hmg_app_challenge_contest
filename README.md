@@ -12,7 +12,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 |---|---|---|
 | ![운행기록부 화면](docs/images/a06-logbook.png) | ![휴대폰으로 받기 QR 코드](docs/images/a07-share-qr.png) | ![휴대폰에서 연 운행기록부](docs/images/m01-phone-logbook.png) |
 
-> 개발 중입니다. 차량 앱(자동 운행 기록, 정차 후 분류, 운행기록부·기간 고르기, 휴대폰으로 받기, 디자인 v0.1), 서버(Supabase) 연결 코드·동기화, 관리자 웹(운행기록부, 세무서 제출용 서식, 기업 계정·개발자 계정)을 만들었고 에뮬레이터와 실서버로 확인했습니다. 기능별 상태는 [docs/status.md](docs/status.md)에 있습니다.
+> **0.3.1 (2026-11-07)**: 차량 앱(자동 기록, 정차 후 분류·말로 기록, 운전자 맞춤·무드등·하차 점검, 운행기록부), 서버(Supabase), 관리자 웹이 모두 동작하고, Pleos Connect 에뮬레이터와 실서버로 확인했습니다. 기능별 상태와 확인 내용은 [docs/status.md](docs/status.md), 제출 점검표는 [docs/submission-checklist.md](docs/submission-checklist.md)에 있습니다.
 
 공모전 README 필수 항목: [앱 이름 및 한 줄 소개](#앱-이름-및-한-줄-소개) · [APK 파일 위치](#apk-파일-위치) · [실행 방법](#실행-방법) · [테스트 환경 및 필요한 설정](#테스트-환경-및-필요한-설정)
 
@@ -23,7 +23,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 
 ## APK 파일 위치
 
-- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 약 27 MB)
+- [`apk/AltroStudio_DriveLog_release.apk`](apk/AltroStudio_DriveLog_release.apk) (release 서명 빌드, 0.3.1, 약 54 MB)
 - 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
 - APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
 
@@ -34,7 +34,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 1. `Pleos_Connect_v2.1` 에뮬레이터를 **Cold boot**로 켜고 APK를 설치합니다: `adb install apk/AltroStudio_DriveLog_release.apk`
 2. 앱을 열고 동의합니다. **계정이나 로그인 없이** 바로 기록이 켜집니다.
 3. 연결 화면에서 시연용 코드 `422511`을 넣으면 데모 조직에 연결됩니다. [나중에 연결]을 누르면 이 차량 안에서만 기록합니다.
-4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜹니다. 용도를 한 번 누르면 운행기록부에 들어갑니다.
+4. Virtual Console에서 기어를 **D**로 바꾸고 계기판 거리를 늘린 뒤 **P**로 바꾸면 분류 화면이 뜨고, 차가 "용도와 업무 내용을 말씀해 주세요"라고 묻습니다. 용도를 한 번 누르면 운행기록부에 들어갑니다. 말로 해 보려면 에뮬레이터의 PC 마이크를 켜고(아래 [말로 기록 시험](#말로-기록-시험)) "업무, 거래처 미팅"이라고 답한 뒤, 차가 되읽으면 "맞아"라고 하거나 [맞아요]를 누릅니다. [직접 입력]으로 적어도 됩니다.
 5. 홈의 [월별 운행기록부 보기]에서 달 칩이나 [기간 선택](달력)으로 기간을 고르고, [휴대폰으로 받기]의 QR 코드를 휴대폰 카메라로 찍으면 휴대폰에서 운행기록부가 열립니다(조직에 연결한 경우).
 6. 관리자 웹 https://altrostudio-drivelog.vercel.app/app.html 에 기업 계정으로 로그인하면 같은 기록과 **세무 제출** 탭(국세청 서식 인쇄·PDF)을 볼 수 있습니다.
 
@@ -75,7 +75,7 @@ node web/scripts/serve.mjs          # http://127.0.0.1:5173
 | Gradle / AGP / Kotlin | 8.10.2 / 8.8.2 / 2.0.0 |
 | compileSdk / targetSdk / minSdk | 35 / 35 / 28 |
 | 에뮬레이터 | Pleos Connect v2.1 (Android 14, API 34, x86_64, Automotive) |
-| Pleos Connect SDK | Vehicle 2.3.2, NaviHelper 3.0.5, TextToSpeech 3.3.1 |
+| Pleos Connect SDK | Vehicle 2.3.2, NaviHelper 3.0.5, TextToSpeech 3.3.1, SpeechToText 3.3.1 |
 
 ### Pleos Connect 에뮬레이터
 
@@ -89,6 +89,16 @@ node web/scripts/serve.mjs          # http://127.0.0.1:5173
    adb shell cmd wifi set-wifi-enabled disabled
    adb shell cmd wifi set-wifi-enabled enabled
    ```
+
+### 말로 기록 시험
+
+말로 기록은 Pleos SpeechToText의 차 안 엔진(ON_DEVICE)을 씁니다. 에뮬레이터에서는 PC 마이크를 켜야 합니다 (Pleos 에뮬레이터 설정 가이드의 "마이크 접근 설정").
+
+```bash
+adb emu avd hostmicon   # 또는 에뮬레이터 패널 … > Extended Controls > Microphone > "Virtual microphone uses host audio input"
+```
+
+Windows의 기본 녹음 장치(설정 > 시스템 > 소리 > 입력)로 듣습니다. 에뮬레이터를 다시 켜면 꺼지므로 다시 켭니다. 에뮬레이터 마이크는 짧은 한 낱말을 놓칠 때가 있어, 차가 기록 전에 들은 내용을 되읽고 확인받으며 [맞아요]·[직접 입력] 버튼도 있습니다.
 
 ### Virtual Console (차량 상태 시뮬레이션)
 

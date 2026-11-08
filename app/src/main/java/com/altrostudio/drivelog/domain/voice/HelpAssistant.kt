@@ -126,11 +126,15 @@ class HelpAssistant(
         respond(topic, null)
     }
 
-    fun cancel() {
+    /**
+     * 듣기와 답을 멈춘다. 출발해서 닫을 때는 [stopSpeech]를 false로 둔다
+     * (운행 시작 안내가 도움 안내를 덮어 읽으므로, 여기서 멈추면 그 안내까지 지워진다)
+     */
+    fun cancel(stopSpeech: Boolean = true) {
         job?.cancel()
         job = null
         listener.cancel()
-        stopSpeaking()
+        if (stopSpeech) stopSpeaking()
         _state.value = HelpState.Idle
     }
 

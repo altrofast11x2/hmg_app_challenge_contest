@@ -51,6 +51,9 @@ class VoiceGuide(
     fun say(text: String) {
         if (settings.voiceGuidance && text.isNotBlank()) speaker.speak(text)
     }
+
+    /** 읽던 안내를 멈춘다 (사용법을 건너뛸 때) */
+    fun stop() = speaker.stop()
 }
 
 /** 읽어 줄 문장. 운전 중에 듣기 쉽게 짧게, 숫자는 단위를 붙여 소리 나는 대로 쓴다 */

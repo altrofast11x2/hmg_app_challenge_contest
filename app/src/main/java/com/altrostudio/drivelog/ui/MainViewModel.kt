@@ -1,5 +1,6 @@
 package com.altrostudio.drivelog.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -28,6 +29,7 @@ import com.altrostudio.drivelog.domain.logbook.currentMonthFlow
 import com.altrostudio.drivelog.domain.trip.TripRecorder
 import com.altrostudio.drivelog.domain.update.LatestVersion
 import com.altrostudio.drivelog.ui.cabin.DriverCardState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -254,6 +256,12 @@ class MainViewModel(
 
     fun stopListening() = container.voiceJournal.cancel()
 
+    /** 정차 화면의 [나중에]: 듣기를 멈추고, 내리기 전에 볼 수 있게 하차 점검을 바로 한다 */
+    fun later(tripId: String) {
+        container.voiceJournal.cancel()
+        container.cabinAssistant.checkBeforeLeaving(tripId)
+    }
+
     val voiceJournal: Boolean get() = container.voiceJournal.enabled
 
     fun setVoiceJournal(on: Boolean) = container.voiceJournal.setEnabled(on)
@@ -285,16 +293,29 @@ class MainViewModel(
 
     fun refreshCarStatus() {
         viewModelScope.launch {
-            val busy = _carStatus.value?.busy == true
-            if (!busy) _carStatus.value = container.cabinAssistant.readStatus()
+            if (_carStatus.value?.busy == true) return@launch
+            try {
+                _carStatus.value = container.cabinAssistant.readStatus()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "차 상태 읽기 실패: ${e.javaClass.simpleName}")
+            }
         }
     }
 
-    /** 차 상태 보기의 [창문 닫기]·[문 잠그기]·[실내등 끄기] */
+    /** 차 상태 보기의 [창문 닫기]·[문 잠그기]·[실내등 끄기]. 실패해도 버튼이 '바꾸는 중'에 멈추지 않게 한다 */
     fun controlCar(items: Set<TidyItem>) {
         viewModelScope.launch {
             _carStatus.value = _carStatus.value?.copy(busy = true, failed = emptySet())
-            _carStatus.value = container.cabinAssistant.control(items)
+            try {
+                _carStatus.value = container.cabinAssistant.control(items)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "차 조작 실패: ${e.javaClass.simpleName}")
+                _carStatus.value = _carStatus.value?.copy(busy = false, failed = items)
+            }
         }
     }
 
@@ -305,13 +326,15 @@ class MainViewModel(
 
     fun chooseHelp(topic: HelpTopic) = container.helpAssistant.choose(topic)
 
-    fun closeHelp() = container.helpAssistant.cancel()
+    fun closeHelp(stopSpeech: Boolean = true) = container.helpAssistant.cancel(stopSpeech)
 
     /** 동의·연결 뒤 처음이면 사용법을 보여 준다 */
     val tutorialPending: Boolean get() = !container.preferences.tutorialSeen
 
     fun finishTutorial() {
         container.preferences.tutorialSeen = true
+        // [건너뛰기]·[시작하기]를 누르면 읽던 사용법을 멈춘다
+        container.voiceGuide.stop()
     }
 
     /** 사용법을 읽어 준다 (음성 안내를 껐으면 읽지 않는다) */
@@ -337,6 +360,7 @@ class MainViewModel(
     }
 
     companion object {
+        private const val TAG = "DriveLog/Main"
         private const val STOP_TIMEOUT_MS = 5_000L
         private const val TICK_MS = 60_000L
 

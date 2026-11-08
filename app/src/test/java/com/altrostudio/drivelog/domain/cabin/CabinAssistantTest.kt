@@ -175,6 +175,37 @@ class CabinAssistantTest {
     }
 
     @Test
+    fun `정차 화면에서 나중에를 누르면 분류를 기다리지 않고 하차 점검을 한다`() = runTest {
+        val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.REAR_LEFT))
+        val h = harness(cabin)
+
+        emit(h, TripMoment.Parked("t1", awaitingClassification = true))
+        assertNull(h.assistant.exitCheck.value)
+
+        h.assistant.checkBeforeLeaving("t1")
+        runCurrent()
+
+        val check = h.assistant.exitCheck.value!!
+        assertEquals("t1", check.tripId)
+        assertEquals(setOf(CabinWindow.REAR_LEFT), check.openWindows)
+        assertTrue(h.spoken.last().startsWith("내리기 전에 확인해 주세요."))
+        assertEquals("t1", h.reports.last().tripId)
+    }
+
+    @Test
+    fun `하차 점검을 끄면 나중에를 눌러도 점검하지 않는다`() = runTest {
+        val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.REAR_LEFT))
+        val h = harness(cabin)
+        h.settings.exitCheck = false
+
+        h.assistant.checkBeforeLeaving("t1")
+        runCurrent()
+
+        assertNull(h.assistant.exitCheck.value)
+        assertTrue(h.reports.isEmpty())
+    }
+
+    @Test
     fun `주행 중(D)이거나 주행 제한 중이면 창문·실내등·문을 바꾸지 않는다`() = runTest {
         val cabin = FakeCabinControl(ambient = original, openWindows = mutableSetOf(CabinWindow.REAR_LEFT))
         val h = harness(cabin)

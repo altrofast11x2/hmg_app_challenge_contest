@@ -123,7 +123,7 @@ fun HomeScreen(
             ) {
                 topBar()
                 banner()
-                MonthCard(month, summary, portrait = true, onOpenLogbook = null, modifier = Modifier.fillMaxWidth())
+                MonthCard(month, summary, portrait = true, onOpenLogbook = null, pending = unclassifiedTrips.isNotEmpty(), modifier = Modifier.fillMaxWidth())
                 RecentCard(recentTrips.take(PORTRAIT_RECENT_COUNT), onOpenLogbook, Modifier.fillMaxWidth())
                 LogbookButton(onOpenLogbook, Modifier.fillMaxWidth())
             }
@@ -146,6 +146,7 @@ fun HomeScreen(
                         summary,
                         portrait = false,
                         onOpenLogbook = onOpenLogbook,
+                        pending = unclassifiedTrips.isNotEmpty(),
                         modifier = Modifier
                             .weight(MONTH_CARD_WEIGHT)
                             .fillMaxHeight()
@@ -241,7 +242,9 @@ private fun MonthCard(
     summary: LogbookSummary?,
     portrait: Boolean,
     onOpenLogbook: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // 배너에 분류할 운행이 있다 ([나중에]로 넘긴 방금 운행은 아직 요약의 미분류 수에 없다)
+    pending: Boolean = false
 ) {
     val colors = DriveLogTheme.colors
     val dimens = DriveLogTheme.dimens
@@ -251,7 +254,7 @@ private fun MonthCard(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(dimens.spacingMedium)) {
             Text(stringResource(R.string.home_month, month.monthValue), style = DriveLogTheme.typography.title, color = colors.textPrimary)
             IntegrityBadge()
-            if (hasTrips && unclassified == 0) {
+            if (hasTrips && unclassified == 0 && !pending) {
                 DriveLogChip(
                     text = stringResource(R.string.home_all_classified),
                     background = colors.statusIntegrityContainer,

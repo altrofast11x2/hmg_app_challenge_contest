@@ -103,6 +103,20 @@ class HelpAssistantTest {
     }
 
     @Test
+    fun `출발해서 닫을 때는 듣기만 멈추고 안내는 끊지 않는다 - 운행 시작 안내가 지워지지 않게`() = runTest {
+        val help = assistant()
+        help.start()
+        val stopsBefore = stops
+
+        help.cancel(stopSpeech = false)
+        advanceUntilIdle()
+
+        assertEquals(HelpState.Idle, help.state.value)
+        assertEquals(stopsBefore, stops)
+        assertTrue(listener.cancels > 0)
+    }
+
+    @Test
     fun `질문을 안내할 일로 바꾼다`() {
         val cases = mapOf(
             "차 상태 알려 줘" to HelpTopic.CAR_STATUS,

@@ -124,7 +124,7 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
             timeoutLabel = durationLabel(viewModel.parkedTimeoutMs),
             onSelect = viewModel::classify,
             onLater = {
-                viewModel.stopListening()
+                viewModel.later(parkedTrip.id)
                 dismissedTripId = parkedTrip.id
             },
             modifier = modifier,
@@ -306,8 +306,17 @@ fun DriveLogRoot(modifier: Modifier = Modifier, viewModel: MainViewModel = viewM
         )
     }
 
-    // 음성 도움 비서 (홈의 [도움]). 답을 읽으면 그 일의 화면으로 데려다준다
-    if (helpOpen && !state.drivingRestricted) {
+    // 음성 도움 비서 (홈의 [도움]). 답을 읽으면 그 일의 화면으로 데려다준다.
+    // 홈이 보일 때만 띄우고, 출발하거나 정차 분류가 뜨면 닫는다 (마이크를 운행 분류와 같이 쓰지 않게)
+    val helpAllowed = !state.drivingRestricted && destination == Destination.HOME && !showTutorial &&
+        classifyingTripId == null && (parkedTrip == null || parkedTrip.id == dismissedTripId)
+    LaunchedEffect(helpAllowed) {
+        if (!helpAllowed && helpOpen) {
+            helpOpen = false
+            viewModel.closeHelp(stopSpeech = false)
+        }
+    }
+    if (helpOpen && helpAllowed) {
         HelpDialog(
             state = helpState,
             onTopic = viewModel::chooseHelp,

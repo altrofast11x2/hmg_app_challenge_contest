@@ -157,6 +157,7 @@ adb forward tcp:8088 tcp:8088
 | 기획 요약 (심사 항목별) | [docs/plan-summary.md](docs/plan-summary.md) |
 | 공모전 제출 점검표 | [docs/submission.md](docs/submission.md) |
 | Pleos SDK 활용 | [docs/sdk-usage.md](docs/sdk-usage.md) |
+| 코드 설명서 (구조·핵심 흐름·안전 원칙·예상 질문) | [docs/code-guide.md](docs/code-guide.md) |
 | Pleos Playground 가이드 대조 (기획·디자인·개발·테스트·보안·심사) | [docs/pleos-guide-check.md](docs/pleos-guide-check.md) |
 | Pleos App Market 제출 준비 (등록정보·버전 관리) | [docs/app-market.md](docs/app-market.md) |
 | 시연 시나리오 | [docs/demo-script.md](docs/demo-script.md) |

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -23,19 +24,40 @@ import com.altrostudio.drivelog.R
  */
 class TripRecorderService : Service() {
 
+    private var foreground = false
+
     override fun onCreate() {
         super.onCreate()
-        ServiceCompat.startForeground(
-            this,
-            NOTIFICATION_ID,
-            buildNotification(),
-            // specialUse 유형은 Android 14(API 34, Pleos Connect)부터. 그 전에는 유형 없이 시작한다
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        )
+        goForeground()
         (application as DriveLogApp).container.startRecording()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 시스템이 서비스를 되살릴 때(백그라운드)는 포그라운드로 못 올린다. 앱 화면이 다시 열려 start()를 부르면 그때 올린다
+        if (!foreground) goForeground()
+        return START_STICKY
+    }
+
+    /**
+     * 포그라운드로 올린다. Android 12부터는 앱이 백그라운드일 때 막힌다
+     * (2026-11-08 에뮬레이터 시스템이 재시작하며 START_STICKY로 서비스를 되살리자 ForegroundServiceStartNotAllowedException으로 앱이 꺼졌다).
+     * 막혀도 앱을 끄지 않고 기록 엔진은 그대로 돌린다
+     */
+    private fun goForeground() {
+        foreground = try {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildNotification(),
+                // specialUse 유형은 Android 14(API 34, Pleos Connect)부터. 그 전에는 유형 없이 시작한다
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+            )
+            true
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "포그라운드로 올리지 못함 (백그라운드에서 시작됨): ${e.javaClass.simpleName}")
+            false
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -59,6 +81,7 @@ class TripRecorderService : Service() {
     }
 
     companion object {
+        private const val TAG = "DriveLog/Service"
         private const val CHANNEL_ID = "trip_recording"
         private const val NOTIFICATION_ID = 1
 

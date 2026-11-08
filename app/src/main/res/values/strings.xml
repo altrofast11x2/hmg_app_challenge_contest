@@ -341,7 +341,7 @@
     <string name="car_status_open_suffix">열림</string>
     <string name="car_status_doors">문</string>
     <string name="car_status_locked">잠김</string>
-    <string name="car_status_unlocked">열림</string>
+    <string name="car_status_unlocked">잠기지 않음</string>
     <string name="car_status_cabin_light">실내등</string>
     <string name="car_status_on">켜짐</string>
     <string name="car_status_off">꺼짐</string>
@@ -377,12 +377,12 @@
     <string name="tutorial_next">다음</string>
     <string name="tutorial_start">시작하기</string>
     <string name="tutorial_1_title">차가 알아서 기록해요</string>
-    <string name="tutorial_1_body">기어를 D로 넣으면 운행 기록이 시작되고 P에 두면 끝나요. 주행 전·후 계기판 거리는 차에서 직접 읽고, 주행 중에는 누를 것이 없어요.</string>
+    <string name="tutorial_1_body">기어를 D로 넣으면 운행 기록이 시작되고 P에 두면 끝나요. 계기판 거리는 차에서 직접 읽으니 주행 중에는 누를 것이 없어요. 쌓인 기록은 홈의 [전체 보기]에서 운행기록부로 봐요.</string>
     <string name="tutorial_2_title">세우면 용도만 알려 주세요</string>
-    <string name="tutorial_2_body">차가 용도와 업무 내용을 물어봐요. “업무, 거래처 미팅”처럼 말하거나 화면에서 한 번 누르세요. 차가 되읽으면 “맞아”라고 하면 기록돼요.</string>
+    <string name="tutorial_2_body">차가 용도와 업무 내용을 물어봐요. “업무, 거래처 미팅”처럼 말하고, 차가 되읽으면 “맞아”라고 하면 기록돼요. 화면에서 용도를 누르거나 [직접 입력]으로 써도 돼요.</string>
     <string name="tutorial_3_title">공용차라면 운전자를 고르세요</string>
     <string name="tutorial_3_body">고르면 그분의 온도·시트 열선·무드등으로 차를 맞추고 운행기록부 사용자 칸에 적어요. 내리기 전에는 열린 창문과 켜진 실내등을 알려 줘요.</string>
     <string name="tutorial_4_title">궁금하면 도움 비서에게 물어보세요</string>
-    <string name="tutorial_4_body">홈 위쪽의 [도움]을 누르고 “차 상태 알려 줘”, “휴대폰으로 받는 법”처럼 말하면 답하고 그 화면으로 데려다줘요. [차 상태]에서는 창문·문·배터리를 한눈에 봐요.</string>
+    <string name="tutorial_4_body">홈 오른쪽 위의 물음표 버튼을 누르고 “차 상태 알려 줘”, “휴대폰으로 받는 법”처럼 말하면 답하고 그 화면으로 데려다줘요. 그 옆 자동차 버튼에서는 창문·문·배터리를 한눈에 봐요.</string>
     <string name="settings_tutorial">사용법 다시 보기</string>
 </resources>

@@ -261,6 +261,23 @@ class CabinAssistant(
         return status
     }
 
+    /**
+     * 정차 화면에서 [나중에]를 눌렀다. 곧 내릴 수 있으니 분류를 기다리지 않고 하차 점검을 한다
+     * (기다리면 5분 뒤 미분류로 끝날 때에야 점검 카드가 떠서 이미 내린 뒤가 된다)
+     */
+    fun checkBeforeLeaving(tripId: String) {
+        if (!settings.exitCheck) return
+        scope.launch {
+            try {
+                mutex.withLock { checkCabin(tripId, announce = true, classified = false) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "하차 점검 실패: ${e.javaClass.simpleName}")
+            }
+        }
+    }
+
     private suspend fun handle(moment: TripMoment) {
         when (moment) {
             is TripMoment.Started -> {
@@ -416,7 +433,7 @@ object CabinPhrases {
         }
         val cabin = buildList {
             status.openWindows?.let { open -> add(if (open.isEmpty()) "창문은 모두 닫혀 있고" else "${windowsSubject(open)} 열려 있고") }
-            status.doorsLocked?.let { add(if (it) "문은 잠겨 있고" else "문은 열려 있고") }
+            status.doorsLocked?.let { add(if (it) "문은 잠겨 있고" else "문은 잠기지 않았고") }
             status.cabinLightOn?.let { add(if (it) "실내등은 켜져 있어요" else "실내등은 꺼져 있어요") }
         }
         val first = if (numbers.isEmpty()) "" else numbers.joinToString(", ") + "입니다. "

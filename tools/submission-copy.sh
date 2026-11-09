@@ -24,13 +24,15 @@ git archive --format=tar HEAD | tar -x -C "$WORK"
 
 # 사본에서 빼는 것: AI 협업 기록, 개발용 설정·워크플로(서버 깨우기는 개발 저장소에서 돈다), 이 스크립트, 내부 제출 점검표
 rm -rf "$WORK/claude_chat" "$WORK/.github" "$WORK/tools" "$WORK/CLAUDE.md" "$WORK/.mcp.json" \
-  "$WORK/docs/submission-checklist.md"
+  "$WORK/docs/submission-checklist.md" "$WORK/docs/submission.md"
 sed -i '/^| `claude_chat\/` |/d' "$WORK/README.md"
+sed -i '/^| 공모전 제출 점검표 | \[docs\/submission.md\]/d' "$WORK/README.md"
 sed -i 's/, 제출 점검표는 \[docs\/submission-checklist.md\](docs\/submission-checklist.md)에 있습니다\./에 있습니다./' "$WORK/README.md"
+sed -i 's/ (\[submission.md\](submission.md))//' "$WORK/docs/briefing-2026-10-28.md"
 
 # 남은 파일에 빼야 할 것이 없는지 마지막으로 확인
-if grep -rIl --exclude-dir=.git -e "parentUuid" -e "sb_secret_[A-Za-z0-9]\{12,\}" "$WORK" | grep -v "web/scripts" ; then
-  echo "사본에 대화 기록이나 관리 키로 보이는 내용이 있습니다. 확인하세요." >&2
+if grep -rIl --exclude-dir=.git -e "parentUuid" -e "hmg_app_challenge_contest" -e "sb_secret_[A-Za-z0-9]\{12,\}" "$WORK" | grep -v "web/scripts" ; then
+  echo "사본에 대화 기록, 개발 저장소 주소, 관리 키로 보이는 내용이 있습니다. 확인하세요." >&2
   exit 1
 fi
 

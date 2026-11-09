@@ -76,7 +76,7 @@
 
 | 항목 | 값 |
 |---|---|
-| GitHub 저장소 | https://github.com/altrofast11x2/hmg_app_challenge_contest (비공개, 심사용 계정이 공지되면 Collaborator로 초대) |
+| GitHub 저장소 | https://github.com/altrofast11x2/AltroStudio_DriveLog (비공개, 심사용 계정이 공지되면 Collaborator로 초대) |
 | APK 경로 | `apk/AltroStudio_Chagok_release.apk` |
 | 관리자 웹 | https://altrostudio-drivelog.vercel.app/app.html (제품 소개 페이지: https://altrostudio-drivelog.vercel.app) |
 | 시연용 차량 연결 코드 | `422511` (여러 번 사용 가능, 2027-02-28까지) |

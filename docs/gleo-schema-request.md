@@ -20,7 +20,7 @@
 
 ## 메일 초안
 
-> 제목: [Gleo Interface] 앱 스키마 검토 요청 — 자동 운행기록부(com.altrostudio.drivelog)
+> 제목: [Gleo Interface] 앱 스키마 검토 요청: 자동 운행기록부(com.altrostudio.drivelog)
 >
 > 안녕하세요, 현대자동차그룹 차량용 앱 개발 공모전에 참가한 AltroStudio입니다.
 > Pleos Connect 앱 「자동 운행기록부(DriveLog)」의 Gleo Interface App Schema 검토를 요청드립니다. Pleos 앱 연동 가이드에 따라 `assets/schema.json`을 앱에 넣었고, 파일을 첨부합니다.
@@ -42,12 +42,12 @@
 
 | 가이드 (App Schema 작성 가이드라인) | schema.json |
 |---|---|
-| 파일 이름 `schema.json`, 위치 `assets/` | ✅ `app/src/main/assets/schema.json` |
-| actionCalls 최대 3개 | ✅ 3개 |
-| function 이름: 대문자 + 밑줄, 고유, 동사만이 아니라 대상 포함 | ✅ RECORD_TRIP_PURPOSE, SET_DRIVER, GET_DRIVING_SUMMARY |
-| description은 영어, 한두 문장, 구체적인 예시 금지, Gleo 동작 조작 문구 금지 | ✅ (workNote 설명의 예시 "such as …"는 2026-11-04에 뺌) |
-| 매개변수 type은 string·number·boolean·array 중 하나, enum은 문자열만 | ✅ 모두 string, enum 문자열 |
-| required에는 필수 매개변수만 | ✅ purpose / driverName / period |
-| 각 function의 intent action 필터 (component service면 방송 수신자) | ✅ `service/GleoActionReceiver` (AndroidManifest의 RECORD_TRIP_PURPOSE·SET_DRIVER·GET_DRIVING_SUMMARY) |
-| version = App Market에 등록된 버전 | ⚠️ App Market 등록 전이라 앱 버전 0.3.0을 적음 (메일에 설명) |
-| Callback: functionName·status·message(영어)·data·mode | ✅ `domain/voice/GleoActions.kt` |
+| 파일 이름 `schema.json`, 위치 `assets/` | 확인: `app/src/main/assets/schema.json` |
+| actionCalls 최대 3개 | 확인: 3개 |
+| function 이름: 대문자 + 밑줄, 고유, 동사만이 아니라 대상 포함 | 확인: RECORD_TRIP_PURPOSE, SET_DRIVER, GET_DRIVING_SUMMARY |
+| description은 영어, 한두 문장, 구체적인 예시 금지, Gleo 동작 조작 문구 금지 | 확인: (workNote 설명의 예시 "such as …"는 2026-11-04에 뺌) |
+| 매개변수 type은 string·number·boolean·array 중 하나, enum은 문자열만 | 확인: 모두 string, enum 문자열 |
+| required에는 필수 매개변수만 | 확인: purpose / driverName / period |
+| 각 function의 intent action 필터 (component service면 방송 수신자) | 확인: `service/GleoActionReceiver` (AndroidManifest의 RECORD_TRIP_PURPOSE·SET_DRIVER·GET_DRIVING_SUMMARY) |
+| version = App Market에 등록된 버전 | 주의: App Market 등록 전이라 앱 버전 0.3.0을 적음 (메일에 설명) |
+| Callback: functionName·status·message(영어)·data·mode | 확인: `domain/voice/GleoActions.kt` |

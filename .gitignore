@@ -24,7 +24,7 @@ keystore.properties
 # web/ (Node.js)
 node_modules/
 
-# Claude Code 개인 설정
+# 개발 도구 개인 설정
 .claude/settings.local.json
 
 # web/ 설정 (Supabase 주소·공개 키). web/scripts/write-config.mjs가 만든다

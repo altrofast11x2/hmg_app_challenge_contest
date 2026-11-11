@@ -35,6 +35,15 @@ sed -i '/^| 공모전 제출 점검표 | \[docs\/submission.md\]/d' "$WORK/READM
 sed -i 's/, 제출 점검표는 \[docs\/submission-checklist.md\](docs\/submission-checklist.md)에 있습니다\./에 있습니다./' "$WORK/README.md"
 sed -i 's/ (\[submission.md\](submission.md))//' "$WORK/docs/briefing-2026-10-28.md"
 
+# design/ 폴더는 개발 저장소에서 고치지 않으므로(읽기 전용) 사본에서만 표현을 정리한다: 도구 이름, 긴 줄표, 이모지
+sed -i 's/\*\*디자인 담당 Claude(claude\.ai)\*\* 가/**디자인 담당**이/; s/개발 쪽(Claude Code)/개발 쪽/g' "$WORK/design/README.md" "$WORK/design/REQUESTS.md"
+sed -i '/<meta name="claude:/d' "$WORK"/design/mockups/*.html
+sed -i 's/ — /: /g; s/✅ \?/확인: /g' "$WORK"/design/*.md
+if grep -rIil --exclude-dir=.git -e "claude" -e "anthropic" "$WORK" | grep -v "/\.gitignore$"; then
+  echo "사본에 개발 도구 이름이 남아 있습니다. 확인하세요." >&2
+  exit 1
+fi
+
 # 남은 파일에 빼야 할 것이 없는지 마지막으로 확인
 if grep -rIl --exclude-dir=.git -e "parentUuid" -e "hmg_app_challenge_contest" -e "sb_secret_[A-Za-z0-9]\{12,\}" "$WORK" | grep -v "web/scripts" ; then
   echo "사본에 대화 기록, 개발 저장소 주소, 관리 키로 보이는 내용이 있습니다. 확인하세요." >&2

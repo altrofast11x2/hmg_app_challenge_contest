@@ -1,4 +1,4 @@
-# web — 소개 페이지와 관리자 웹
+# web: 소개 페이지와 관리자 웹
 
 순수 HTML·CSS·JavaScript(ES 모듈)이고 설치할 패키지와 빌드 단계가 없습니다. 서버는 차량 앱과 같은 Supabase REST API를 직접 부릅니다.
 

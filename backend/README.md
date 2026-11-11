@@ -1,4 +1,4 @@
-# backend — Supabase (Postgres + Auth + RLS)
+# backend: Supabase (Postgres + Auth + RLS)
 
 차량 앱과 관리자 웹이 함께 쓰는 서버입니다. 앱은 Supabase REST API를 직접 호출합니다.
 
@@ -39,24 +39,21 @@
 
 방법은 두 가지다. A와 `setup.mjs`는 마이그레이션 적용 기록을 `public.drivelog_migrations`에 남겨서, 둘을 섞어 써도 같은 SQL을 두 번 적용하지 않는다.
 
-### A. Claude Code + Supabase MCP (secret 키 없이)
+### A. Supabase MCP로 적용 (secret 키 없이)
 
-1. 대시보드에서 프로젝트를 만들고, 프로젝트 ref로 MCP를 등록한다 (`.mcp.json`).
-   ```
-   claude mcp add --scope project --transport http supabase "https://mcp.supabase.com/mcp?project_ref=<project-ref>&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-   ```
-2. Claude Code를 다시 시작하고 `/mcp`에서 supabase를 승인·로그인한다.
+1. 대시보드에서 프로젝트를 만들고, 쓰는 개발 도구에 Supabase MCP 서버를 등록한다. 주소는 `https://mcp.supabase.com/mcp?project_ref=<project-ref>` 이다.
+2. 도구에서 supabase 서버를 승인하고 로그인한다.
 3. 대시보드에서 직접 할 일 (MCP에 해당 기능이 없다): **Authentication > Sign In / Providers**에서 **Allow anonymous sign-ins** 켜기
-4. Claude가 MCP로 `migrations/`의 SQL을 차례로 적용(`apply_migration`) → `drivelog_migrations` 기록 → `seed/seed.sql`(관리자 계정 포함, 값은 `backend/.env`) 실행 → 보안·성능 점검(advisors)을 한다.
+4. MCP의 `apply_migration`으로 `migrations/`의 SQL을 차례로 적용하고 `drivelog_migrations`에 기록한 뒤, `seed/seed.sql`(관리자 계정 포함, 값은 `backend/.env`)을 실행하고 보안·성능 점검(advisors)을 한다.
    - 관리자 계정을 대시보드(**Authentication > Users > Add user**, **Auto Confirm User** 체크)에서 직접 만들어도 된다. 그때는 `seed.sql`의 비밀번호 칸을 그대로 둔다.
-   - `apply_migration`과 정책 삭제 같은 SQL은 Claude Code에 승인 창이 뜬다. 늦게 승인하면 요청이 만료되어 `Invalid or expired requestState` 오류가 난다 → 다시 실행하고 바로 승인한다.
+   - 승인 창이 뜨는 요청은 늦게 승인하면 만료되어 `Invalid or expired requestState` 오류가 난다. 다시 실행하고 바로 승인한다.
 5. `local.properties`에 `supabase.url`, `supabase.anonKey`(Publishable key)를 넣는다.
 
 ### B. 스크립트 (`backend/.env`의 키 사용)
 
 1. https://supabase.com 에서 프로젝트를 만든다 (지역: Northeast Asia (Seoul) 권장).
 2. `backend/.env.example`을 `backend/.env`로 복사하고 값을 채운다.
-3. 마이그레이션 적용과 익명 로그인 켜기 — 둘 중 하나
+3. 마이그레이션 적용과 익명 로그인 켜기: 둘 중 하나
    - 자동: `node backend/scripts/setup.mjs` (`SUPABASE_ACCESS_TOKEN` 필요)
    - 수동: 대시보드 **SQL Editor**에 `supabase/migrations/0001_init.sql` 내용을 붙여 넣고 실행 → **Authentication > Sign In / Providers**에서 **Allow anonymous sign-ins** 켜기
 4. 데모 데이터: `node backend/seed/seed.mjs`

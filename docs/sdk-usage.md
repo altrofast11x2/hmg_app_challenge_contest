@@ -34,7 +34,9 @@
 - Pleos Playground 문서(create-my-project, 2026-11-03)는 Vehicle Control SDK를 "준비 중"으로 적는다. 개발 단계에서는 manifest 선언만으로 쓸 수 있고(온라인 설명회 10/28), App Market에 올릴 때 승인이 필요하다. 팀은 법인이 없어 App Market 등록은 법인 설립 뒤로 미뤘고(2026-11-04), 공모전 제출·시연(에뮬레이터)에는 승인이 필요 없다.
 - 타이어 공기압은 Pleos `getTirePressure`가 `PRIVATE_CAR_SAFETY`, AAOS `TIRE_PRESSURE`가 signature 권한이라 쓰지 않는다.
 
-## 음성 명령 (Gleo Interface, 0.3.0)
+## 향후 계획: 음성 명령 (Gleo Interface)
+
+> 운영사무국 공지(개발 범위 안내)에 따라 공모전 참가팀은 Gleo Interface(App Schema) 검토·승인을 신청할 수 없다. 그래서 아래는 준비만 해 둔 것이고 이번 출품 기능과 시연에는 쓰지 않는다. 말로 기록은 다음 절의 SpeechToText만으로 동작한다.
 
 `app/src/main/assets/schema.json`에 함수 3개를 등록하고(component `service` = 방송), `service/GleoActionReceiver`가 받아 `domain/voice/GleoActions`가 처리한 뒤 `ai.pleos.playground.intent.action.APP_ACTION_RESPONSE` 방송으로 답한다 (status success/asking/fail, 영어 message, data). 7초 제한이라 6초 안에 답한다.
 
@@ -44,12 +46,11 @@
 | `SET_DRIVER` | `driverName`(필수) | 이름(공백·"님"·성 생략 허용)으로 운전자를 찾아 맞춤 설정 적용. 못 찾으면 asking + 명단 |
 | `GET_DRIVING_SUMMARY` | `period`(TODAY·THIS_MONTH·LAST_MONTH) | 운행 수, 총거리, 업무용 거리, 업무사용비율 |
 
-에뮬레이터 Gleo AI(`ai.umos.ambientai`)가 설치 때 스키마를 읽는 것을 로그(`[GAA] [Schema] Loaded schema.json from com.altrostudio.drivelog`)로 확인했고, 세 함수는 Gleo와 같은 방송을 adb로 보내 확인했다. Pleos 문서상 스키마는 Pleos 검토·승인 뒤 활성화된다. 팀이 신청한다 ([gleo-schema-request.md](gleo-schema-request.md)).
-승인되지 않아도 말로 용도·업무 내용을 기록하는 기능은 아래 SpeechToText로 동작한다.
+에뮬레이터 Gleo AI(`ai.umos.ambientai`)가 설치 때 스키마를 읽는 것을 로그(`[GAA] [Schema] Loaded schema.json from com.altrostudio.drivelog`)로 확인했고, 세 함수는 Gleo와 같은 방송을 adb로 보내 확인했다. Pleos 문서상 스키마는 Pleos 검토·승인 뒤 활성화된다. 공모전 기간에는 신청하지 않는다 (공모전 뒤에 쓸 초안: [gleo-schema-request.md](gleo-schema-request.md)).
 
-## 말로 기록 (SpeechToText, 0.3.1 — Gleo 승인 없이 동작)
+## 말로 기록 (SpeechToText, 0.3.1)
 
-Gleo 스키마 승인을 기다리지 않도록, 정차하면 앱이 직접 묻고 듣는다. 구현: `data/voice/PleosListener.kt`(SDK), `domain/voice/VoiceJournal.kt`(대화), `domain/voice/SpokenTrip.kt`(받아 적은 글자 해석).
+정차하면 앱이 직접 묻고 듣는다. 음성 인식은 Pleos SpeechToText의 차 안 엔진만 쓰고, 목소리를 외부 음성 인식 서비스로 보내지 않는다. 구현: `data/voice/PleosListener.kt`(SDK), `domain/voice/VoiceJournal.kt`(대화), `domain/voice/SpokenTrip.kt`(받아 적은 글자 해석).
 
 | 순서 | 동작 |
 |---|---|

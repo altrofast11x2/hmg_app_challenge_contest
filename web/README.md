@@ -43,12 +43,13 @@ cd web && node --test               # 운행기록부·CSV 단위 테스트
 빌드 단계가 없는 정적 사이트라, 공개할 파일만 모은 `web/dist`를 그대로 올린다 (`scripts/`·`test/`·README는 올라가지 않는다).
 
 ```bash
-node web/scripts/build.mjs                       # web/dist 생성 (config.js 포함, 커밋 금지)
+node web/scripts/build.mjs                       # web/dist 생성 (config.js 포함, 커밋 금지). web/download/에 ZIP이 있으면 함께 담는다
 vercel login                                     # 처음 한 번 (사용자가 직접)
 vercel link --cwd web/dist --project altrostudio-drivelog --scope altrofast11x2s-projects --yes   # 처음 한 번
 vercel deploy --cwd web/dist --prod --yes
 ```
 
+- 소개 페이지의 [소스 코드·APK 내려받기]는 `/download/AltroStudio_Chagok_source_apk.zip`을 받는다 (공모전 제출용 내려받기 주소). 이 파일은 저장소에 넣지 않고 배포할 때만 만든다.
 - `vercel.json`이 보안 헤더(다른 사이트가 이 화면을 틀 안에 넣지 못하게 막기 등)를 붙인다.
 - 2026-10-26 Vercel MCP 연결로는 프로젝트 생성이 거부돼서(403) CLI로 배포한다.
 

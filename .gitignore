@@ -32,3 +32,6 @@ web/js/config.js
 
 # web/ 배포 폴더 (web/scripts/build.mjs가 만든다, config.js와 .vercel 연결 정보 포함)
 web/dist/
+
+# 소개 페이지에서 내려받는 소스 코드·APK 묶음 (tools/submission-copy.sh가 만든다)
+web/download/

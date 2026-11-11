@@ -27,6 +27,17 @@ for (const file of PUBLIC_FILES) {
   cpSync(new URL(file, WEB), new URL(file, DIST));
 }
 writeFileSync(new URL('js/config.js', DIST), source);
+// 소스 코드·APK 묶음 (공모전 제출용 내려받기 주소: /download/AltroStudio_Chagok_source_apk.zip).
+// tools/submission-copy.sh가 web/download/에 만든다 (커밋하지 않는다). 없으면 넘어간다
+const DOWNLOAD = new URL('download/', WEB);
+let downloads = 0;
+if (existsSync(DOWNLOAD)) {
+  mkdirSync(new URL('download/', DIST), { recursive: true });
+  for (const entry of readdirSync(DOWNLOAD)) {
+    cpSync(new URL(entry, DOWNLOAD), new URL(`download/${entry}`, DIST));
+    downloads += 1;
+  }
+}
 // 공개 개인정보 처리방침 (App Market 제출용 URL: /privacy.html)
 writeFileSync(new URL('privacy.html', DIST), privacyPage());
-console.log(`web/dist를 만들었습니다 (${PUBLIC_FILES.length + 2}개 파일).`);
+console.log(`web/dist를 만들었습니다 (${PUBLIC_FILES.length + 2}개 파일, 내려받기 ${downloads}개).`);

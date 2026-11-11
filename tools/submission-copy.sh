@@ -6,6 +6,8 @@
 # 개발은 이 저장소에서 계속하고, 제출 전에 이 스크립트로 사본을 다시 올린다.
 #
 # 사용: bash tools/submission-copy.sh [사본 저장소 주소]
+#   ZIP_OUT=web/download/AltroStudio_Chagok_source_apk.zip  같은 내용을 ZIP으로도 만든다 (소스 코드 + apk/, 소개 페이지에서 내려받는 파일)
+#   NO_PUSH=1                                               사본 저장소에는 올리지 않는다 (ZIP만 만들 때)
 set -euo pipefail
 
 REPO_URL=${1:-https://github.com/altrofast11x2/AltroStudio_DriveLog.git}
@@ -13,6 +15,9 @@ AUTHOR_NAME="AltroStudio"
 AUTHOR_EMAIL="230317413+altrofast11x2@users.noreply.github.com"
 
 SOURCE=$(git rev-parse --short HEAD)
+ROOT=$(git rev-parse --show-toplevel)
+ZIP_OUT=${ZIP_OUT:-}
+case "$ZIP_OUT" in ""|/*|[A-Za-z]:*) ;; *) ZIP_OUT="$ROOT/$ZIP_OUT" ;; esac
 if [ -n "$(git status --porcelain)" ]; then
   echo "커밋하지 않은 변경이 있습니다. 먼저 커밋하세요." >&2
   exit 1
@@ -42,6 +47,15 @@ git add -A
 GIT_AUTHOR_NAME="$AUTHOR_NAME" GIT_AUTHOR_EMAIL="$AUTHOR_EMAIL" \
 GIT_COMMITTER_NAME="$AUTHOR_NAME" GIT_COMMITTER_EMAIL="$AUTHOR_EMAIL" \
   git commit -q -m "자동 운행기록부(DriveLog) 제출본 $(date +%Y-%m-%d)"
+if [ -n "$ZIP_OUT" ]; then
+  mkdir -p "$(dirname "$ZIP_OUT")"
+  git archive --format=zip --prefix=AltroStudio_Chagok/ -o "$ZIP_OUT" HEAD
+  echo "ZIP: $ZIP_OUT ($(du -h "$ZIP_OUT" | cut -f1))"
+fi
+if [ -n "${NO_PUSH:-}" ]; then
+  echo "사본 저장소에는 올리지 않았습니다 (원본 $SOURCE, 파일 $(git ls-files | wc -l)개)"
+  exit 0
+fi
 git remote add origin "$REPO_URL"
 git push -q -f origin main
-echo "올림: $REPO_URL (원본 $SOURCE, 파일 $(git ls-files | wc -l)개)"
+echo "올림: $REPO_URL (원본 $SOURCE, 파일 $(git ls-files | wc -l)개, 커밋 번호 $(git rev-parse HEAD))"

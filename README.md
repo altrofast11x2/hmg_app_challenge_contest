@@ -26,6 +26,7 @@ AltroStudio · 현대자동차그룹 차량용 앱 개발 공모전 출품작 (P
 ## APK 파일 위치
 
 - [`apk/AltroStudio_Chagok_release.apk`](apk/AltroStudio_Chagok_release.apk) (release 서명 빌드, 0.4.0, 약 54 MB)
+- 소스 코드와 APK를 묶은 ZIP: https://altrostudio-drivelog.vercel.app/download/AltroStudio_Chagok_source_apk.zip (이 저장소와 같은 내용, 소개 페이지 아래쪽 [소스 코드·APK 내려받기]에서도 받을 수 있습니다)
 - 직접 만들 때: `keystore.properties.example`을 `keystore.properties`로 복사해 서명 키 정보를 넣고 `./gradlew assembleRelease` (서명 키와 `keystore.properties`는 커밋하지 않습니다)
 - APK에는 서버 주소와 **공개 키(Publishable key)** 가 들어 있습니다. 공개 키는 앱에 넣도록 만들어진 키이고, 데이터 보호는 서버의 권한 규칙(RLS)이 맡습니다. 관리용 secret/service_role 키는 APK와 웹 어디에도 넣지 않습니다.
 
@@ -161,6 +162,7 @@ adb forward tcp:8088 tcp:8088
 | 항목 | 위치 |
 |---|---|
 | release APK | [`apk/AltroStudio_Chagok_release.apk`](apk/AltroStudio_Chagok_release.apk) |
+| 소스 코드·APK 묶음 (ZIP) | https://altrostudio-drivelog.vercel.app/download/AltroStudio_Chagok_source_apk.zip |
 | 제품 소개 페이지 | https://altrostudio-drivelog.vercel.app |
 | 관리자 웹 | https://altrostudio-drivelog.vercel.app/app.html |
 | 구현 현황 | [docs/status.md](docs/status.md) |

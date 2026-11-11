@@ -18,6 +18,7 @@
 | README.md: APK 파일 위치 또는 Release 링크 | ✅ | [README](../README.md#apk-파일-위치) |
 | 저장소 주소와 APK 파일 경로를 제출 페이지(접수양식)에 적는다 | ⏳ | 저장소 `https://github.com/altrofast11x2/hmg_app_challenge_contest`, APK 경로 `apk/AltroStudio_Chagok_release.apk` ([기획 요약](plan-summary.md#제출-정보)) |
 | 접수 메일에 저장소 주소와 최종 커밋 번호(commit hash)를 적는다. 심사용 계정 초대는 필요 없음 (2026-11 공지) | ⏳ | 사본 저장소를 마지막으로 올린 뒤 그 커밋 번호를 접수양식 7번과 메일 본문에 적는다. 그 뒤에는 사본을 다시 올리지 않는다(다시 올리면 번호가 바뀜 → 수정 제출) |
+| 소스 코드와 APK를 압축한 파일의 내려받기 주소도 함께 적는다 (저장소 공개가 어려울 때의 방법, 2026-11 공지) | ✅ | https://altrostudio-drivelog.vercel.app/download/AltroStudio_Chagok_source_apk.zip (사본 저장소와 같은 내용, `ZIP_OUT=… bash tools/submission-copy.sh`로 만들고 웹과 함께 배포) |
 | 마감 뒤 11월 16일(월)까지 저장소를 공개(Public)로 바꾸고 11월 23일까지 유지 | ⏳ | 11/16에 사본 저장소 공개 전환. 바꾸지 않으면 개발 산출물 가산점이 반영되지 않음 |
 | README에 개발에 쓴 Pleos Connect 에뮬레이터 버전과 화면 규격 | ✅ | README "개발에 사용한 Pleos Connect 에뮬레이터 버전과 화면 규격" (v2.1, 2560 × 1440 px, 160 dpi) |
 
